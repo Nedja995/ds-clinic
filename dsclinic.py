@@ -103,7 +103,7 @@ def pokreni_analizu():
         generate_report_pdf(document, protokoli, OUTPUT_DIR)
 
     if os.name == 'nt': os.startfile(OUTPUT_DIR)
-
+      
 def pokreni_analizu_gemini():
     if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
     if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)
@@ -114,10 +114,16 @@ def pokreni_analizu_gemini():
 
     try:
         gemini_client = api_gemini.gemini_client_connect()
-        res = api_gemini.analyze_lab_result_docs(gemini_client, documents_filepaths[0], documents_filepaths[1])
-        print(f"SUCCESS - RESPONSE: {res}")
+        res = api_gemini.analyze_lab_result_docs(
+            gemini_client, 
+            documents_filepaths[0], 
+            documents_filepaths[1], 
+            task_text=api_gemini.TASKS.TASK_3)
+        print(f"SUCCESS - RESPONSE:\n{res}")
     except Exception as e:
         print(f"ERROR - GOOGLE SERVICE: {str(e)}")
+    finally:
+        gemini_client.close()
 
     # ANALIZA TEXTA I NALAZAK PROTOKOLA
     #protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
