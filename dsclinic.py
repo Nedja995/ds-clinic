@@ -10,7 +10,6 @@ from utils import BASE_SYNDROMS
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ## APP PARAMETERS
-GOOGLE_API_KEY = "AIzaSyCu6yARhrFmmN7fHmbuYaLJ6Rsxp-Pa-So"
 DATA_DIR = ROOT_DIR
 INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
 OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
@@ -103,6 +102,7 @@ def pokreni_analizu():
         generate_report_pdf(document, protokoli, OUTPUT_DIR)
 
     if os.name == 'nt': os.startfile(OUTPUT_DIR)
+
 
 
 def main():
