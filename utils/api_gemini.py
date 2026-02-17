@@ -22,7 +22,8 @@ class TASKS(StrEnum):
   TASK_2 = "Analiziraj laboratorijske nalaze i uporedi sa prethodnim nalazom. Pronadji anomalije i promene u odnosu na prethodni nalaz. Napravi detaljnu analizu i predlozi moguce dijagnoze i preporuke za dalje korake."
   TASK_3 = "Spoji, analiziraj i sumiraj analizu iz dva nalaza jedan je iz MetaHuner program a drugi je iz labaratorije"
   TASK_4 = "spoji podatke iz oba dokumenta i ukazi na kriticne simptome"
-  TASK_5 = "merge data from documents and show critical symptoms and possible diagnosis in Serbian language"
+  TASK_5 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata, prikazi ih kao json listu"
+  TASK_6 = "Merge medical data from all documents and show critical symptoms summarized in Serbian language"
 
 def gemini_client_connect() -> genai.Client:
     client = genai.Client(
