@@ -1,6 +1,7 @@
 import os
 import pdfplumber
 from fpdf import FPDF
+from utils import BASE_SYNDROMS
 
 #import warnings
 #warnings.filterwarnings("ignore")
@@ -23,10 +24,10 @@ def sredi_slova(text):
     return text
 
 # TRAZI DIJAGNOZE
-def analyze_content(text: str = "", syndromBaseDict: dict = {}) -> list:
+def analyze_content(text: str = "", BASE_DICT: dict = {}) -> list:
     protocols_found : list = []
 
-    for kljuc, podaci in syndromBaseDict.items():
+    for kljuc, podaci in BASE_DICT.items():
         if kljuc.upper() in text:
             protocols_found.append(podaci)
 
@@ -74,9 +75,9 @@ def generate_report_pdf(document_name: str, protocols_found: list = [], output_p
         #
         pdf_novi.cell(0, 10, "Nisu detektovani specificni patogeni iz baze.", ln=True)
 
-    pdf_novi.output(os.path.join(OUTPUT_DIR, f"NALAZ_{file}"))
+    pdf_novi.output(os.path.join(OUTPUT_DIR, f"NALAZ_{document_name}"))
 
-    print(f"GOTOVO: {file}")
+    print(f"GOTOVO: {pdf_novi}")
 
 
 def pokreni_analizu():
@@ -87,13 +88,19 @@ def pokreni_analizu():
     doc_files = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.pdf')]
     
     for document in doc_files:
+        text = ""
         # Citanje PDF-a
         try:
             with pdfplumber.open(os.path.join(INPUT_DIR, document)) as pdf:
-                tekst_pdfa = " ".join([s.extract_text() or "" for s in pdf.pages]).upper()
-
+                text = " ".join([s.extract_text() or "" for s in pdf.pages]).upper()
         except Exception as e:
             print(f"Greska: {str(e)}")
+
+        # ANALIZA TEXTA I NALAZAK PROTOKOLA
+        protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
+
+        # GHENERISANJE IZVESTAJA
+        generate_report_pdf(document, protokoli, OUTPUT_DIR)
 
     if os.name == 'nt': os.startfile(OUTPUT_DIR)
 
