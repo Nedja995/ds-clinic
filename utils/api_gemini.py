@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 import base64
 import os
+import json
 
 
 ## GOOGLE SERVICE
@@ -24,6 +25,8 @@ class TASKS(StrEnum):
   TASK_4 = "spoji podatke iz oba dokumenta i ukazi na kriticne simptome"
   TASK_5 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata, prikazi ih kao json listu"
   TASK_6 = "Merge medical data from all documents and show critical symptoms summarized in Serbian language"
+  TASK_7 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata"
+  TASK_8 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata i prikazi ih kao json lista, a zatim napravi detaljnu analizu i predlozi moguce dijagnoze i preporuke za dalje korake"
 
 def gemini_client_connect() -> genai.Client:
     client = genai.Client(
@@ -72,9 +75,15 @@ def analyze_lab_result_docs(client: genai.Client, # Gemini client instance
 
   # CONTENT CONFIG
   generate_content_config = types.GenerateContentConfig(
+  thinking_config=types.ThinkingConfig(
+      thinking_level=thinking_level,
+    ),
     temperature = 1,
     top_p = 0.95,
     max_output_tokens = 65535,
+    response_mime_type="application/json",
+    #response_json_schema=types.JsonSchema(type="array", items=types.JsonSchema(type="dictionary")),
+    
     safety_settings = [types.SafetySetting(
       category="HARM_CATEGORY_HATE_SPEECH",
       threshold="OFF"
@@ -89,24 +98,40 @@ def analyze_lab_result_docs(client: genai.Client, # Gemini client instance
       threshold="OFF"
     )],
     tools = tools,
-    thinking_config=types.ThinkingConfig(
-      thinking_level=thinking_level,
-    ),
   )
 
-  for chunk in client.models.generate_content_stream(
+  res = ""
+
+  for response in client.models.generate_content_stream(
       model = model,
       contents = contents,
-      config = generate_content_config,
+      config = generate_content_config
     ):
-    if not chunk.candidates or not chunk.candidates[0].content or not chunk.candidates[0].content.parts:
+    if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
         # Pass
         continue
-    # Store
-    #print(chunk.text, end="")
-    results.append(chunk.text)
+    # Parse response
+    responseText = response.text
+    #print(responseText, end="")
+   
 
-  return results
+
+    # Function result
+    #results.append(responseText)
+    res += responseText
+    #print(res, end="")
+
+  # Convert the JSON string to a Python dictionary
+  responseDict = json.loads(res)
+  # Now you can use the data as a normal Python dictionary
+  #print(f"\ndict: {responseDict}")
+  print(f"\nCategory: {responseDict['category']}")
+  print(f"\nTest: {responseDict['test_name']} - {responseDict['flag']}")
+  print(f"\nResult: {responseDict['result']} {responseDict['unit']}")
+  print(f"\nReference interval: {responseDict['reference_interval']}")
+  print(f"\nStatus: {responseDict['test_status']}\n")
+
+  return responseDict
 
 
 # try:

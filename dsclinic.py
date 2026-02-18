@@ -63,7 +63,7 @@ def pokreni_analizu_gemini():
     # GHENERISANJE IZVESTAJA
     #generate_report_pdf(document, protokoli, OUTPUT_DIR)
 
-    if os.name == 'nt': os.startfile(OUTPUT_DIR)
+    #if os.name == 'nt': os.startfile(OUTPUT_DIR)
 
 
 

@@ -1,0 +1,153 @@
+['[
+  {
+    "dokument": "NALAZ MEDICINSKO-BIOK', 'EMIJSKOG LABORATORIJA",
+    "pacijent": "RENATO VAMPOVAC",
+    "datum": "22.10.2025",
+    "kategorija": "', 'HEMATOLOGIJA",
+    "pretraga": "K - 
+MCHC",
+    "rezultat":', ' 346,
+    "jedinica": "g/L",
+    "referentni_interval', '": "320 - 345",
+    "oznaka": "H",
+    "status":', ' "Povišeno"
+  },
+  {
+    "dokument": "NALAZ MEDICINSKO', '-BIOKEMIJSKOG LABORATORIJA",
+    "pacijent": "RENATO VAMPO', 'VAC",
+    "datum": "22.10.2025",
+    "kategor', 'ija": "BIOKEMIJA",
+    "pretraga": "S - Trigliceridi",
+    ', '"rezultat": 1.79,
+   
+ "jedinica": "mmol/L",
+    ', '"referentni_interval": "< 1.7",
+    "oznaka": "H",
+    "status": "Povišeno"
+  },
+  {
+    "dokument": "NALAZ', ' MEDICINSKO-BIOKEMIJSKOG LABORATORIJA",
+    "pacijent": "REN', 'ATO VAMPOVAC",
+    "datum": "22.10.2025",
+    "kategorija": "BIOKEMIJA",
+    "pretraga": "S - TIBC', '",
+    "rezultat": 45.0,
+    "jedinica": "μmol/', 'L",
+    "referentni_interval": "49.0 - 72.0",
+    "oznaka": "L",
+    "status": "Sniženo"
+  },
+  ', '{
+    "dokument": "NALAZ MEDICINSKO-BIOKEMIJSKOG LABORATORIJA",', '
+    "pacijent": "RENATO VAMPOVAC",
+    "datum": "22.', '10.2025",
+    "kategorija": "ANALIZA MOKRAĆE",
+    "pretraga": "U - Izgled",
+    "rezultat": "zamućen",
+    "jedinica": null,
+    "referentni_interval": "bistar",
+    "oznaka', '": "Abnormalno",
+    "status": "Patološki nalaz"
+  },
+  {', '
+    "dokument": "NALAZ MEDICINSKO-BIOKEMIJSKOG LABORATORIJA",
+    "pacijent": "RENATO VAMPOVAC",
+    "datum": "22.1', '0.2025",
+    "kategorija": "SEDIMENT MOKRAĆE",
+    "pretraga": "U - Bakterije",
+    "rezultat": "dosta",
+    "jedinica": "0/neg/VP",
+    "referentni_interval": "0/neg/', 'VP",
+    "oznaka": "Abnormalno",
+    "status": "Infekcija/', 'Kolonizacija"
+  },
+  {
+    "dokument": "NALAZ MEDICINSKO-BIO', 'KEMIJSKOG LABORATORIJA",
+    "pacijent": "RENATO VAMPOVAC",', '
+    "datum": "22.10.2025",
+    "kategorija":', ' "SEDIMENT 
+MOKRAĆE",
+    "pretraga": "U - Sluz",
+    ', '"rezultat": "dosta",
+    "jedinica": "0/neg/VP",
+    ', '"referentni_interval": "0/neg/VP",
+    "oznaka": "Abnormal', 'no",
+    "status": "Patološki 
+nalaz"
+  },
+  {
+    "dokument', '": "NONLINEAR ANALYSIS (NLS)",
+    "pacijent": "GORAN PRVULOVIC",
+    "datum": "Izvještaj generiran 2025/2026",
+    "k', 'ategorija": "PATHOMORPHOLOGY",
+    "pretraga": "TIREOTOXICOSIS",
+    "rezultat": 0.109,
+    "jedinica": "D-value",', '
+    "referentni_interval": "> 0.425 (Standard NLS)",
+    "oznaka', '": "Critical Low D",
+    "status": "Visoka vjerojatnost poremećaja"
+  ', '},
+  {
+    "dokument": "NONLINEAR ANALYSIS (NLS)",
+    "pacijent": "', 'GORAN PRVULOVIC",
+    "datum": "Izvještaj generiran 2025', '/2026",
+    "kategorija": "MICROORGANISMS",
+    "pretraga": "', 'HELIOBACTER PYLORI",
+    "rezultat": 0.190,
+    ', '"jedinica": "D-value",
+    "referentni_interval": "> 0.4', '25 (Standard NLS)",
+    "oznaka": "Critical Low D",
+   
+ "status":', ' "Visoka vjerojatnost prisutnosti"
+  },
+  {
+    "dokument": "NON', 'LINEAR ANALYSIS (NLS)",
+    "pacijent": "GORAN PRVULOVIC",
+    "datum', '": "Izvještaj generiran 2025/2026",
+    
+"kategor', 'ija": "PATHOMORPHOLOGY",
+    "pretraga": "HEART BLOCKS",
+    ', '"rezultat": 0.210,
+    "jedinica": "D-value",
+    "referentni_interval": "> 0.425 (Standard NLS)",
+    "oz', 'naka": "Critical Low D",
+    "status": "Visoka vjerojatnost poremećaja', '"
+  },
+  {
+    "dokument": "NONLINEAR ANALYSIS (NLS)",
+    "pacij', 'ent": "GORAN PRVULOVIC",
+    "datum": "Izvještaj generiran 2', '025/2026",
+    "kategorija": "PATHOMORPHOLOGY",
+    "pretraga": "HYPOTHYROIDISM",
+    "rezultat": 0.27', '6,
+    "jedinica": "D-value",
+    "referentni_interval": ">', ' 0.425 (Standard NLS)",
+    "oznaka": "Critical Low D",
+    "status": "Visoka vjerojatnost poremećaja"
+  },
+  {
+    ', '"dokument": "NONLINEAR ANALYSIS (NLS)",
+    "pacijent": "GORAN PRVULOVIC', '",
+    "datum": "Izvještaj generiran 2025/2026",', '
+    "kategorija": "PATHOMORPHOLOGY",
+    "pretraga": "DIFFUSE', ' GOITRE",
+    "rezultat": 0.302,
+    "jedinica":', ' "D-value",
+    "referentni_interval": "> 0.425 
+(Standard N', 'LS)",
+    "oznaka": "Critical Low D",
+    "status": "Visoka vjero', 'jatnost poremećaja"
+  },
+  {
+    "dokument": "NONLINEAR ANALYSIS (NLS', ')",
+    "pacijent": "GORAN PRVULOVIC",
+    "datum": "Izv', 'ještaj generiran 2025/2026",
+    "kategorija": "VIT', 'AMINS",
+    "pretraga": "Biotin, Vitamin H",
+    "rezultat":', ' 0.399,
+    "jedinica": "D-value",
+    "referent', 'ni_interval": "> 0.425 (Standard NLS)",
+    "oznaka": "', 'Low D",
+    "status": "Značajan deficit/rezonancija"
+  }
+]', '']
