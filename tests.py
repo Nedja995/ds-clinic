@@ -10,6 +10,12 @@ DATA_DIR = ROOT_DIR
 INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
 OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
 
+
+def sredi_slova(text):
+    mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
+    for k, v in mape.items(): text = text.replace(k, v)
+    return text
+
 def pokreni_analizu():
     if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
     if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)

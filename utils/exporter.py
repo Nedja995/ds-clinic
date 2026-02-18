@@ -1,5 +1,4 @@
 import os
-import pdfplumber
 from fpdf import FPDF
 
 ## SCRIPT PARAMETERS
@@ -11,6 +10,13 @@ INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
 OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
 
 from fpdf import FPDF
+
+ 
+def sredi_slova(text):
+    mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
+    for k, v in mape.items(): text = text.replace(k, v)
+    return text
+
 
 class ReportPDF(FPDF):
     def header(self):

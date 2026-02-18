@@ -1,5 +1,4 @@
 import os
-
 from utils import BASE_SYNDROMS, api_gemini, exporter
 
 #import warnings
@@ -40,22 +39,15 @@ def pokreni_analizu_gemini():
     documents_names = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.pdf')]
     documents_filepaths = [os.path.join(INPUT_DIR, f) for f in documents_names]
   
-    try:
-        gemini_client = api_gemini.gemini_client_connect()
-        res = api_gemini.analyze_lab_result_docs(
-            gemini_client, 
-            documents_filepaths[0], 
-            documents_filepaths[1], 
-            task_text=api_gemini.TASKS.TASK_5)
-        #
-        print(f"\n----------\nSUCCESS - RESPONSE RAW:\n{res}")
-        #
-        ##map(lambda x: sredi_slova(x), res)
-        print(f"\n----------\nSUCCESS - RESPONSE:\n{res}")
-    except Exception as e:
-        print(f"\n----------\nERROR - GOOGLE SERVICE: {str(e)}")
-    finally:
-        gemini_client.close()
+    # Call Gemini API to analyze lab result documents
+    res = api_gemini.analyze_docs(documents_filepaths[0], documents_filepaths[1])
+    #
+    #print(f"\n----------\nSUCCESS - RESPONSE RAW:\n{res}")
+    #
+    ##map(lambda x: sredi_slova(x), res)
+    #print(f"\n----------\nSUCCESS - RESPONSE:\n{res}")
+
+    print(f"\n--------------- PROGRAM COMPLETE --------------------------\n")
 
     # ANALIZA TEXTA I NALAZAK PROTOKOLA
     #protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)

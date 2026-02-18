@@ -1,0 +1,65 @@
+[
+    {
+        "pacijent": "Renato Vampovac",
+        "datum_rodenja": "08.07.1971",
+        "datum_klinickog_nalaza": "22.10.2025",
+        "identifikovana_osnova": {
+            "mkb_kod": "I21.4",
+            "opis": "Netransmuralni infarkt miokarda (NSTEMI)",
+            "status": "Pacijent je pod nadzorom zbog kardiološkog incidenta"
+        },
+        "analiza_klinickih_laboratorijskih_nalaza": {
+            "hematologija": {
+                "mchc": "346 H (Povišen)",
+                "interpretacija": "Blago povišena koncentracija hemoglobina u eritrocitima, može ukazivati na dehidrataciju ili sferocitozu, ali je klinički diskretno."
+            },
+            "biokemija_i_lipidi": {
+                "trigliceridi": "1.79 H (Povišen)",
+                "tibc": "45.0 L (Snižen)",
+                "interpretacija": "Povišeni trigliceridi ukazuju na metabolički rizik. Snižen TIBC (ukupni kapacitet vezivanja gvožđa) uz normalno gvožđe (14.0) može ukazivati na hroničnu upalu ili jetrene promene pre nego na deficit gvožđa."
+            },
+            "urin_analiza": {
+                "eritrociti_hemoglobin": "U tragu",
+                "mikroskopski_sediment": "Eritrociti (5-10), Bakterije (Dosta), Sluz (Dosta)",
+                "interpretacija": "Jasni znaci urinarne infekcije (bakteriurija) i mikrohematurije. Zahteva dalju obradu (urinokulturu)."
+            },
+            "hormoni": {
+                "tsh": "1.97 (Normalan)",
+                "interpretacija": "Funkcija štitne žlezde je u referentnim granicama prema standardnim laboratorijskim kriterijumima."
+            }
+        },
+        "analiza_nls_izvestaja_nelinearna_analiza": {
+            "kardiovaskularni_sistem": {
+                "markeri": "Heart Blocks (D=0.418), Atheroscleroses (D=0.587), Myocardiodystrophia (D=0.661)",
+                "znacaj": "Visoka rezonanca sa patologijom srca, što korelira sa dijagnozom I21.4 (infarkt)."
+            },
+            "endokrini_sistem": {
+                "markeri": "Hypothyroidism (D=0.276), Diffuse Goitre (D=0.302), Tireotoxikosis (D=0.109)",
+                "konflikt": "NLS ukazuje na energetski disbalans štitne žlezde uprkos normalnom TSH u krvi."
+            },
+            "mikroorganizmi_i_toksini": {
+                "markeri": "H. Pylori (D=0.190), E. Coli (D=0.903), Ascaris (D=0.953)",
+                "znacaj": "Sugeriše prisustvo Helicobacter pylori u digestivnom traktu i potvrđuje nalaz E. coli koji odgovara bakterijama u urinu."
+            }
+        },
+        "poredjenje_i_anomalije": {
+            "korelacija_urin": "Oba nalaza (NLS i laboratorija) potvrđuju bakterijsku aktivnost. NLS specifikuje E. coli.",
+            "korelacija_srce": "NLS potvrđuje strukturne promene (ateroskleroza) koje su dovele do kardiološke dijagnoze I21.4.",
+            "diskrepancija_stitnjaca": "NLS sugeriše hipotireozu/gušavost, dok je laboratorijski TSH savršen. Potrebno pratiti antitela ili slobodne hormone (fT3, fT4).",
+            "metabolicki_status": "Blaga hipertrigliceridemija u krvi prati NLS nalaze o masnim promenama."
+        },
+        "potencijalne_dijagnoze_i_rizici": [
+            "Status post Myocardial Infarctum (I21.4) - stabilno pod terapijom",
+            "Infectio tractus urinarii (Urinarna infekcija)",
+            "Hypertriglyceridaemia (Metabolički poremećaj lipida)",
+            "Gastritis susp. (zbog visoke rezonance na H. Pylori u NLS-u)"
+        ],
+        "preporuke_za_dalje_korake": [
+            "Urinokultura sa antibiogramom zbog nalaza "dosta bakterija" i eritrocita u urinu.",
+            "Kardiološka kontrola sa fokusom na regulaciju lipida (triglicerida) i evaluaciju "heart block" markera sa NLS-a putem EKG-a.",
+            "Gastroenterološki pregled ili Urea izdisajni test na Helicobacter pylori.",
+            "Ultrazvuk štitne žlezde kako bi se razjasnila diskrepancija između NLS nalaza (gušavost) i normalnog TSH.",
+            "Povećan unos tečnosti i korigovana dijeta (smanjenje unosa masti i šećera)."
+        ]
+    }
+]
