@@ -1,0 +1,46 @@
+{
+    "ime_pacijenta": "Nebojsa Bobic",
+    "datum": "19.02.2026",
+    "nalazi": [
+        {
+            "misljenje": "KRITICNO: Trombociti (Trombocitopenija - rizik od krvarenja)",
+            "vrednost": "82 x10^9/L (Referentno: 150-450)"
+        },
+        {
+            "misljenje": "Eritrociti (Snizeno - Anemija)",
+            "vrednost": "3.71 x10^12/L (Referentno: 4.2-6)"
+        },
+        {
+            "misljenje": "Hemoglobin (Snizeno)",
+            "vrednost": "133 g/L (Referentno: 135-180)"
+        },
+        {
+            "misljenje": "Hematokrit (Snizeno)",
+            "vrednost": "0.388 L/L (Referentno: 0.4-0.54)"
+        },
+        {
+            "misljenje": "MCV (Poviseno - Makrocitoza)",
+            "vrednost": "104.6 fL (Referentno: 80-100)"
+        },
+        {
+            "misljenje": "Limfociti % (Poviseno - Limfocitoza)",
+            "vrednost": "67.8 % (Referentno: 18-42)"
+        },
+        {
+            "misljenje": "Neutrofili % (Snizeno - Neutropenija)",
+            "vrednost": "29 % (Referentno: 50-70)"
+        },
+        {
+            "misljenje": "NLS Analiza: Insulin-zavisni dijabetes melitus (Visok stepen spektralne slicnosti)",
+            "vrednost": "D=0,306"
+        },
+        {
+            "misljenje": "NLS Analiza: Prosirene vene potkolenice (Visok stepen spektralne slicnosti)",
+            "vrednost": "D=0,364"
+        },
+        {
+            "misljenje": "NLS Analiza: Intestinalna disbakterioza",
+            "vrednost": "D=0,688"
+        }
+    ]
+}

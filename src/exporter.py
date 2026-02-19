@@ -1,11 +1,9 @@
 import os
 import datetime
 from fpdf import FPDF
+
+from src import word_utils
  
-def sredi_slova(text):
-    mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
-    for k, v in mape.items(): text = text.replace(k, v)
-    return text
 
 
 class ReportPDF(FPDF):
@@ -21,7 +19,7 @@ class ReportPDF(FPDF):
         self.line(10, self.get_y(), 200, self.get_y())
         self.ln(10)
 
-    def draw_table(self, data):
+    def draw_table(self, data: dict = {}):
         # Column widths
         w = [95, 95]
         
@@ -34,33 +32,21 @@ class ReportPDF(FPDF):
         
         # Rows
         self.set_font('Helvetica', '', 9)
-        for row in data:
+        for k, v in data.items():
             # Calculate height based on multi-cell content
             h = 10
             # Basic version for simplicity; fpdf2 would handle wrapping better
-            self.cell(w[0], h, f" {row[0]}", 1, 0, 'L')
-            self.cell(w[1], h, f" {row[1]}", 1, 1, 'L')
+            self.cell(w[0], h, f" {k}", 1, 0, 'L')
+            self.cell(w[1], h, f" {v}", 1, 1, 'L')
 
 def create_report(patient_name: str = "NEPOZNATO", 
-                  birthdate: str = "NEPOZNATO", 
+                  date: str = "NEPOZNATO", 
                   advice: str = "NEMA SAVETA",
                   dijagnoze_i_objasenjenja: dict = {}, 
                   protocols_found: list = [],
                   output_dir: str = ""):
-    '''
-    Exports protocols to PDF report.
-    
-    Protocols should be in format: [{"nalaz": str, "terapija": list, "napomena": str}, ...]
-    
-    :param document_name: Description
-    :type document_name: str
-    :param protocols_found: Description
-    :type protocols_found: list
-    :param output_dir: Description
-    :type output_dir: str
-    '''
     text_pacijent: str = f"Pacijent: {patient_name}"
-    text_datum: str = birthdate
+    text_datum: str = date
     text_savet: str = "NEMA SAVETA" if not advice else advice
     # nalazi = [
     # ("Povecan ocni pritisak (Glaukom)", "02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
@@ -75,6 +61,7 @@ def create_report(patient_name: str = "NEPOZNATO",
     pdf = ReportPDF()
     # font_path = "~/Library/Fonts/Arial Unicode.ttf" # Update with actual path to Arial Unicode font on your system
     # pdf.add_font("Arial_Unicode", "", font_path, uni=True) 
+    # pdf.add_font("Arial_Unicode", uni=True)
     # pdf.set_font("Arial_Unicode", "", 12)
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -119,7 +106,10 @@ def create_report(patient_name: str = "NEPOZNATO",
     pdf.output(output_path)
     print(f"PDF generated successfully: {output_path}")
 
-
+def sredi_slova(text: str):
+    mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
+    for k, v in mape.items(): text = text.replace(k, v)
+    return text
 def generate_report_pdf(document_name: str, protocols_found: list = [], output_dir: str = ""):
     '''
     Exports protocols to PDF report.
@@ -160,17 +150,17 @@ def generate_report_pdf(document_name: str, protocols_found: list = [], output_d
         for p in protocols_found:
             # Column 1 - NALAZ
             pdf_novi.set_font("Helvetica", 'B', 11)
-            pdf_novi.cell(0, 10, sredi_slova(f"NALAZ: {p['nalaz']}"), ln=True)
+            pdf_novi.cell(0, 10, word_utils.sredi_slova(f"NALAZ: {p['nalaz']}"), ln=True)
 
             # Column 2 - TERAPIJA
             pdf_novi.set_font("Helvetica", '', 10)
             for t in p['terapija']:
                 pdf_novi.cell(10)
-                pdf_novi.cell(0, 7, f"- {sredi_slova(t)}", ln=True)
+                pdf_novi.cell(0, 7, f"- {word_utils.sredi_slova(t)}", ln=True)
 
             # Column 3 - NAPOMENA
             pdf_novi.set_font("Helvetica", 'I', 9)
-            pdf_novi.multi_cell(0, 7, sredi_slova(f"Vazno: {p['napomena']}"))
+            pdf_novi.multi_cell(0, 7, word_utils.sredi_slova(f"Vazno: {p['napomena']}"))
             pdf_novi.ln(5)
     else:
         ## NEMA PRONADJENIH PROTOKOLA

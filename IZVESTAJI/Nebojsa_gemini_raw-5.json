@@ -1,0 +1,56 @@
+{
+    "ime_pacijenta": "Nebojsa Bobic",
+    "datum": "2026-02-19",
+    "izvor_dokumenata": [
+        "Beo-lab laboratorijski izvestaj (19.01.2026)",
+        "NLS Nonlinear Analysis izvestaj (16.02.2026)"
+    ],
+    "nalazi": [
+        {
+            "parametar": "Trombociti (PLT)",
+            "vrednost": "82 x10^9/L (Referentno: 150 - 450)",
+            "status": "Kriticno nisko",
+            "dijagnoza": "Trombocitopenija",
+            "znacaj": "Visok rizik od krvarenja i poremecaja koagulacije. Ovo je najkriticniji parametar u krvnoj slici.",
+            "misljenje": "Laboratorijski nalaz pokazuje znacajno smanjen broj krvnih plocica."
+        },
+        {
+            "parametar": "Eritrociti (RBC) i MCV",
+            "vrednost": "RBC: 3.71 x10^12/L (Snizeno); MCV: 104.6 fL (Poviseno)",
+            "status": "Patoloski",
+            "dijagnoza": "Makrocitna Anemija",
+            "znacaj": "Smanjen broj crvenih krvnih zrnaca uz povecan volumen (velicinu) celija. Cesto ukazuje na nedostatak vitamina B12 ili folne kiseline, ili probleme sa jetrom.",
+            "misljenje": "Prisutna anemija sa karakteristikama makrocitoze (povisen MCV i MCH)."
+        },
+        {
+            "parametar": "Leukocitarna formula (Neutrofili/Limfociti)",
+            "vrednost": "Neutrofili: 29% (Snizeno); Limfociti: 67.8% (Poviseno)",
+            "status": "Van referentnih vrednosti",
+            "dijagnoza": "Relativna limfocitoza sa neutropenijom",
+            "znacaj": "Inverzija leukocitarne formule moze ukazivati na virusnu infekciju, hronicno oboljenje ili hematoloski poremecaj.",
+            "misljenje": "Dominacija limfocita uz smanjen procenat neutrofila u perifernoj krvi."
+        },
+        {
+            "parametar": "Insulin-dependent Diabetes Mellitus (NLS)",
+            "vrednost": "D=0,306 (Spektralna slicnost)", "status": "Visoka verovatnoca (NLS)",
+            "dijagnoza": "Diabetes Mellitus (Insulin-zavisni)",
+            "znacaj": "Nizak D-koeficijent na NLS analizi ukazuje na akutno ili visoko izradjeno prisustvo patoloskog obrasca dijabetesa.",
+            "misljenje": "Nelinearna dijagnostika detektuje metabolicki poremecaj regulacije glukoze."
+        },
+        {
+            "parametar": "Venski sistem potkolenice (NLS)",
+            "vrednost": "D=0,364", "status": "Prisutno (NLS)",
+            "dijagnoza": "Varikozna dilatacija vena",
+            "znacaj": "Problemi sa venskom cirkulacijom u nogama.",
+            "misljenje": "NLS nalaz ukazuje na prosirene vene."
+        },
+        {
+            "parametar": "Digestivni trakt (NLS)",
+            "vrednost": "D=0,688 (Disbakterioza); D=1,374 (Hemoroidi)",
+            "status": "Umereno do hronicno",
+            "dijagnoza": "Intestinalna disbakterioza i Hemoroidi",
+            "znacaj": "Poremecaj crevne flore i vaskularni problemi rektuma.",
+            "misljenje": "NLS nalaz digestivnog trakta."
+        }
+    ]
+}

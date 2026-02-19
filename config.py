@@ -8,24 +8,25 @@ from enum import StrEnum
 
 #### GEMINI
 
+## Tinking level
 ARG_GEMINI_THINKING_LEVEL_STR: str = "HIGH"
 
-## GEMINI CONSTANTS
+## Models
 class GEMINI_MODELS(StrEnum):
   """The model names, find more <link>"""
   GEMINI_3_PRO_PREVIEW = "gemini-3-pro-preview"
   GEMINI_3_FLASH_PREVIEW = "gemini-3-flash-preview"
   GEMINI_3_PRO_IMAGE_PREVIEW = "gemini-3-pro-image-preview"
+
 ARG_GEMINI_MODEL_NAME: str = GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
 
-
-
+## Task descriptions
 class AI_TASKS(StrEnum):
   """AI analysis task descriptions."""
   TASK_1 = "Make analysis from these two laboratory results"
   TASK_2 = "Analiziraj laboratorijske nalaze i uporedi sa prethodnim nalazom. Pronadji anomalije i promene u odnosu na prethodni nalaz. Napravi detaljnu analizu i predlozi moguce dijagnoze i preporuke za dalje korake."
   TASK_3 = "Spoji, analiziraj i sumiraj analizu iz dva nalaza jedan je iz MetaHuner program a drugi je iz labaratorije"
-  TASK_4 = "spoji podatke iz dokumenata/izvestaja i ukazi na kriticne simptome, predstavi podatke formatirane u json formatu, sa listom koja sadrzi polje 'ime_pacijenta', polje 'datum' (trenutni), polje 'nalazi' u dictionary formatu sa poljima, 'misljenje', 'vrednost'."
+  TASK_4 = "spoji podatke iz dokumenata/izvestaja i ukazi na kriticne simptome, predstavi podatke formatirane u json formatu, sa listom koja sadrzi polje 'ime_pacijenta', polje 'datum' (trenutni), polje 'nalazi' u dictionary formatu sa poljima, 'misljenje', 'vrednost', 'status', 'znacaj', 'parametar', 'dijagnoza'."
   TASK_5 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata, prikazi ih kao json listu"
   TASK_6 = "Merge medical data from all documents and show critical symptoms summarized in Serbian language"
   TASK_7 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata"
@@ -33,9 +34,32 @@ class AI_TASKS(StrEnum):
 
 ARG_AI_TASK_DESCRIPTION: str = AI_TASKS.TASK_4
 
-## GOOGLE SERVICE
-#
-GOOGLE_API_KEY: str = "AIzaSyB6hNlueZ8ush24AEzfozI7XmONGwSuyIA"
 
+"""
+https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#generationconfig
+
+Temperature controls response randomness. 
+Lower values (min 0) are deterministic and better for factual tasks, 
+while higher values increase creativity. 
+If responses are too generic or loop, adjust the temperature (at least 0.1).
+"""
+ARG_GEMINI_MODEL_TEMPERATURE: float = 1.0
+
+"""
+https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#generationconfig
+
+If specified, nucleus sampling is used.
+Top-P changes how the model selects tokens for output. Tokens are selected from the most (see top-K) to least probable until the sum of their probabilities equals the top-P value. For example, if tokens A, B, and C have a probability of 0.3, 0.2, and 0.1 and the top-P value is 0.5, then the model will select either A or B as the next token by using temperature and excludes C as a candidate.
+Specify a lower value for less random responses and a higher value for more random responses.
+
+"""
+ARG_GEMINI_MODEL_TOP_P: float = 0.95
+
+ARG_GEMINI_MODEL_MAX_OUTPUT_TOKENS: int = 65535
+
+
+## GOOGLE SERVICE
+GOOGLE_API_KEY: str = "AIzaSyB6hNlueZ8ush24AEzfozI7XmONGwSuyIA"
+# Project
 GOOGLE_PROJECT_ID: str = "projects/278038315476" #"gen-lang-client-0650384180"
 GOOGLE_PROJECT_LOCATION: str = "us-central1"

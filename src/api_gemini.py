@@ -5,7 +5,9 @@ from typing import List, Optional
 import base64
 import os
 import json
-from .. import config
+
+from src import word_utils
+import config
 
 
 ## Gemini specific settings
@@ -91,6 +93,11 @@ def analyze_docs(doc1_path: str, doc2_path: str) -> list:
 
   return results
 
+def sredi_slova(text):
+    mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
+    for k, v in mape.items(): text = text.replace(k, v)
+    return text
+
 def analyze_lab_result_docs(client: genai.Client,
                             model_name: str = "gemini-3-pro-preview",
                             thinking_level: genai.types.ThinkingLevel = genai.types.ThinkingLevel.HIGH,
@@ -114,8 +121,9 @@ def analyze_lab_result_docs(client: genai.Client,
     elif ext[0] == ".pdf":
       doc1 = types.Part.from_bytes(data=open(doc1_path, "rb").read(), mime_type="application/pdf")
       
-    print(f"\n---------- |GEMINI| - Document 2 format supported: {ext[0]} ----------\n")
+   
     ext = [ext for ext in support_extensions if doc2_path.lower().endswith(ext)]
+    print(f"\n---------- |GEMINI| - Document 2 format supported: {ext[0]} ----------\n")
     if ext and len(ext) > 0:
       if ext[0] in [".jpg", ".jpeg", ".png"]:
         doc2 = types.Part.from_bytes(data=open(doc2_path, "rb").read(), mime_type="image/jpeg")
@@ -144,10 +152,11 @@ def analyze_lab_result_docs(client: genai.Client,
     thinking_config=types.ThinkingConfig(
       thinking_level=thinking_level,
     ),
-    temperature = 1,
-    top_p = 0.95,
-    max_output_tokens = 65535,
+    temperature = config.ARG_GEMINI_MODEL_TEMPERATURE,
+    top_p = config.ARG_GEMINI_MODEL_TOP_P,
+    max_output_tokens = config.ARG_GEMINI_MODEL_MAX_OUTPUT_TOKENS,
     response_mime_type = "application/json",
+
     #response_json_schema = AnalysisReport.model_json_schema(),
     #response_mime_type="application/json",
     #response_json_schema=types.JsonSchema(type="array", items=types.JsonSchema(type="dictionary")),
@@ -188,10 +197,13 @@ def analyze_lab_result_docs(client: genai.Client,
     #report = AnalysisReport.model_validate_json(response.text)
     #print(f"\n---------- |GEMINI| - Analysis Report2:\n{report}\n")
 
-    filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
+    filtered_text: str = "".join(map(lambda x: sredi_slova(x), responseText))
+    #filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
+  
     #print(responseText, end="")
     #results.append(responseText)
     res += filtered_text
+    #res = res.replace("NLS Analiza: ", "")
     #print(res, end="")
     print(f"\n---------- |GEMINI| - Analysis End. -----------------\n")
 
@@ -214,35 +226,3 @@ def analyze_lab_result_docs(client: genai.Client,
   # print(f"\nStatus: {responseDict['test_status']}\n")
 
   return responseDict
-
-def extract_info_from_response(response: dict) -> dict:
-  # Extract specific information from the response dictionary
-  extracted_info = {
-      "category": response.get("category", ""),
-      "test_name": response.get("test_name", ""),
-      "flag": response.get("flag", ""),
-      "result": response.get("result", ""),
-      "unit": response.get("unit", ""),
-      "reference_interval": response.get("reference_interval", ""),
-      "test_status": response.get("test_status", "")
-  }
-  return extracted_info
-
-
-## Using Example
-# try:
-#   gemini_client = gemini_client_connect()
-#   res = analyze_lab_result_docs(gemini_client, "", "")
-#   print(f"SUCCESS - RESPONSE: {res}")
-# except Exception as e:
-#   print(f"ERROR - GOOGLE SERVICE: {str(e)}")
-
-# async def main():
-#     # Create a local session to maintain conversation history
-#     client = vertexai.Client(project=GOOGLE_PROJECT_ID, location=GOOGLE_PROJECT_LOCATION)
-#     remote_app = client.agent_engines.get(name=''projects/449719406185/locations/us-central1/reasoningEngines/<agent_id>')
-#     remote_session = await remote_app.async_create_session(user_id="u_456")
-#     print(remote_session)
-
-# if __name__ == "__main__":
-#     asyncio.run(main())
