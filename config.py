@@ -18,7 +18,7 @@ class GEMINI_MODELS(StrEnum):
   GEMINI_3_FLASH_PREVIEW = "gemini-3-flash-preview"
   GEMINI_3_PRO_IMAGE_PREVIEW = "gemini-3-pro-image-preview"
 
-ARG_GEMINI_MODEL_NAME: str = GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+ARG_GEMINI_MODEL_NAME: str = GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
 
 ## Task descriptions
 class AI_TASKS(StrEnum):
