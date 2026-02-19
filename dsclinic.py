@@ -58,6 +58,17 @@ def pokreni_analizu_gemini():
 
     # GHENERISANJE IZVESTAJA
     result = results_dict if results_dict else {}
+    
+    if isinstance(results_dict, list) and len(results_dict) > 0:
+        result = results_dict[0]
+    elif isinstance(results_dict, dict):
+        result = results_dict
+    else:
+        print(f"\n\n---------- |ERROR|DSCLINIC| - Bad response: ------\n")
+        print(f"{results_dict}")
+        print(f"\n-------------------------------------------------------------------\n")
+
+    
     ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
     datum: str = result.get("datum", "NEPOZNATO")
     nalazi_list: list = result.get("nalazi", [])

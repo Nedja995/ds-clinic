@@ -1,3 +1,4 @@
+import io
 import os
 import datetime
 from fpdf import FPDF
@@ -103,8 +104,37 @@ def create_report(patient_name: str = "NEPOZNATO",
     pdf.set_font('Helvetica', 'I', 8)
     pdf.cell(55, 5, 'M.P. Potpis terapeuta', 0, 0, 'C')
     
-    pdf.output(output_path)
-    print(f"PDF generated successfully: {output_path}")
+    #pdf.output(output_path)
+    #print(f"PDF generated successfully: {output_path}")
+    
+    #close fix
+     #2. Get bytes (fpdf2 returns bytes by default; use dest='S' for older versions)
+    #pdf_bytes = pdf.output() 
+    pdf_bytes = pdf.output(dest='S').encode('latin-1') # Returns bytes
+    #buffer = io.BytesIO(pdf_bytes)   
+
+    # 3. Write bytes to file using standard Python utils
+    with open(output_path, "wb") as f:
+        f.write(pdf_bytes)
+
+    # Optional: Verify file exists using os utils
+    if os.path.exists(output_path):
+        print(f"PDF generated successfully: {output_path}")
+        
+    #output_path_test = os.path.join(output_dir, f"NALAZ_TEST.pdf")
+    # pdf = ReportPDF()
+    # pdf.set_auto_page_break(auto=True, margin=15)
+    # pdf.add_page()
+    # pdf.set_font('Helvetica', 'B', 10)
+    # pdf.cell(100, 10, "tst", 0, 0)
+    # pdf.cell(90, 10, "tst", 0, 1, 'R')
+    # pdf.ln(5)
+    # pdf.output(output_path_test, "F")
+    # if os.path.exists(output_path_test):
+    #     os.remove(output_path_test)
+    #     print(f"File '{output_path_test}' deleted successfully.")
+    # else:
+    #     print(f"File '{output_path_test}' does not exist.")
 
 def sredi_slova(text: str):
     mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
