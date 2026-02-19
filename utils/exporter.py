@@ -1,16 +1,6 @@
 import os
+import datetime
 from fpdf import FPDF
-
-## SCRIPT PARAMETERS
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-## APP PARAMETERS
-DATA_DIR = ROOT_DIR
-INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
-OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
-
-from fpdf import FPDF
-
  
 def sredi_slova(text):
     mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
@@ -51,24 +41,52 @@ class ReportPDF(FPDF):
             self.cell(w[0], h, f" {row[0]}", 1, 0, 'L')
             self.cell(w[1], h, f" {row[1]}", 1, 1, 'L')
 
-def create_report():
+def create_report(patient_name: str = "NEPOZNATO", 
+                  birthdate: str = "NEPOZNATO", 
+                  advice: str = "NEMA SAVETA",
+                  dijagnoze_i_objasenjenja: dict = {}, 
+                  protocols_found: list = [],
+                  output_dir: str = ""):
+    '''
+    Exports protocols to PDF report.
+    
+    Protocols should be in format: [{"nalaz": str, "terapija": list, "napomena": str}, ...]
+    
+    :param document_name: Description
+    :type document_name: str
+    :param protocols_found: Description
+    :type protocols_found: list
+    :param output_dir: Description
+    :type output_dir: str
+    '''
+    text_pacijent: str = f"Pacijent: {patient_name}"
+    text_datum: str = birthdate
+    text_savet: str = "NEMA SAVETA" if not advice else advice
+    # nalazi = [
+    # ("Povecan ocni pritisak (Glaukom)", "02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
+    # ("Manjak vitamina B2", "02.06.25 Vitamin B2, riboflavin D=1,452"),
+    # ]
+    timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    output_path = os.path.join(output_dir, f"NALAZ_{patient_name}_{timestamp_str}.pdf")
+    
+    # Output dir
+    os.makedirs(output_dir, exist_ok=True)
+
     pdf = ReportPDF()
+    # font_path = "~/Library/Fonts/Arial Unicode.ttf" # Update with actual path to Arial Unicode font on your system
+    # pdf.add_font("Arial_Unicode", "", font_path, uni=True) 
+    # pdf.set_font("Arial_Unicode", "", 12)
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
     # Patient Info
     pdf.set_font('Helvetica', 'B', 10)
-    pdf.cell(100, 10, 'Pacijent: DRAGAN STAMENKOVIC', 0, 0)
-    pdf.cell(90, 10, 'Datum: 17. 2. 2026.', 0, 1, 'R')
+    pdf.cell(100, 10, text_pacijent, 0, 0)
+    pdf.cell(90, 10, text_datum, 0, 1, 'R')
     pdf.ln(5)
     
-    # Table Data
-    table_data = [
-    ("Povecan ocni pritisak (Glaukom)", "02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
-    ("Manjak vitamina B2", "02.06.25 Vitamin B2, riboflavin D=1,452"),
-    ]
-    
-    pdf.draw_table(table_data)
+    # Table of findings
+    pdf.draw_table(dijagnoze_i_objasenjenja)
     pdf.ln(10)
     
     # Recommendations section
@@ -78,7 +96,7 @@ def create_report():
     
     pdf.set_font('Helvetica', '', 10)
     pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 6, "Nastaviti sa biljnim kapima po dogovoru. Kontrola za 3 nedelje.")
+    pdf.multi_cell(0, 6, text_savet)
     pdf.ln(10)
     
     # Consent
@@ -98,16 +116,31 @@ def create_report():
     pdf.set_font('Helvetica', 'I', 8)
     pdf.cell(55, 5, 'M.P. Potpis terapeuta', 0, 0, 'C')
     
-    pdf.output('report.pdf')
-    print("PDF generated successfully: report.pdf")
+    pdf.output(output_path)
+    print(f"PDF generated successfully: {output_path}")
 
 
-def generate_report_pdf(document_name: str, protocols_found: list = [], output_path: str = ""):
-    # Output path correction
-    if not output_path: output_path = os.path.join(OUTPUT_DIR, f"NALAZ_{document_name}")
+def generate_report_pdf(document_name: str, protocols_found: list = [], output_dir: str = ""):
+    '''
+    Exports protocols to PDF report.
+    
+    Protocols should be in format: [{"nalaz": str, "terapija": list, "napomena": str}, ...]
+    
+    :param document_name: Description
+    :type document_name: str
+    :param protocols_found: Description
+    :type protocols_found: list
+    :param output_dir: Description
+    :type output_dir: str
+    '''
+    output_path = os.path.join(output_dir, f"NALAZ_{document_name}.pdf")
+    
+    # Output dir
+    os.makedirs(output_dir, exist_ok=True)
 
     ## PDF GENERATION
-    pdf_novi = FPDF()
+    pdf_novi = ReportPDF()
+    pdf_novi.set_auto_page_break(auto=True, margin=15)
     pdf_novi.add_page()
 
     # Page Title
@@ -144,9 +177,6 @@ def generate_report_pdf(document_name: str, protocols_found: list = [], output_p
         #
         pdf_novi.cell(0, 10, "Nisu detektovani specificni patogeni iz baze.", ln=True)
 
-    pdf_novi.output(os.path.join(OUTPUT_DIR, f"NALAZ_{document_name}"))
+    pdf_novi.output(output_path)
 
-    print(f"GOTOVO: {pdf_novi}")
-
-if __name__ == "__main__":
-    create_report()
+    print(f"GOTOVO: {output_path}")

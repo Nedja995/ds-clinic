@@ -1,13 +1,30 @@
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
+from typing import List, Optional
 import base64
 import os
 import json
-import config
+from .. import config
 
 
 ## Gemini specific settings
 ARG_GEMINI_THINKING_LEVEL: types.ThinkingLevel = types.ThinkingLevel[config.ARG_GEMINI_THINKING_LEVEL_STR]
+
+class AnalysisFound(BaseModel):
+    name: str = Field(description="NN")
+    description: str = Field(description="Nema opisa")
+    vrednost: str = Field(description="Nepoznato")
+    
+class AnalysisReport(BaseModel):
+    name: str = Field(description="NN")
+    report_date: str = Field(description="Nepoznat datum")
+    terapije_i_saveti: str = Field(description="Nema terapija i saveta")
+    nalazi: List[AnalysisFound] = Field(description="Nema nalaza")
+    
+
+
+
 
 ## API INITIALIZATION
 def gemini_client_connect() -> genai.Client:
@@ -61,9 +78,9 @@ def analyze_docs(doc1_path: str, doc2_path: str) -> list:
           doc1_path=doc1_path, 
           doc2_path=doc2_path 
           )   
-      print(f"\n---------- |GEMINI| - Analysis success. Results raw: --------------\n")
-      print(f"{results}")
-      print(f"\n-------------------------------------------------------------------\n")
+      print(f"\n---------- |GEMINI| - Analysis success. --------------\n")
+      #print(f"{results}")
+      #print(f"\n-------------------------------------------------------------------\n")
   except Exception as e:
       print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------\n")
       print(f"{str(e)}")
@@ -83,9 +100,30 @@ def analyze_lab_result_docs(client: genai.Client,
                             ) -> list:
   results: list = []
 
-  doc1 = types.Part.from_bytes(data=open(doc1_path, "rb").read(), mime_type="application/pdf")
-  doc2 = types.Part.from_bytes(data=open(doc2_path, "rb").read(), mime_type="application/pdf")
-
+  support_extensions = [".jpg", ".jpeg", ".png", ".pdf"]
+  
+  ext = [ext for ext in support_extensions if doc1_path.lower().endswith(ext)]
+  
+  doc1: types.Part = None
+  doc2: types.Part = None
+  
+  if ext and len(ext) > 0:
+    print(f"\n---------- |GEMINI| - Document 1 format supported: {ext[0]} ----------\n")
+    if ext[0] in [".jpg", ".jpeg", ".png"]:
+      doc1 = types.Part.from_bytes(data=open(doc1_path, "rb").read(), mime_type="image/jpeg")
+    elif ext[0] == ".pdf":
+      doc1 = types.Part.from_bytes(data=open(doc1_path, "rb").read(), mime_type="application/pdf")
+      
+    print(f"\n---------- |GEMINI| - Document 2 format supported: {ext[0]} ----------\n")
+    ext = [ext for ext in support_extensions if doc2_path.lower().endswith(ext)]
+    if ext and len(ext) > 0:
+      if ext[0] in [".jpg", ".jpeg", ".png"]:
+        doc2 = types.Part.from_bytes(data=open(doc2_path, "rb").read(), mime_type="image/jpeg")
+      elif ext[0] == ".pdf":
+        doc2 = types.Part.from_bytes(data=open(doc2_path, "rb").read(), mime_type="application/pdf")
+  else:
+    pass
+  
   # CONTENTS
   contents = [
     types.Content(
@@ -109,7 +147,9 @@ def analyze_lab_result_docs(client: genai.Client,
     temperature = 1,
     top_p = 0.95,
     max_output_tokens = 65535,
-    response_mime_type="application/json",
+    response_mime_type = "application/json",
+    #response_json_schema = AnalysisReport.model_json_schema(),
+    #response_mime_type="application/json",
     #response_json_schema=types.JsonSchema(type="array", items=types.JsonSchema(type="dictionary")),
     safety_settings = [types.SafetySetting(
       category="HARM_CATEGORY_HATE_SPEECH",
@@ -129,6 +169,7 @@ def analyze_lab_result_docs(client: genai.Client,
 
   res = ""
 
+  print(f"\n---------- |GEMINI| - Analysis Start... --------------\n")
   for response in client.models.generate_content_stream(
       model = model_name,
       contents = contents,
@@ -137,20 +178,33 @@ def analyze_lab_result_docs(client: genai.Client,
     # Check
     if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
       # PASS - Empty response
-      print(f"\n---------- |GEMINI| - Analysis Info: No candidates or content in response. Skipping...")
+      print(f"\n---------- |GEMINI| - Analysis WARNING: No candidates or content in response. Skipping...")
       continue
+    
     
     # Parse response
     responseText = response.text
+    
+    #report = AnalysisReport.model_validate_json(response.text)
+    #print(f"\n---------- |GEMINI| - Analysis Report2:\n{report}\n")
+
+    filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
     #print(responseText, end="")
     #results.append(responseText)
-    res += responseText
-    print(res, end="")
+    res += filtered_text
+    #print(res, end="")
+    print(f"\n---------- |GEMINI| - Analysis End. -----------------\n")
 
+  responseDict: dict = {}
   # Convert the JSON string to a Python dictionary
-  responseDict = json.loads(res)
-  print(f"\n---------- |GEMINI| - Response Dictionary: --------------\n")
-  print(responseDict, end="")
+  try:
+    responseDict = json.loads(res)
+  except json.JSONDecodeError as e:
+    print(f"--------- |GEMINI| Error decoding JSON: {e}")
+    responseDict = {}
+    
+  # print(f"\n---------- |GEMINI| - Response Dictionary: --------------\n")
+  # print(responseDict, end="")
   # Now you can use the data as a normal Python dictionary
   #print(f"\ndict: {responseDict}")
   # print(f"\nCategory: {responseDict['category']}")

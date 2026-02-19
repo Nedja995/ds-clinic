@@ -4,7 +4,7 @@
 
 ## Using
 
-### Parameters:
+### Parameters
 
 - Models:
   - gemini-3-pro-preview
@@ -18,3 +18,9 @@
 - Create: ```python3.12 -m venv .venv```
 - Activate (unix): ```source .venv/bin/activate```
 - Activate (windows): ```.venv\Scripts\activate.bat```
+
+### Output format
+
+- nalaz
+- terapija
+- napomena

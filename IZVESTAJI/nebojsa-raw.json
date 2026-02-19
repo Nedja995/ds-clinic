@@ -1,0 +1,37 @@
+[
+    {
+        "ime_pacijenta": "Neboj?a Bobi?",
+        "datum": "18.02.2026.",
+        "nalazi": [
+            {
+                "misljenje": "Kriti?na trombocitopenija (visok rizik od krvarenja)",
+                "vrednost": "82 x10^9/L (Referentno: 150 - 450)"
+            },
+            {
+                "misljenje": "Makrocitna anemija (sni?eni eritrociti i hemoglobin uz povi?en MCV)",
+                "vrednost": "RBC: 3.71 x10^12/L, Hgb: 133 g/L, MCV: 104.6 fL"
+            },
+            {
+                "misljenje": "Zna?ajna neutropenija (sni?en procenat neutrofilnih granulocita)",
+                "vrednost": "29 % (Referentno: 50 - 70)"
+            },
+            {
+                "misljenje": "Relativna limfocitoza (povi?en procenat limfocita)",
+                "vrednost": "67.8 % (Referentno: 18 - 42)"
+            },
+            {
+                "misljenje": "Insulin-zavisni dijabetes mellitus (NLS nalaz)",
+                "vrednost": "D=0,306 (Indikovan hroni?ni poreme?aj)"
+            },
+            {
+                "misljenje": "Prisustvo mikroorganizama i parazita (NLS nalaz)",
+                "vrednost": "Rotavirus (D=1,051), Ascaris lumbricoides (D=1,
+                236)"
+            },
+            {
+                "misljenje": "Vaskularni i gastrointestinalni poreme?aji",
+                "vrednost": "Varikoziteti vena potkolenice, intestinalna disbakterioza, hemoroidi"
+            }
+        ]
+    }
+]

@@ -1,0 +1,64 @@
+[
+    {
+        "pacijent": "Renato Vampovac",
+        "datum_rodenja": "08.07.1971",
+        "analiza_medicinskog_laboratorija": {
+            "datum_nalaza": "22.10.2025",
+            "anomalije": [
+                {
+                    "parametar": "K - MCHC",
+                    "vrednost": "346",
+                    "referentni_interval": "320 - 345",
+                    "status": "Visoko (H)",
+                    "znacaj": "Blago povišena koncentracija hemoglobina u eritrocitima, često povezana sa blagom dehidratacijom ili specifičnostima u obliku eritrocita."
+                },
+                {
+                    "parametar": "S - Trigliceridi",
+                    "vrednost": "1.79",
+                    "referentni_interval": "< 1.7",
+                    "status": "Visoko (H)",
+                    "znacaj": "Blaga hipertrigliceridemija. Ukazuje na metabolički status i ishranu."
+                },
+                {
+                    "parametar": "S - TIBC",
+                    "vrednost": "45.0",
+                    "referentni_interval": "49.0 - 72.0",
+                    "status": "Nisko (L)",
+                    "znacaj": "Smanjen ukupni kapacitet vezivanja gvožđa uz normalno gvožđe (14.0) može ukazivati na hroničnu upalu ili specifičan status metabolizma gvožđa."
+                },
+                {
+                    "parametar": "Urin - Mikroskopski pregled",
+                    "nalaz": "Eritrociti 5-10, Bakterije: dosta, Sluz: dosta",
+                    "status": "Patološki",
+                    "znacaj": "Prisustvo značajnog broja bakterija i eritrocita u urinu ukazuje na aktivnu infekciju ili upalni proces u urinarnom traktu (Urinarna infekcija/Cistitis)."
+                }
+            ]
+        },
+        "upoređivanje_sa_nls_nalazom": {
+            "datum_nls": "Septembar 2025 - Februar 2026",
+            "podudarnosti": [
+                "NLS detektuje prisustvo bakterija (E. coli D=0.903, Proteus vulgaris D=4.541) što se poklapa sa laboratorijskim nalazom urina (bakterije "dosta").",
+                "NLS ukazuje na "Neutral fats of plasma" (D=0.042), što korelira sa povišenim trigliceridima u laboratoriji.",
+                "NLS navodi "Cystopyelitis" (D=1.703), što potvrđuje sumnju na upalu urinarnog trakta viđenu u mikroskopskom pregledu urina."
+            ],
+            "razlike_i_rizici": [
+                "Laboratorijski TSH je uredan (1.97), dok NLS sugeriše "Hypothyroidism" (D=0.276) i "Diffuse Goitre". Klinički je TSH relevantniji, ali NLS sugeriše potrebu za praćenjem strukture štitne žlezde.",
+                "NLS sugeriše srčane blokove (Heart Blocks D=0.210) i miokardiodistrofiju, što laboratorijski nalazi (AST, ALT) direktno ne potvrđuju, ali zahtevaju kardiološku proveru."
+            ]
+        },
+        "potencijalne_dijagnoze": [
+            "Infectio tractus urinarii (Urinarna infekcija)",
+            "Hypertriglyceridemia (Blagi poremećaj metabolizma masti)",
+            "Suspectio Gastritis (zbog NLS nalaza Helicobacter Pylori D=0.190)",
+            "Status post Myocardiopathia (prema NLS anamnezi, potrebna kardiološka korelacija)"
+        ],
+        "preporuke_za_dalje_korake": [
+            "Uraditi urinokulturu sa antibiogramom radi ciljanog lečenja urinarne infekcije.",
+            "Ultrazvuk abdomena i urotrakta zbog prisustva eritrocita i bakterija u urinu.",
+            "Kardiološki pregled sa EKG-om radi provere navoda o srčanim blokovima iz NLS analize.",
+            "Provera statusa Helicobacter Pylori putem izdisajnog testa ili antigena u stolici.",
+            "Korekcija ishrane (smanjenje unosa masti i šećera) i ponavljanje lipidnog statusa za 3 meseca.",
+            "Konsultacija sa endokrinologom i ultrazvuk štitne žlezde (zbog NLS indikacija uprkos urednom TSH)."
+        ]
+    }
+]

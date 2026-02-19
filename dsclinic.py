@@ -1,5 +1,7 @@
 import os
-from utils import BASE_SYNDROMS, api_gemini, exporter
+import utils.api_gemini as api_gemini
+import utils.exporter as exporter
+from utils import BASE_SYNDROMS
 
 #import warnings
 #warnings.filterwarnings("ignore")
@@ -36,27 +38,59 @@ def pokreni_analizu_gemini():
     if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)
     
     # PRONALAZAK PDF FAJLOVA U FOLDERU
-    documents_names = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.pdf')]
+    documents_names = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.pdf') or f.lower().endswith('.jpg') or f.lower().endswith('.jpeg') or f.lower().endswith('.png')]
     documents_filepaths = [os.path.join(INPUT_DIR, f) for f in documents_names]
   
     # Call Gemini API to analyze lab result documents
-    res = api_gemini.analyze_docs(documents_filepaths[0], documents_filepaths[1])
-    #
-    #print(f"\n----------\nSUCCESS - RESPONSE RAW:\n{res}")
+    results_dict: list = api_gemini.analyze_docs(documents_filepaths[0], documents_filepaths[1])
+
     #
     ##map(lambda x: sredi_slova(x), res)
     #print(f"\n----------\nSUCCESS - RESPONSE:\n{res}")
 
-    print(f"\n--------------- PROGRAM COMPLETE --------------------------\n")
-
+    print(f"\n---------- |GEMINI| - Analysis success. --------------\n")
+    print(f"{results_dict}")
+    print(f"\n-------------------------------------------------------------------\n")
+      
     # ANALIZA TEXTA I NALAZAK PROTOKOLA
+    protokoli: list = []
+    protokoli = [{"nalaz": "Neki nalaz", "terapija": ["terapija1", "terapija2"], "napomena": "Napomena o terapiji"},]
     #protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
 
     # GHENERISANJE IZVESTAJA
-    #generate_report_pdf(document, protokoli, OUTPUT_DIR)
+    result = results_dict[0] if len(results_dict) > 0 else {}
+    ime_pacijenta = result.get("pacijent", "NEPOZNATO")
+    datum_rodjenja = result.get("datum_rodjenja", "NEPOZNATO")
+    datum_nalaza_lab = result.get("datum_nalaza_lab", "NEPOZNATO")
+    datum_nalaza_nls = result.get("datum_nalaza_nls", "NEPOZNATO")
+    preporuke_za_dalje_korake = result.get("preporuke_za_dalje_korake", "NEMA PREPORUKA ZA DALJE KORAKE")
+    preporuke: list = result.get("preporuke", [])
+    moguce_dijagnoze: list = result.get("moguce_dijagnoze", [])
 
-    #if os.name == 'nt': os.startfile(OUTPUT_DIR)
+    
+    dijagnoze_i_objasenjenja: dict = {}
+    for d in moguce_dijagnoze:
+        nalaz = "NEPOZNATO"
+        objasnjenje = "NEPOZNATO"
+        
+        tokens = d.split("(")
+        if tokens and len(tokens) >= 2:
+            nalaz = tokens[0].strip()
+            #objasnjenje = tokens[1].strip("").replace(")", "")
+        
+        dijagnoze_i_objasenjenja[nalaz] = objasnjenje
+        
+    exporter.create_report(
+        ime_pacijenta, 
+        datum_rodjenja, 
+        preporuke[0] if len(preporuke) > 0 else "Nema preporuka",
+        dijagnoze_i_objasenjenja,
+        protokoli, 
+        OUTPUT_DIR)
 
+    print(f"\n--------------- PROGRAM COMPLETE --------------------------\n")
+    
+    if os.name == 'nt': os.startfile(OUTPUT_DIR)
 
 
 def main():

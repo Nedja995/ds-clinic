@@ -1,0 +1,106 @@
+[
+  {
+    "pacijent": "Renato Vampovac",
+    "datum_rođenja": "8.7.1971.",
+    "analiza_trenutnog_nalaza": {
+      "hematologija": {
+        "status": "Uglavnom uredan",
+        "anomalije": [
+          {
+            "parametar": "MCHC",
+            "vrednost": "346",
+            "referentni_interval": "320 - 345",
+            "oznaka": "H (Visoko)",
+            "interpretacija": "Blago povišena srednja koncentracija hemoglobin u eritrocitima. Može ukazivati na blagu dehidrataciju ili promenu u obliku eritrocita, ali bez kliničkog značaja u izolaciji."
+          }
+        ]
+      },
+      "biochemija": {
+        "status": "Metabolički disbalans",
+        "anomalije": [
+          {
+            "parametar": "Trigliceridi",
+            "vrednost": "1.79",
+            "referentni_interval": "< 1.7",
+            "oznaka": "H (Visoko)",
+            "interpretacija": "Blago povišene masnoće u krvi, što ukazuje na potrebu za korigovanjem ishrane."
+          },
+          {
+            "parametar": "TIBC (Ukupni kapacitet vezivanja gvožđa)",
+            "vrednost": "45.0",
+            "referentni_interval": "49.0 - 72.0",
+            "oznaka": "L (Nisko)",
+            "interpretacija": "Snižen TIBC uz normalno gvožđe (14.0) može ukazivati na hronične upalne procese ili specifično stanje metabolizma gvožđa."
+          },
+          {
+            "parametar": "Glukoza",
+            "vrednost": "5.9",
+            "referentni_interval": "4.4 - 6.4",
+            "status": "Gornja granica",
+            "interpretacija": "Vrednost je u granicama normale, ali na samoj gornjoj ivici, što zahteva praćenje."
+          }
+        ]
+      },
+      "analiza_urina": {
+        "status": "Patološki nalaz - Akutno",
+        "anomalije": [
+          {
+            "parametar": "Izgled",
+            "vrednost": "zamućen",
+            "interpretacija": "Ukazuje na prisustvo bakterija, sluzi ili ćelija."
+          },
+          {
+            "parametar": "Eritrociti (sediment)",
+            "vrednost": "5-10",
+            "referentni_interval": "0-2",
+            "interpretacija": "Mikrohematurija (prisustvo krvi u urinu)."
+          },
+          {
+            "parametar": "Bakterije",
+            "vrednost": "dosta",
+            "interpretacija": "Signifikantna bakteriurija."
+          },
+          {
+            "parametar": "Sluz",
+            "vrednost": "dosta",
+            "interpretacija": "Često prati upalne procese urinarnog trakta."
+          }
+        ]
+      }
+    },
+    "upoređivanje_sa_nls_nalazom": {
+      "urinarni_trakt": "NLS nalaz je ranije detektovao "Cystopyelitis" i prisustvo "Escherichia coli". Trenutni laboratorijski nalaz urina (dosta bakterija, eritrociti, zamućenost) direktno potvrđuje ove sumnje i ukazuje na aktivnu infekciju ili hronični proces koji je ponovo postao aktivan.",
+      "kardiovaskularni_sistem": "NLS analiza je učestalo prijavljivala "Heart Blocks" i "Atheroscleroses". Biohemijski nalaz pokazuje blago povišene trigliceride (1.79), što potvrđuje predispoziciju za aterosklerotske promene na koje je NLS ukazao.",
+      "štitna_žlezda": "NLS je registrovao stanja poput "Hypothyroidism" i "Diffuse Goitre". Međutim, trenutni laboratorijski TSH (1.97) je savršeno u granicama normale, što sugeriše da je funkcija štitne žlezde trenutno stabilna i kompenzovana.",
+      "metabolizam_i_toksini": "NLS je identifikovao "sugar toxins" i opterećenje pankreasa. Laboratorijska glukoza od 5.9 (gornja granica) potvrđuje opterećenje metabolizma šećera."
+    },
+    "potencijalne_dijagnoze": [
+      "Infectio tractus urinarii (Urinarna infekcija - verovatno E. coli prema NLS-u)",
+      "Hypertriglyceridemia (Blago povišene masnoće)",
+      "Dysmetabolismus glucosi (Blagi poremećaj metabolizma glukoze)",
+      "Atherosclerosis in obs. (U skladu sa NLS nalazom i lipidnim statusom)"
+    ],
+    "preporuke": [
+      {
+        "korak": "Urinokultura",
+        "razlog": "Zbog nalaza "dosta bakterija" i eritrocita u urinu, potrebno je identifikovati uzročnika i odrediti antibiogram."
+      },
+      {
+        "korak": "Nefrološki/Urološki pregled",
+        "razlog": "Zbog korelacije NLS nalaza (Cystopyelitis) i laboratorije urina."
+      },
+      {
+        "korak": "Korekcija ishrane",
+        "razlog": "Smanjiti unos ugljenih hidrata i masti zbog povišenih triglicerida i glukoze na gornjoj granici."
+      },
+      {
+        "korak": "Kardiološki pregled (EKG)",
+        "razlog": "NLS nalaz je više puta ukazao na "Heart Blocks", što laboratorija ne može potvrditi ili demantovati, pa je potreban EKG."
+      },
+      {
+        "korak": "Kontrola gvožđa i feritina",
+        "razlog": "Zbog sniženog TIBC-a, kako bi se isključio hronični inflamatorni proces."
+      }
+    ]
+  }
+]
