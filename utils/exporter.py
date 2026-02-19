@@ -66,7 +66,7 @@ def create_report(patient_name: str = "NEPOZNATO",
     # ("Povecan ocni pritisak (Glaukom)", "02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
     # ("Manjak vitamina B2", "02.06.25 Vitamin B2, riboflavin D=1,452"),
     # ]
-    timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H-%M")
     output_path = os.path.join(output_dir, f"NALAZ_{patient_name}_{timestamp_str}.pdf")
     
     # Output dir
