@@ -1,11 +1,12 @@
-import io
+##
+#
+#
 import os
-import datetime
+#
 from fpdf import FPDF
-
+#
 from src import word_utils
  
-
 
 class ReportPDF(FPDF):
     def header(self):
@@ -47,18 +48,13 @@ def create_report(ime_pacijenta: str = "NEPOZNATO",
                   dijagnoza: str = None,
                   dijagnoze_i_objasenjenja: dict = {}, 
                   protocols_found: list = [],
-                  output_dir: str = ""):
+                  output_dir: str = "") -> FPDF:
+    
     text_pacijent: str = f"Pacijent: {ime_pacijenta}"
-
     # nalazi = [
     # ("Povecan ocni pritisak (Glaukom)", "02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
     # ("Manjak vitamina B2", "02.06.25 Vitamin B2, riboflavin D=1,452"),
     # ]
-    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H-%M")
-    output_path = os.path.join(output_dir, f"NALAZ_{ime_pacijenta}_{timestamp_str}.pdf")
-    
-    # Output dir
-    os.makedirs(output_dir, exist_ok=True)
 
     pdf = ReportPDF()
     # font_path = "~/Library/Fonts/Arial Unicode.ttf" # Update with actual path to Arial Unicode font on your system
@@ -127,16 +123,15 @@ def create_report(ime_pacijenta: str = "NEPOZNATO",
     pdf.set_font('Helvetica', 'I', 8)
     pdf.cell(55, 5, 'M.P. Potpis terapeuta', 0, 0, 'C')
     
+    return pdf
+
+def write_report_file(pdf: FPDF, output_path: str = ""):
     #pdf.output(output_path)
     #print(f"PDF generated successfully: {output_path}")
     
-    #close fix
-     #2. Get bytes (fpdf2 returns bytes by default; use dest='S' for older versions)
-    #pdf_bytes = pdf.output() 
-    pdf_bytes = pdf.output(dest='S').encode('latin-1') # Returns bytes
-    #buffer = io.BytesIO(pdf_bytes)   
+    # CLOSE FILE FIX
+    pdf_bytes = pdf.output(dest='S').encode('latin-1') # Returns bytes 
 
-    # 3. Write bytes to file using standard Python utils
     with open(output_path, "wb") as f:
         f.write(pdf_bytes)
 
@@ -144,34 +139,10 @@ def create_report(ime_pacijenta: str = "NEPOZNATO",
     if os.path.exists(output_path):
         print(f"PDF generated successfully: {output_path}")
         
-    #output_path_test = os.path.join(output_dir, f"NALAZ_TEST.pdf")
-    # pdf = ReportPDF()
-    # pdf.set_auto_page_break(auto=True, margin=15)
-    # pdf.add_page()
-    # pdf.set_font('Helvetica', 'B', 10)
-    # pdf.cell(100, 10, "tst", 0, 0)
-    # pdf.cell(90, 10, "tst", 0, 1, 'R')
-    # pdf.ln(5)
-    # pdf.output(output_path_test, "F")
-    # if os.path.exists(output_path_test):
-    #     os.remove(output_path_test)
-    #     print(f"File '{output_path_test}' deleted successfully.")
-    # else:
-    #     print(f"File '{output_path_test}' does not exist.")
+
+
 
 def generate_report_pdf(document_name: str, protocols_found: list = [], output_dir: str = ""):
-    '''
-    Exports protocols to PDF report.
-    
-    Protocols should be in format: [{"nalaz": str, "terapija": list, "napomena": str}, ...]
-    
-    :param document_name: Description
-    :type document_name: str
-    :param protocols_found: Description
-    :type protocols_found: list
-    :param output_dir: Description
-    :type output_dir: str
-    '''
     output_path = os.path.join(output_dir, f"NALAZ_{document_name}.pdf")
     
     # Output dir

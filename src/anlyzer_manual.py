@@ -1,3 +1,7 @@
+##
+#
+#
+
 # ==========================================================
 # CENTRALNA BAZA PODATAKA (Ovde samo dodaješ, ništa ne brišeš)
 # ==========================================================
@@ -47,3 +51,13 @@ VELIKA_BAZA = {
 
     # <<< OVDE MOŽEŠ DODATI NOVU STAVKU PO ISTOM ŠABLONU >>>
 }
+
+# TRAZI DIJAGNOZE
+def analyze_content(text: str = "", BASE_DICT: dict = {}) -> list:
+    protocols_found : list = []
+
+    for kljuc, podaci in BASE_DICT.items():
+        if kljuc.upper() in text:
+            protocols_found.append(podaci)
+
+    return protocols_found

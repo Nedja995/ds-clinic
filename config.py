@@ -1,4 +1,4 @@
-#
+##
 # Configuration file for DSClinic project
 #
 from enum import StrEnum
@@ -20,7 +20,7 @@ class GEMINI_MODELS(StrEnum):
 
 ARG_GEMINI_MODEL_NAME: str = GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
 
-## Task descriptions
+## AI Task descriptions
 class AI_TASKS(StrEnum):
   """AI analysis task descriptions."""
   TASK_1 = "Make analysis from these two laboratory results"

@@ -1,17 +1,21 @@
-import os, sys
+##
+#
+#
+import os, sys, datetime
+from typing import List
+#
 import src.api_gemini as api_gemini
 import src.exporter as exporter
-from src import BASE_SYNDROMS
-
+#
 #import warnings
 #warnings.filterwarnings("ignore")
 #sys.stdout.reconfigure(encoding='utf-8')
 
-## SCRIPT PARAMETERS
-SCRIPT_FILE = sys.argv[0]  
-ROOT_DIR = os.path.dirname(os.path.abspath(SCRIPT_FILE)) #sys.executable # resource_path(".") #os.path.dirname(os.path.abspath(__file__))
 
-## APP PARAMETERS
+## PROGRAM PARAMETERS
+SCRIPT_FILE = sys.argv[0] #sys.executable #resource_path(".") #__file__
+ROOT_DIR = os.path.dirname(os.path.abspath(SCRIPT_FILE))
+# Data paths
 DATA_DIR = ROOT_DIR
 INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
 OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
@@ -19,45 +23,25 @@ OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
 print(f"\n---------- |DSCLINIC| Run programm with parameters: --------------")
 print(f"\n---------- ROOT_DIR: ${ROOT_DIR}.")
 
-## UTILITIES
 
-
-
-# TRAZI DIJAGNOZE
-def analyze_content(text: str = "", BASE_DICT: dict = {}) -> list:
-    protocols_found : list = []
-
-    for kljuc, podaci in BASE_DICT.items():
-        if kljuc.upper() in text:
-            protocols_found.append(podaci)
-
-    return protocols_found
-
-      
-def pokreni_analizu_gemini():
-    if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
-    if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)
-    
-    # PRONALAZAK PDF FAJLOVA U FOLDERU
+def find_input_documents() -> List[str]:
     documents_names = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.pdf') or f.lower().endswith('.jpg') or f.lower().endswith('.jpeg') or f.lower().endswith('.png')]
     documents_filepaths = [os.path.join(INPUT_DIR, f) for f in documents_names]
+    return documents_filepaths
+
+
+def pokreni_analizu_gemini():
+    documents_filepaths = find_input_documents()
   
     # Call Gemini API to analyze lab result documents
     results_dict: dict = api_gemini.analyze_docs(documents_filepaths=documents_filepaths)
 
-    #
-    ##map(lambda x: word_utils.sredi_slova(x), res)
-    #print(f"\n----------\nSUCCESS - RESPONSE:\n{res}")
+    #map(lambda x: word_utils.sredi_slova(x), res)
 
     print(f"\n---------- |GEMINI| - Analysis success. --------------\n")
     print(f"{results_dict}")
     print(f"\n-------------------------------------------------------------------\n")
       
-    # ANALIZA TEXTA I NALAZAK PROTOKOLA
-    protokoli: list = []
-    protokoli = [{"nalaz": "Neki nalaz", "terapija": ["terapija1", "terapija2"], "napomena": "Napomena o terapiji"},]
-    #protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
-
     # GHENERISANJE IZVESTAJA
     result = results_dict if results_dict else {}
     
@@ -90,49 +74,55 @@ def pokreni_analizu_gemini():
         vrednost: str = nalaz.get("vrednost", "NEPOZNATO")
         nalazi_dict[misljenje] = vrednost
 
+    # ANALIZA TEXTA I NALAZAK PROTOKOLA
+    protokoli: list = [{"nalaz": "Neki nalaz", "terapija": ["terapija1", "terapija2"], "napomena": "Napomena o terapiji"},]
+    #protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
 
-    #datum_rodjenja = result.get("datum_rodjenja", "NEPOZNATO")
-    #datum_nalaza_lab = result.get("datum_nalaza_lab", "NEPOZNATO")
-    #datum_nalaza_nls = result.get("datum_nalaza_nls", "NEPOZNATO")
-    #preporuke_za_dalje_korake = result.get("preporuke_za_dalje_korake", "NEMA PREPORUKA ZA DALJE KORAKE")
-    preporuke: list = result.get("preporuke", [])
-    #moguce_dijagnoze: list = result.get("moguce_dijagnoze", [])
-
-    
-    dijagnoze_i_objasenjenja: dict = {}
+    #dijagnoze_i_objasenjenja: dict = {}
     # for k,
     # for d in moguce_dijagnoze:
     #     nalaz = "NEPOZNATO"
     #     objasnjenje = "NEPOZNATO"
-        
     #     tokens = d.split("(")
     #     if tokens and len(tokens) >= 2:
     #         nalaz = tokens[0].strip()
     #         #objasnjenje = tokens[1].strip("").replace(")", "")
-        
     #     dijagnoze_i_objasenjenja[nalaz] = objasnjenje
-    dijagnoze_i_objasenjenja = nalazi_dict
         
-    exporter.create_report(
+    pdf = exporter.create_report(
         ime_pacijenta=ime_pacijenta, 
         date=datum, 
-        preporucena_terapija_i_savet=dijagnoza_summarized,
+        preporucena_terapija_i_savet=strucno_misljenje_dijagnoza,
         dijagnoza_summarized=None,#preporucena_terapija_i_savet,
         dijagnoza=None,#strucno_misljenje_dijagnoza,
-        dijagnoze_i_objasenjenja=dijagnoze_i_objasenjenja,
-        protocols_found=protokoli, 
-        output_dir=OUTPUT_DIR
+        dijagnoze_i_objasenjenja=nalazi_dict,
+        protocols_found=protokoli
     )
+
+    ## WRITE PDF REPORT
+    # Filepath
+    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H-%M")
+    output_path = os.path.join(OUTPUT_DIR, f"NALAZ_{ime_pacijenta}_{timestamp_str}.pdf")
+    # Create dirs if need
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    # Write file
+    exporter.write_report_file(pdf, output_path=output_path)
 
     print(f"\n--------------- PROGRAM COMPLETE --------------------------\n")
     
-    if os.name == 'nt': os.startfile(OUTPUT_DIR)
-
 
 def main():
+    if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
+    if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)
+
     # pokreni_analizu()
     pokreni_analizu_gemini()
+
+    if os.name == 'nt': os.startfile(OUTPUT_DIR)
+    elif os.name == 'posix': os.system(f'open {OUTPUT_DIR}')
+    
     input("Press Enter to exit...")
+
 
 if __name__ == "__main__":
     main()

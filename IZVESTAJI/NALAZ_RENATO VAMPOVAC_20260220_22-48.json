@@ -1,0 +1,50 @@
+{
+    "ime_pacijenta": "RENATO VAMPOVAC",
+    "datum": "20.02.2026",
+    "dijagnoza_bolesti": "Suspektna Plucna tuberkuloza (Pulmonary Tuberculosis), Tireotoksikoza (Tireotoxicosis)",
+    "dijagnoza_summarized": "NLS analiza ukazuje na visoku verovatnocu aktivnog procesa plucne tuberkuloze uz prisustvo specificnog uzrocnika (Mycobacterium tuberculosis). Prisutni su i znaci poremecaja stitne zlezde (tireotoksikoza) i inflamatorni procesi zglobova (poliartritis).",
+    "dijagnoza": {
+        "primarna": [
+            "PULMONARY TUBERCULOSIS (D=0,309)",
+            "MYCOBACTERIUM TUBERCULOSIS (D=0,307)"
+        ],
+        "sekundarna": [
+            "TIREOTOXICOSIS (D=0,431)",
+            "POLYARTHRITIS (D=0,525)",
+            "MITRAL STENOSIS (D=0,645)"
+        ],
+        "mikrobiologija": [
+            "MYCOBACTERIUM TUBERCULOSIS (D=0,307)",
+            "EPSTEIN - BARR VIRUS (D=0,786)",
+            "CYTOMEGALOVIRUS (D=0,857)"
+        ]
+    },
+    "strucno_misljenje_dijagnoza_summarized": "Prema NLS metodologiji, vrednosti D (koeficijent spektralne razlike) manje od 0,425 ukazuju na visoku verovatnocu klinicke manifestacije bolesti. Nalaz D=0,309 za plucnu tuberkulozu i D=0,307 za mikobakteriju predstavlja kritican rezultat koji sugerise aktivan infektivni proces. Tireotoksikoza (D=0,431) je na granici akutnog stanja.",
+    "preporucena_terapija_i_savet_summarized": "HITNO: Javiti se pulmologu radi konvencionalne dijagnostike (RTG pluca, analiza sputuma, IGRA test) radi potvrde tuberkuloze. Konsultacija sa endokrinologom zbog sumnje na tireotoksikozu. Mirovanje i izolacija do potvrde statusa tuberkuloze.",
+    "nalazi": [
+        {
+            "parametar": "PULMONARY TUBERCULOSIS",
+            "vrednost": "D=0,309",
+            "status": "KRITICNO",
+            "znacaj": "Visoka verovatnoca oboljenja / Akutna faza",
+            "dijagnoza": "Patomorfologija",
+            "misljenje": "Najdominantniji patoloski signal u izvestaju."
+        },
+        {
+            "parametar": "MYCOBACTERIUM TUBERCULOSIS",
+            "vrednost": "D=0,307",
+            "status": "KRITICNO",
+            "znacaj": "Prisustvo uzrocnika",
+            "dijagnoza": "Mikroorganizmi",
+            "misljenje": "Potvrdjuje etiologiju patoloskog procesa na plucima."
+        },
+        {
+            "parametar": "TIREOTOXICOSIS",
+            "vrednost": "D=0,431",
+            "status": "VISOK 
+RIZIK", "znacaj": "Granicna vrednost ka akutnom stanju", "dijagnoza": "Patomorfologija", "misljenje": "Poremecaj funkcije stitne zlezde."}, {"parametar": "POLYARTHRITIS", "vrednost": "D=0,
+            525", "status": "UMERENO", "znacaj": "Hronicni ili latentni proces", "dijagnoza": "Patomorfologija", "misljenje": "Upalni proces na zglobovima."}, {"parametar": "MITRAL STENOSIS", "vrednost": "D=0,
+            645", "status": "UMERENO", "znacaj": "Strukturna promena 
+na srcu", "dijagnoza": "Patomorfologija", "misljenje": "Suzenje mitralnog zalistka."}, {"parametar": "EPSTEIN - BARR VIRUS", "vrednost": "D=0,
+            786", "status": "LATENTNO", "znacaj": "Prisustvo virusa", "dijagnoza": "Mikroorganizmi", "misljenje": "Moguce opterecenje imunog sistema."}, {"parametar": "URETHRITIS", "vrednost": "D=1,
+            194", "status": "NISKO", "znacaj": "Niska verovatnoca aktivnosti", "dijagnoza": "Patomorfologija", "misljenje": "Trenutno nije prioritet."}]}

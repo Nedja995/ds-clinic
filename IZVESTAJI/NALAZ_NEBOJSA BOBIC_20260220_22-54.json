@@ -1,0 +1,60 @@
+{
+    "ime_pacijenta": "NEBOJSA BOBIC",
+    "datum": "20.02.2026",
+    "dijagnoza_bolesti": [
+        "Insulin-zavisni dijabetes melitus",
+        "Varikozno prosirenje vena potkolenice",
+        "Crevna disbakterioza",
+        "Hemoroidi",
+        "Rotavirus",
+        "Ascaris lumbricoides"
+    ],
+    "dijagnoza_summarized": "Identifikovane su dve kriticne patologije sa visokim stepenom podudaranja (D < 0.4): Insulin-zavisni dijabetes i Varikozno prosirenje vena.",
+    "dijagnoza": "NLS (Nonlinear Analysis) izvestaj pokazuje patomorfoloske promene u grupi C i prisustvo mikroorganizama u grupi D. Najznacajniji rezultati su u grupi patomorfologije gde nizak D koeficijent ukazuje na visoku aktivnost procesa.",
+    "strucno_misljenje_dijagnoza_summarized": "Vrednost D=0,306 za insulin-zavisni dijabetes ukazuje na 90-95% spektralne slicnosti sa ovim oboljenjem, sto predstavlja kritican nalaz. Vrednost D=0,364 za prosirene vene takodje ukazuje na aktivan vaskularni problem. Nalazi mikroorganizama (Rotavirus, Ascaris) imaju visoke D vrednosti (>1.0), sto znaci da trenutno nisu statisticki znacajni ili su u latentnoj fazi.",
+    "preporucena_terapija_i_savet_summarized": "Hitno se javiti endokrinologu radi laboratorijske potvrde dijabetesa (glukoza, HbA1c, insulin). Preporucuje se pregled vaskularnog hirurga (Color Doppler krvnih sudova nogu). Za disbakteriozu se savetuje korekcija ishrane i upotreba probiotika.",
+    "nalazi": [
+        {
+            "misljenje": "Visoka spektralna slicnost ukazuje na aktivan patoloski proces koji zahteva hitnu medicinsku evaluaciju.",
+            "vrednost": "0,306",
+            "status": "KRITICNO",
+            "znacaj": "Veoma visok",
+            "parametar": "INSULIN-DEPENDENT DIABETES MELLITUS",
+            "dijagnoza": "Insulin-zavisni dijabetes melitus"
+        },
+        {
+            "misljenje": "Visoka verovatnoca prisustva patologije, rizik od komplikacija venske cirkulacije.",
+            "vrednost": "0,364",
+            "status": "KRITICNO",
+            "znacaj": "Visok",
+            "parametar": "VARICOUS DILATATION OF SHANK VEINS",
+            "dijagnoza": "Varikozno prosirenje vena potkolenice"
+        },
+        {
+            "misljenje": "Umerena spektralna slicnost, ukazuje na hronican proces ili razvojno stanje.",
+            "vrednost": "0,688",
+            "status": "UPOZORENJE",
+            "znacaj": "Umeren",
+            "parametar": "INTESTINAL DYSBACTERIOSIS",
+            "dijagnoza": "Crevna disbakterioza"
+        },
+        {
+            "misljenje": "Nizak stepen slicnosti (D > 1.0), verovatno odsustvo aktivne infekcije ili samo informacioni trag.",
+            "vrednost": "1,051",
+            "status": "NIZAK RIZIK",
+            "znacaj": "Nizak",
+            "parametar": "ROTAVIRUS",
+            "dijagnoza": "Rotavirus"
+        },
+        {
+            "misljenje": "Nizak stepen slicnosti, verovatno nije klinicki manifestno.",
+            "vrednost": "1,236",
+            "status": "NIZAK RIZIK",
+            "znacaj": "Nizak",
+            "parametar": "ASCARIS LUMBRICOIDES",
+            "dijagnoza": "Velika decja glista (parazit)"
+        },
+        {
+            "misljenje": "Visoka vrednost D 
+faktora ukazuje na malu verovatnocu akutnog problema.", "vrednost": "1,
+            374", "status": "NIZAK RIZIK", "znacaj": "Nizak", "parametar": "HAEMORRHOIDS", "dijagnoza": "Hemoroidi"}]}

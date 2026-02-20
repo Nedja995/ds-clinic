@@ -1,13 +1,15 @@
+##
+#
+#
+from typing import List
+import json
+from pydantic import BaseModel, Field
+#
 from google import genai
 from google.genai import types
-from pydantic import BaseModel, Field
-from typing import List, Optional
-import base64
-import os
-import json
-
-from src import word_utils
+#
 import config
+from src import word_utils
 
 
 ## Gemini specific settings
@@ -26,8 +28,6 @@ class AnalysisReport(BaseModel):
     terapije_i_saveti: str = Field(description="Nema terapija i saveta")
     nalazi: List[AnalysisFound] = Field(description="Nema nalaza")
     
-
-
 
 
 ## API INITIALIZATION
@@ -60,9 +60,9 @@ def gemini_client_connect() -> genai.Client:
   return client
 
 #
-def analyze_docs(documents_filepaths: List[str] = []) -> list:
+def analyze_docs(documents_filepaths: List[str] = []) -> dict:
   model_name: str = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
-  results = None
+  results: dict = {}
 
   # Initialize api client
   client = gemini_client_connect()
@@ -72,18 +72,18 @@ def analyze_docs(documents_filepaths: List[str] = []) -> list:
 
   # Analyze lab result documents
   try:
-      results = analyze_docs2(model_name=model_name, 
-                             documents_filepaths=documents_filepaths)
+      results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
       print(f"\n---------- |GEMINI| - Analysis success. --------------")
       #print(f"{results}")
       #print(f"\n-------------------------------------------------------------------\n")
   except Exception as e:
       print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
       print(f"{str(e)}")
+      # CHECK IS GEMINI MODEL EXPERIENCING HIG DEMAND
       if "high demand" in str(e):
+        # Try again with different model
         model_name = config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
-        results = analyze_docs2(model_name=model_name, 
-                               documents_filepaths=documents_filepaths)
+        results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
       print(f"\n-------------------------------------------------------------------")
   finally:
       client.close()
@@ -93,19 +93,18 @@ def analyze_docs(documents_filepaths: List[str] = []) -> list:
 
 
 #
-def analyze_docs2(model_name: str = config.ARG_GEMINI_MODEL_NAME, documents_filepaths: List[str] = []) -> list:
+def analyze_docs2(model_name: str = config.ARG_GEMINI_MODEL_NAME, documents_filepaths: List[str] = []) -> dict:
   task_description: str = config.ARG_AI_TASK_DESCRIPTION
   thinking_level = ARG_GEMINI_THINKING_LEVEL
-  results = None
+  results: dict = {}
 
   # Initialize api client
   client = gemini_client_connect()
-  # check
-  # if client is None or client is not genai.Client:
-  #   raise ValueError("Invalid client provided. Please provide a valid genai.Client instance.")
+  #if client is None or client is not genai.Client:
+  #  raise ValueError("Invalid client provided. Please provide a valid genai.Client instance.")
 
   # Analyze lab result documents
-#  try:
+  #try:
   results = analyze_lab_result_docs(
       client=client,
       model_name=model_name,
@@ -113,11 +112,11 @@ def analyze_docs2(model_name: str = config.ARG_GEMINI_MODEL_NAME, documents_file
       task_description=task_description,
       documents_filepaths=documents_filepaths
       )   
-# except Exception as e:
-#    print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
+  #except Exception as e:
+  #print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
   #print(f"{str(e)}")
-  ##raise e
-#finally:
+  #raise e
+  #finally:
   client.close()
   client = None
 
@@ -147,7 +146,7 @@ def analyze_lab_result_docs(client: genai.Client,
                             thinking_level: genai.types.ThinkingLevel = ARG_GEMINI_THINKING_LEVEL,
                             task_description: str = config.ARG_AI_TASK_DESCRIPTION,
                             documents_filepaths: List[str] = [],
-                            ) -> list:
+                            ) -> dict:
   print(f"\n---------- |GEMINI||INFO| Analysis - Run with parameters: --------------")
   print(f"\n---------- Thinking level: ${thinking_level}.")
   print(f"\n---------- Model: {model_name}.")
@@ -163,12 +162,13 @@ def analyze_lab_result_docs(client: genai.Client,
     if doc: documents.append(doc)
     else: print(f"\n---------- |GEMINI||ERROR| Failed to load document at path: ${filepath}.")
 
-  parts: List[genai.types.Part] = []
-  parts.extend(documents)
-  parts.append(types.Part.from_text(text=task_description))
-
-
   # CONTENTS
+  parts: List[genai.types.Part] = []
+  # Add input documents
+  parts.extend(documents)
+  # Add AI task descripion
+  parts.append(types.Part.from_text(text=task_description))
+  
   contents = [
     types.Content(
       role="user",
@@ -235,9 +235,7 @@ def analyze_lab_result_docs(client: genai.Client,
     res += filtered_text
     #res = res.replace("NLS Analiza: ", "")
     #print(res, end="")
-    
     print(f"\n----- |GEMINI| Analysis: Request Checking response finished. Append to results..")
-
     ## --- END FOR LOOP ---
 
   print(f"\n------- |GEMINI| Analysis: Requests finished.")
