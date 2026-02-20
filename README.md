@@ -28,6 +28,12 @@ Check ```config.py```
 
 ## Development
 
+### Make Windows executable
+
+```bash
+pyinstaller --onefile dsclinic.py
+```
+
 ### Output format
 
 - nalaz

@@ -40,21 +40,22 @@ class ReportPDF(FPDF):
             self.cell(w[0], h, f" {k}", 1, 0, 'L')
             self.cell(w[1], h, f" {v}", 1, 1, 'L')
 
-def create_report(patient_name: str = "NEPOZNATO", 
+def create_report(ime_pacijenta: str = "NEPOZNATO", 
                   date: str = "NEPOZNATO", 
-                  advice: str = "NEMA SAVETA",
+                  preporucena_terapija_i_savet: str = "NEMA SAVETA",
+                  dijagnoza_summarized: str = "NEPOZNATA DIJAGNOZA",
+                  dijagnoza: str = None,
                   dijagnoze_i_objasenjenja: dict = {}, 
                   protocols_found: list = [],
                   output_dir: str = ""):
-    text_pacijent: str = f"Pacijent: {patient_name}"
-    text_datum: str = date
-    text_savet: str = "NEMA SAVETA" if not advice else advice
+    text_pacijent: str = f"Pacijent: {ime_pacijenta}"
+
     # nalazi = [
     # ("Povecan ocni pritisak (Glaukom)", "02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
     # ("Manjak vitamina B2", "02.06.25 Vitamin B2, riboflavin D=1,452"),
     # ]
     timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H-%M")
-    output_path = os.path.join(output_dir, f"NALAZ_{patient_name}_{timestamp_str}.pdf")
+    output_path = os.path.join(output_dir, f"NALAZ_{ime_pacijenta}_{timestamp_str}.pdf")
     
     # Output dir
     os.makedirs(output_dir, exist_ok=True)
@@ -70,7 +71,7 @@ def create_report(patient_name: str = "NEPOZNATO",
     # Patient Info
     pdf.set_font('Helvetica', 'B', 10)
     pdf.cell(100, 10, text_pacijent, 0, 0)
-    pdf.cell(90, 10, text_datum, 0, 1, 'R')
+    pdf.cell(90, 10, date, 0, 1, 'R')
     pdf.ln(5)
     
     # Table of findings
@@ -84,8 +85,30 @@ def create_report(patient_name: str = "NEPOZNATO",
     
     pdf.set_font('Helvetica', '', 10)
     pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 6, text_savet)
+    pdf.multi_cell(0, 6, preporucena_terapija_i_savet)
     pdf.ln(10)
+
+     # Dijagnoza summarized section
+    if dijagnoza:
+        pdf.set_font('Helvetica', 'B', 12)
+        pdf.set_text_color(200, 0, 0) # Reddish
+        pdf.cell(0, 10, 'DIJAGNOZA:', 0, 1)
+        
+        pdf.set_font('Helvetica', '', 10)
+        pdf.set_text_color(0, 0, 0)
+        pdf.multi_cell(0, 6, dijagnoza)
+        pdf.ln(10)
+
+    # Dijagnoza section
+    if dijagnoza_summarized:
+        pdf.set_font('Helvetica', 'B', 12)
+        pdf.set_text_color(200, 0, 0) # Reddish
+        pdf.cell(0, 10, 'DIJAGNOZA 2:', 0, 1)
+        
+        pdf.set_font('Helvetica', '', 10)
+        pdf.set_text_color(0, 0, 0)
+        pdf.multi_cell(0, 6, dijagnoza_summarized)
+        pdf.ln(10)
     
     # Consent
     pdf.set_font('Helvetica', 'I', 9)

@@ -8,13 +8,16 @@ from src import BASE_SYNDROMS
 #sys.stdout.reconfigure(encoding='utf-8')
 
 ## SCRIPT PARAMETERS
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_FILE = sys.argv[0]  
+ROOT_DIR = os.path.dirname(os.path.abspath(SCRIPT_FILE)) #sys.executable # resource_path(".") #os.path.dirname(os.path.abspath(__file__))
 
 ## APP PARAMETERS
 DATA_DIR = ROOT_DIR
 INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
 OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
 
+print(f"\n---------- |DSCLINIC| Run programm with parameters: --------------")
+print(f"\n---------- ROOT_DIR: ${ROOT_DIR}.")
 
 ## UTILITIES
 
@@ -73,6 +76,9 @@ def pokreni_analizu_gemini():
 
     dijagnoza_bolesti = result.get("dijagnoza_bolesti", "NEPOZNATA DIJAGNOZA BOLESTI")
     dijagnoza = result.get("dijagnoza", "NEPOZNATA DIJAGNOZA")
+    dijagnoza_summarized = result.get("dijagnoza_summarized", "NEPOZNATA DIJAGNOZA")
+    strucno_misljenje_dijagnoza = result.get("strucno_misljenje_dijagnoza_summarized", "NEPOZNATO")
+    preporucena_terapija_i_savet = result.get("preporucena_terapija_i_savet_summarized", "NEMA SAVETA")
 
 
     nalazi_list: list = result.get("nalazi", [])
@@ -105,14 +111,18 @@ def pokreni_analizu_gemini():
     #         #objasnjenje = tokens[1].strip("").replace(")", "")
         
     #     dijagnoze_i_objasenjenja[nalaz] = objasnjenje
+    dijagnoze_i_objasenjenja = nalazi_dict
         
     exporter.create_report(
-        ime_pacijenta, 
-        datum, 
-        dijagnoza,
-        nalazi_dict,
-        protokoli, 
-        OUTPUT_DIR)
+        ime_pacijenta=ime_pacijenta, 
+        date=datum, 
+        preporucena_terapija_i_savet=dijagnoza_summarized,
+        dijagnoza_summarized=None,#preporucena_terapija_i_savet,
+        dijagnoza=None,#strucno_misljenje_dijagnoza,
+        dijagnoze_i_objasenjenja=dijagnoze_i_objasenjenja,
+        protocols_found=protokoli, 
+        output_dir=OUTPUT_DIR
+    )
 
     print(f"\n--------------- PROGRAM COMPLETE --------------------------\n")
     
@@ -122,6 +132,7 @@ def pokreni_analizu_gemini():
 def main():
     # pokreni_analizu()
     pokreni_analizu_gemini()
+    input("Press Enter to exit...")
 
 if __name__ == "__main__":
     main()

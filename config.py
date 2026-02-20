@@ -18,7 +18,7 @@ class GEMINI_MODELS(StrEnum):
   GEMINI_3_FLASH_PREVIEW = "gemini-3-flash-preview"
   GEMINI_3_PRO_IMAGE_PREVIEW = "gemini-3-pro-image-preview"
 
-ARG_GEMINI_MODEL_NAME: str = GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
+ARG_GEMINI_MODEL_NAME: str = GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
 
 ## Task descriptions
 class AI_TASKS(StrEnum):
@@ -26,7 +26,7 @@ class AI_TASKS(StrEnum):
   TASK_1 = "Make analysis from these two laboratory results"
   TASK_2 = "Analiziraj laboratorijske nalaze i uporedi sa prethodnim nalazom. Pronadji anomalije i promene u odnosu na prethodni nalaz. Napravi detaljnu analizu i predlozi moguce dijagnoze i preporuke za dalje korake."
   TASK_3 = "Spoji, analiziraj i sumiraj analizu iz dva nalaza jedan je iz MetaHuner program a drugi je iz labaratorije"
-  TASK_4 = "spoji podatke iz dokumenata/izvestaja i ukazi na kriticne simptome, predstavi podatke formatirane u json formatu, sa listom koja sadrzi polje 'ime_pacijenta', polje 'datum' (trenutni), polje 'dijagnoza_bolesti', 'dijagnoza', polje 'nalazi' u dictionary formatu sa poljima, 'misljenje', 'vrednost', 'status', 'znacaj', 'parametar', 'dijagnoza'."
+  TASK_4 = "spoji podatke iz dokumenata/izvestaja i ukazi na kriticne simptome, predstavi podatke formatirane u json formatu, koji sadrzi polje 'ime_pacijenta', polje 'datum' (trenutni), polje 'dijagnoza_bolesti', polje 'dijagnoza_summarized', polje 'dijagnoza', polje 'strucno_misljenje_dijagnoza_summarized', polje 'preporucena_terapija_i_savet_summarized', polje 'nalazi' u dictionary formatu sa poljima, 'misljenje', 'vrednost', 'status', 'znacaj', 'parametar', 'dijagnoza'."
   TASK_5 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata, prikazi ih kao json listu"
   TASK_6 = "Merge medical data from all documents and show critical symptoms summarized in Serbian language"
   TASK_7 = "spoji podatke iz oba dokumenta i ukazi na kriticne nalaze, nije bitno da li su od razlicitih pacijenata"

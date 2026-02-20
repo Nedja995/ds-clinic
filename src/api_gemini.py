@@ -72,7 +72,7 @@ def analyze_docs(documents_filepaths: List[str] = []) -> list:
 
   # Analyze lab result documents
   try:
-      results = analyze_docs(model_name=model_name, 
+      results = analyze_docs2(model_name=model_name, 
                              documents_filepaths=documents_filepaths)
       print(f"\n---------- |GEMINI| - Analysis success. --------------")
       #print(f"{results}")
@@ -82,7 +82,7 @@ def analyze_docs(documents_filepaths: List[str] = []) -> list:
       print(f"{str(e)}")
       if "high demand" in str(e):
         model_name = config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
-        results = analyze_docs(model_name=model_name, 
+        results = analyze_docs2(model_name=model_name, 
                                documents_filepaths=documents_filepaths)
       print(f"\n-------------------------------------------------------------------")
   finally:
@@ -93,7 +93,7 @@ def analyze_docs(documents_filepaths: List[str] = []) -> list:
 
 
 #
-def analyze_docs(model_name: str = config.ARG_GEMINI_MODEL_NAME, documents_filepaths: List[str] = []) -> list:
+def analyze_docs2(model_name: str = config.ARG_GEMINI_MODEL_NAME, documents_filepaths: List[str] = []) -> list:
   task_description: str = config.ARG_AI_TASK_DESCRIPTION
   thinking_level = ARG_GEMINI_THINKING_LEVEL
   results = None
@@ -105,21 +105,21 @@ def analyze_docs(model_name: str = config.ARG_GEMINI_MODEL_NAME, documents_filep
   #   raise ValueError("Invalid client provided. Please provide a valid genai.Client instance.")
 
   # Analyze lab result documents
-  try:
-      results = analyze_lab_result_docs(
-          client=client,
-          model_name=model_name,
-          thinking_level=thinking_level,
-          task_description=task_description,
-          documents_filepaths=documents_filepaths
-          )   
-  except Exception as e:
-      print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
-      print(f"{str(e)}")
-      raise e
-  finally:
-      client.close()
-      client = None
+#  try:
+  results = analyze_lab_result_docs(
+      client=client,
+      model_name=model_name,
+      thinking_level=thinking_level,
+      task_description=task_description,
+      documents_filepaths=documents_filepaths
+      )   
+# except Exception as e:
+#    print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
+  #print(f"{str(e)}")
+  ##raise e
+#finally:
+  client.close()
+  client = None
 
   return results
 
