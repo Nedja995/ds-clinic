@@ -71,6 +71,11 @@ def pokreni_analizu_gemini():
     
     ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
     datum: str = result.get("datum", "NEPOZNATO")
+
+    dijagnoza_bolesti = result.get("dijagnoza_bolesti", "NEPOZNATA DIJAGNOZA BOLESTI")
+    dijagnoza = result.get("dijagnoza", "NEPOZNATA DIJAGNOZA")
+
+
     nalazi_list: list = result.get("nalazi", [])
     nalazi_dict: dict = {}
 
@@ -105,7 +110,7 @@ def pokreni_analizu_gemini():
     exporter.create_report(
         ime_pacijenta, 
         datum, 
-        preporuke[0] if len(preporuke) > 0 else "Nema preporuka",
+        dijagnoza,
         nalazi_dict,
         protokoli, 
         OUTPUT_DIR)
