@@ -6,6 +6,7 @@ from typing import List
 #
 import src.api_gemini as api_gemini
 import src.exporter as exporter
+from src import word_utils
 #
 #import warnings
 #warnings.filterwarnings("ignore")
@@ -67,12 +68,19 @@ def pokreni_analizu_gemini():
 
     nalazi_list: list = result.get("nalazi", [])
     nalazi_dict: dict = {}
+    
 
     for nalaz in nalazi_list:
         #misljenje: str = nalaz.get("misljenje", "NEPOZNATO")
-        misljenje: str = nalaz.get("dijagnoza", "NEPOZNATO")
-        vrednost: str = nalaz.get("vrednost", "NEPOZNATO")
-        nalazi_dict[misljenje] = vrednost
+        #dijagnoza: str = nalaz.get("dijagnoza", None)
+        #if not dijagnoza: misljenje = f"{misljenje} ({dijagnoza})"
+        #vrednost: str = nalaz.get("vrednost", "NEPOZNATO")
+        #nalazi_dict[misljenje] = vrednost
+        misljenje_i_dijagnoza: str = nalaz.get("misljenje_i_dijagnoza", "NEPOZNATO")
+        parametar_i_vrednost: str = nalaz.get("parametar_i_vrednost", "NEPOZNATO")
+        #if "NEPOZNATO" in parametar_i_vrednost: parametar_i_vrednost = f"{nalaz.get('parametar', '')} {nalaz.get('vrednost', 'NEPOZNATO')}"
+        nalazi_dict[misljenje_i_dijagnoza] = parametar_i_vrednost
+        
 
     # ANALIZA TEXTA I NALAZAK PROTOKOLA
     protokoli: list = [{"nalaz": "Neki nalaz", "terapija": ["terapija1", "terapija2"], "napomena": "Napomena o terapiji"},]

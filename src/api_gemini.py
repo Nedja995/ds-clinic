@@ -229,7 +229,9 @@ def analyze_lab_result_docs(client: genai.Client,
     #report = AnalysisReport.model_validate_json(response.text)
     #print(f"\n---------- |GEMINI| - Analysis Report2:\n{report}\n")
     filtered_text: str = "".join(map(lambda x: word_utils.sredi_slova(x), responseText))
-    #filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
+    filtered_text = filtered_text.replace("?", "")
+    # filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
+    # filtered_text = filtered_text.encode('latin-1', 'ignore').decode('latin-1')
     #print(responseText, end="")
     #results.append(responseText)
     res += filtered_text

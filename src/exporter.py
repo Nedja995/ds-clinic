@@ -38,7 +38,12 @@ class ReportPDF(FPDF):
             # Calculate height based on multi-cell content
             h = 10
             # Basic version for simplicity; fpdf2 would handle wrapping better
-            self.cell(w[0], h, f" {k}", 1, 0, 'L')
+            txt_misljenje = k
+            # limit = 59
+            # if len(txt_misljenje) > limit:
+            #     txt_misljenje = txt_misljenje[:limit] + "\n" + txt_misljenje[limit:]
+
+            self.cell(w[0], h, f" {txt_misljenje}", 1, 0, 'L')
             self.cell(w[1], h, f" {v}", 1, 1, 'L')
 
 def create_report(ime_pacijenta: str = "NEPOZNATO", 
@@ -131,6 +136,7 @@ def write_report_file(pdf: FPDF, output_path: str = ""):
     
     # CLOSE FILE FIX
     pdf_bytes = pdf.output(dest='S').encode('latin-1') # Returns bytes 
+    output_path = output_path.replace("?", "")
 
     with open(output_path, "wb") as f:
         f.write(pdf_bytes)
