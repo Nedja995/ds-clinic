@@ -13,6 +13,8 @@ import config
 ## Gemini specific settings
 ARG_GEMINI_THINKING_LEVEL: types.ThinkingLevel = types.ThinkingLevel[config.ARG_GEMINI_THINKING_LEVEL_STR]
 
+CONST_INPUT_SUPPORTED_EXTENSIONS: list = [".jpg", ".jpeg", ".png", ".pdf"]
+
 class AnalysisFound(BaseModel):
     name: str = Field(description="NN")
     description: str = Field(description="Nema opisa")
@@ -51,16 +53,48 @@ def gemini_client_connect() -> genai.Client:
   except Exception as e:
     print(f"\n\n---------- |ERROR|GEMINI| - Client initialization failed. ----------")
     print(f"\nEXCEPTION:\n{str(e)}")
-    print(f"\n----------------------------------\n")
+    print(f"\n----------------------------------")
   finally:
       pass
   
   return client
 
 #
-def analyze_docs(doc1_path: str, doc2_path: str) -> list:
+def analyze_docs(documents_filepaths: List[str] = []) -> list:
+  model_name: str = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+  results = None
+
+  # Initialize api client
+  client = gemini_client_connect()
+  # check
+  # if client is None or client is not genai.Client:
+  #   raise ValueError("Invalid client provided. Please provide a valid genai.Client instance.")
+
+  # Analyze lab result documents
+  try:
+      results = analyze_docs(model_name=model_name, 
+                             documents_filepaths=documents_filepaths)
+      print(f"\n---------- |GEMINI| - Analysis success. --------------")
+      #print(f"{results}")
+      #print(f"\n-------------------------------------------------------------------\n")
+  except Exception as e:
+      print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
+      print(f"{str(e)}")
+      if "high demand" in str(e):
+        model_name = config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
+        results = analyze_docs(model_name=model_name, 
+                               documents_filepaths=documents_filepaths)
+      print(f"\n-------------------------------------------------------------------")
+  finally:
+      client.close()
+      client = None
+
+  return results
+
+
+#
+def analyze_docs(model_name: str = config.ARG_GEMINI_MODEL_NAME, documents_filepaths: List[str] = []) -> list:
   task_description: str = config.ARG_AI_TASK_DESCRIPTION
-  model_name: str = config.ARG_GEMINI_MODEL_NAME
   thinking_level = ARG_GEMINI_THINKING_LEVEL
   results = None
 
@@ -77,70 +111,68 @@ def analyze_docs(doc1_path: str, doc2_path: str) -> list:
           model_name=model_name,
           thinking_level=thinking_level,
           task_description=task_description,
-          doc1_path=doc1_path, 
-          doc2_path=doc2_path 
+          documents_filepaths=documents_filepaths
           )   
-      print(f"\n---------- |GEMINI| - Analysis success. --------------\n")
-      #print(f"{results}")
-      #print(f"\n-------------------------------------------------------------------\n")
   except Exception as e:
-      print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------\n")
+      print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
       print(f"{str(e)}")
-      print(f"\n-------------------------------------------------------------------\n")
+      raise e
   finally:
       client.close()
       client = None
 
   return results
 
-def sredi_slova(text):
-    mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
-    for k, v in mape.items(): text = text.replace(k, v)
-    return text
+def load_document(filepath: str) -> genai.types.Part:
+  print(f"\n---- |GEMINI||DEBUG| Load Document from filepath: {filepath}.")
+  doc: types.Part = None
+  doc_extension = [ext for ext in CONST_INPUT_SUPPORTED_EXTENSIONS if filepath.lower().endswith(ext)]
+
+  if doc_extension and len(doc_extension) > 0:
+    print(f"\n---- |GEMINI||DEBUG| Document format supported: {doc_extension[0]}.")
+    if doc_extension[0] in [".jpg", ".jpeg", ".png"]:
+      # Document is Image file
+      doc = types.Part.from_bytes(data=open(filepath, "rb").read(), mime_type="image/jpeg")
+    elif doc_extension[0] == ".pdf":
+      # Document is PDF file
+      doc = types.Part.from_bytes(data=open(filepath, "rb").read(), mime_type="application/pdf")
+  else:
+    print(f"\n---------- |GEMINI||WARNING| Load Document failed because: Format not supported. Skip...")
+    pass
+
+  return doc
 
 def analyze_lab_result_docs(client: genai.Client,
-                            model_name: str = "gemini-3-pro-preview",
-                            thinking_level: genai.types.ThinkingLevel = genai.types.ThinkingLevel.HIGH,
-                            task_description: str = "Analiziraj laboratorijske nalaze i uporedi sa prethodnim nalazom. Pronadji anomalije i promene u odnosu na prethodni nalaz. Napravi detaljnu analizu i predlozi moguce dijagnoze i preporuke za dalje korake.",
-                            doc1_path: str = "", # Path to first PDF document
-                            doc2_path: str = "" # Path to second PDF document
+                            model_name: str = config.ARG_GEMINI_MODEL_NAME,
+                            thinking_level: genai.types.ThinkingLevel = ARG_GEMINI_THINKING_LEVEL,
+                            task_description: str = config.ARG_AI_TASK_DESCRIPTION,
+                            documents_filepaths: List[str] = [],
                             ) -> list:
-  results: list = []
+  print(f"\n---------- |GEMINI||INFO| Analysis - Run with parameters: --------------")
+  print(f"\n---------- Thinking level: ${thinking_level}.")
+  print(f"\n---------- Model: {model_name}.")
+  print(f"\n---------- Documents: {documents_filepaths}.")
+  print(f"\n---------- Task description: ${task_description}.")
 
-  support_extensions = [".jpg", ".jpeg", ".png", ".pdf"]
-  
-  ext = [ext for ext in support_extensions if doc1_path.lower().endswith(ext)]
-  
-  doc1: types.Part = None
-  doc2: types.Part = None
-  
-  if ext and len(ext) > 0:
-    print(f"\n---------- |GEMINI| - Document 1 format supported: {ext[0]} ----------\n")
-    if ext[0] in [".jpg", ".jpeg", ".png"]:
-      doc1 = types.Part.from_bytes(data=open(doc1_path, "rb").read(), mime_type="image/jpeg")
-    elif ext[0] == ".pdf":
-      doc1 = types.Part.from_bytes(data=open(doc1_path, "rb").read(), mime_type="application/pdf")
-      
-   
-    ext = [ext for ext in support_extensions if doc2_path.lower().endswith(ext)]
-    print(f"\n---------- |GEMINI| - Document 2 format supported: {ext[0]} ----------\n")
-    if ext and len(ext) > 0:
-      if ext[0] in [".jpg", ".jpeg", ".png"]:
-        doc2 = types.Part.from_bytes(data=open(doc2_path, "rb").read(), mime_type="image/jpeg")
-      elif ext[0] == ".pdf":
-        doc2 = types.Part.from_bytes(data=open(doc2_path, "rb").read(), mime_type="application/pdf")
-  else:
-    pass
-  
+  responseDict: dict = {}
+
+  documents: List[genai.types.Part] = []
+
+  for filepath in documents_filepaths:
+    doc = load_document(filepath)
+    if doc: documents.append(doc)
+    else: print(f"\n---------- |GEMINI||ERROR| Failed to load document at path: ${filepath}.")
+
+  parts: List[genai.types.Part] = []
+  parts.extend(documents)
+  parts.append(types.Part.from_text(text=task_description))
+
+
   # CONTENTS
   contents = [
     types.Content(
       role="user",
-      parts=[
-        doc1,
-        doc2,
-        types.Part.from_text(text=task_description)
-      ]
+      parts=parts
     ),
   ]
   tools = [
@@ -148,6 +180,7 @@ def analyze_lab_result_docs(client: genai.Client,
   ]
 
   # CONTENT CONFIG
+  print(f"\n---- |GEMINI||DEBUG| Analysis - Prepaire content config.")
   generate_content_config = types.GenerateContentConfig(
     thinking_config=types.ThinkingConfig(
       thinking_level=thinking_level,
@@ -156,7 +189,6 @@ def analyze_lab_result_docs(client: genai.Client,
     top_p = config.ARG_GEMINI_MODEL_TOP_P,
     max_output_tokens = config.ARG_GEMINI_MODEL_MAX_OUTPUT_TOKENS,
     response_mime_type = "application/json",
-
     #response_json_schema = AnalysisReport.model_json_schema(),
     #response_mime_type="application/json",
     #response_json_schema=types.JsonSchema(type="array", items=types.JsonSchema(type="dictionary")),
@@ -178,51 +210,48 @@ def analyze_lab_result_docs(client: genai.Client,
 
   res = ""
 
-  print(f"\n---------- |GEMINI| - Analysis Start... --------------\n")
+  print(f"\n------- |GEMINI||INFO| Analysis: Start requests.")
   for response in client.models.generate_content_stream(
       model = model_name,
       contents = contents,
       config = generate_content_config
     ):
+    print(f"\n----- |GEMINI| Analysis: Request finised. Checking response..")
     # Check
     if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
       # PASS - Empty response
-      print(f"\n---------- |GEMINI| - Analysis WARNING: No candidates or content in response. Skipping...")
+      print(f"\n----- |GEMINI||WARNING| Analysis: No candidates or content in response. Skipping...")
       continue
     
-    
-    # Parse response
+    ## RESPONSE PARSING
     responseText = response.text
     
     #report = AnalysisReport.model_validate_json(response.text)
     #print(f"\n---------- |GEMINI| - Analysis Report2:\n{report}\n")
-
-    filtered_text: str = "".join(map(lambda x: sredi_slova(x), responseText))
+    filtered_text: str = "".join(map(lambda x: word_utils.sredi_slova(x), responseText))
     #filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
-  
     #print(responseText, end="")
     #results.append(responseText)
     res += filtered_text
     #res = res.replace("NLS Analiza: ", "")
     #print(res, end="")
-    print(f"\n---------- |GEMINI| - Analysis End. -----------------\n")
+    
+    print(f"\n----- |GEMINI| Analysis: Request Checking response finished. Append to results..")
 
-  responseDict: dict = {}
+    ## --- END FOR LOOP ---
+
+  print(f"\n------- |GEMINI| Analysis: Requests finished.")
+
   # Convert the JSON string to a Python dictionary
   try:
     responseDict = json.loads(res)
+    print(f"\n----- |GEMINI| Analysis: Response JSON created.")
   except json.JSONDecodeError as e:
-    print(f"--------- |GEMINI| Error decoding JSON: {e}")
+    print(f"\n---------- |GEMINI| - Analysis - ERROR: Error decoding JSON:\n{e}.")
     responseDict = {}
     
   # print(f"\n---------- |GEMINI| - Response Dictionary: --------------\n")
   # print(responseDict, end="")
-  # Now you can use the data as a normal Python dictionary
-  #print(f"\ndict: {responseDict}")
-  # print(f"\nCategory: {responseDict['category']}")
-  # print(f"\nTest: {responseDict['test_name']} - {responseDict['flag']}")
-  # print(f"\nResult: {responseDict['result']} {responseDict['unit']}")
-  # print(f"\nReference interval: {responseDict['reference_interval']}")
-  # print(f"\nStatus: {responseDict['test_status']}\n")
+  
 
   return responseDict

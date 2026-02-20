@@ -136,10 +136,6 @@ def create_report(patient_name: str = "NEPOZNATO",
     # else:
     #     print(f"File '{output_path_test}' does not exist.")
 
-def sredi_slova(text: str):
-    mape = {"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj", "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj"}
-    for k, v in mape.items(): text = text.replace(k, v)
-    return text
 def generate_report_pdf(document_name: str, protocols_found: list = [], output_dir: str = ""):
     '''
     Exports protocols to PDF report.

@@ -40,8 +40,7 @@ def pokreni_analizu_gemini():
     documents_filepaths = [os.path.join(INPUT_DIR, f) for f in documents_names]
   
     # Call Gemini API to analyze lab result documents
-    results_dict: dict = api_gemini.analyze_docs(documents_filepaths[0], 
-                                                 documents_filepaths[1])
+    results_dict: dict = api_gemini.analyze_docs(documents_filepaths=documents_filepaths)
 
     #
     ##map(lambda x: word_utils.sredi_slova(x), res)
