@@ -1,0 +1,12 @@
+{
+    "python.logging.level": "DEBUG",
+    "python.logging.enabled": true,
+    "autopep8.interpreter": [
+        "${workspaceFolder}/.venv/Scripts/python.exe" 
+    ],
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Args": [
+        "--max-line-length",
+        "500"
+  ],
+}
