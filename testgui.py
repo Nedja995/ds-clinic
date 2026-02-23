@@ -1,6 +1,9 @@
 import tkinter as tk
+import logging
 from tkinter import ttk, scrolledtext
 import tkinter.messagebox
+
+logger = logging.getLogger(__name__)
 
 class MedicinskaApp:
     def __init__(self, root, inicijalni_podaci=None):
@@ -227,6 +230,7 @@ class MedicinskaApp:
         tkinter.messagebox.showinfo("Uspeh", "Podaci su spremni za vašu PDF funkciju.")
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     test_podaci = {
         "ime_pacijenta": "Marko Marković",
         "datum": "24.05.2024.",

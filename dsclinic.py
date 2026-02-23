@@ -7,6 +7,7 @@ import datetime
 import re;
 from typing import List
 import json
+import logging
 #
 import src.api_gemini as api_gemini
 # import src.exporter as exporter
@@ -21,6 +22,9 @@ import config
 # warnings.filterwarnings("ignore")
 # sys.stdout.reconfigure(encoding='utf-8')
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # PROGRAM PARAMETERS
 SCRIPT_FILE = sys.argv[0]  # sys.executable #resource_path(".") #__file__
@@ -54,8 +58,6 @@ print(f"{AI_TASK_DESCRIPTION}")
 print(f"----------------------- AI TASK DESCRIPTION END.   ----------------------")
 
 
-
-
 # Data paths
 DATA_DIR = ROOT_DIR
 INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
@@ -71,6 +73,25 @@ def find_input_documents() -> List[str]:
     documents_filepaths = [os.path.join(INPUT_DIR, f) for f in documents_names]
     return documents_filepaths
 
+def write_report_to_pdf(report: Report, filepath: str = "report.pdf"):
+    # WRITE PDF REPORT
+    # Output path
+    output_filename = report.patient_name.replace(".", " ")
+    output_filename = output_filename.replace("/", "")
+    current_date = datetime.datetime.now().strftime("%d.%m.%Y")
+    timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+    output_path = os.path.join(OUTPUT_DIR, f"NALAZ_{output_filename}_{timestamp_str}.pdf")
+
+    # Generate pdf
+    pdf_maker.generate_report_pdf(
+        patient_name=report.patient_name,
+        report_date=report.report_date or current_date,
+        terapija_i_saveti=report.terapija_i_saveti,
+        table_data=report.nalazi,
+        output_filename=output_path
+    )
+    
+    
 def obradi(data_dict: dict) -> Report:
     # formatted_json = json.dumps(data_dict, indent=4, sort_keys=False)
     # print(formatted_json)
@@ -87,15 +108,10 @@ def obradi(data_dict: dict) -> Report:
         print(f"\n\n---------- |ERROR|DSCLINIC| - Bad response: ------\n")
         print(f"{data_dict}")
         print(f"\n-------------------------------------------------------------------\n")
-        
-    report: Report = Report()
-    report.ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
-    report.trenutni_datum = result.get("trenutni_datum", "NEPOZNATO")
-    report.strucno_misljenje_dijagnoza = result.get(
-        
+
     ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
     datum = result.get("trenutni_datum", "NEPOZNATO")
-    strucno_misljenje_dijagnoza = result.get(config_json['MAPIRANJE']['PREPORUCENA_TERAPIJA_I_SAVET'], "NEPOZNATO")
+    terapija_i_saveti = result.get(config_json['MAPIRANJE']['PREPORUCENA_TERAPIJA_I_SAVET'], "NEPOZNATO")
     nalazi_list: list = result.get(config_json['MAPIRANJE']['NALAZI'], [])
     nalazi_models: List[ReportItem] = []
 
@@ -104,37 +120,15 @@ def obradi(data_dict: dict) -> Report:
         parametar_i_vrednost: str = nalaz.get(config_json['MAPIRANJE']['PARAMETAR_APARATA'], "NEPOZNATO")
         nalazi_models.append(ReportItem(misljenje=misljenje, parametar=parametar_i_vrednost))
 
-    # WRITE PDF REPORT
-
-    # ANALIZA TEXTA I NALAZAK PROTOKOLA
-    #protokoli: list = [{"nalaz": "Neki nalaz", "terapija": ["terapija1", "terapija2"], "napomena": "Napomena o terapiji"},]
-    # protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
-
-    # WRITE PDF REPORT
-    # Output path
-    output_filename = ime_pacijenta.replace(".", " ")
-    output_filename = output_filename.replace("/", "")
-    current_date = datetime.datetime.now().strftime("%d.%m.%Y")
-    timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-    output_path = os.path.join(OUTPUT_DIR, f"NALAZ_{output_filename}_{timestamp_str}.pdf")
-    # Create dirs if need
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    # Generate pdf
-    pdf_maker.generate_report_pdf(
-        patient_name=ime_pacijenta,
-        report_date=current_date,
-        terapija_i_saveti=strucno_misljenje_dijagnoza,
-        table_data=nalazi_models,
-        output_filename=output_path
-    )
+    report: Report = Report()
+    report.patient_name = ime_pacijenta
+    report.report_date = datum
+    report.terapija_i_saveti = terapija_i_saveti
+    report.nalazi = nalazi_models
     
-    #
-    if "True" in config_json._DEBUG_EXPORT_RAW_RESPONSE_JSON:
-        if not os.path.exists(OUTPUT_DEBUG_DIR):
-            os.makedirs(OUTPUT_DEBUG_DIR)
-        raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response_{output_filename}_{timestamp_str}.json")
-        with open(raw_response_output_filepath, "w", encoding="utf-8") as file:
-            json.dump(data_dict, file, indent=4, ensure_ascii=False) # Using indent for human-readable formatting
+    return report
+    
+
 
 def pokreni_analizu_gemini():
     documents_filepaths = find_input_documents()
@@ -153,22 +147,41 @@ def main():
     if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
     if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)
 
+    response_json = {}
+
     if "False" in config_json['_DEBUG_USE_RAW_JSON_RESPONSE']:
-        # pokreni_analizu()
+        #
         response_json = pokreni_analizu_gemini()
-        
+        # protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
+        response_data = obradi(response_json)
     else:
-        # DEBUG 
+        # DEBUG INPUT
         raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response.json")
-        json_data = {}
-        with open(raw_response_output_filepath, "r", encoding="utf-8") as file:
-            json_data = json.load(file)
-            
         
-    if os.name == 'nt':
-        os.startfile(OUTPUT_DIR)
-    elif os.name == 'posix':
-        os.system(f'open {OUTPUT_DIR}')
+        with open(raw_response_output_filepath, "r", encoding="utf-8") as file:
+            response_json = json.load(file)
+            response_data = obradi(response_json)
+            f = 1   
+    
+    write_report_to_pdf(response_data)
+    
+    if "True" in config_json['_DEBUG_EXPORT_RAW_RESPONSE_JSON']:
+        # DEBUG 
+        # Output path
+        output_filename = "neko nEkic" #report.patient_name.replace(".", " ")
+        output_filename = output_filename.replace("/", "")
+        current_date = datetime.datetime.now().strftime("%d.%m.%Y")
+        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+        output_path = os.path.join(OUTPUT_DIR, f"NALAZ_{output_filename}_{timestamp_str}.pdf")
+        raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response_{output_filename}_{timestamp_str}.json")
+        #
+        if not os.path.exists(OUTPUT_DEBUG_DIR): os.makedirs(OUTPUT_DEBUG_DIR, exist_ok=True)
+        
+        with open(raw_response_output_filepath, "w", encoding="utf-8") as file:
+            json.dump(response_json, file, indent=4, ensure_ascii=False) # Using indent for human-readable formatting
+        
+    if os.name == 'nt': os.startfile(OUTPUT_DIR)
+    elif os.name == 'posix': os.system(f'open {OUTPUT_DIR}')
 
     input("Press Enter to exit...")
 

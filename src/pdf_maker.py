@@ -7,8 +7,7 @@ from typing import List
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
 from datetime import datetime
-from src.models import ReportItem
-
+from src.models import ReportItem, Report
 
 
 SCRIPT_FILE = sys.argv[0]  # sys.executable #resource_path(".") #__file__
@@ -185,6 +184,8 @@ class HolisticReport(FPDF):
         self.set_font(FONT_ITALIC, "", 9)
         self.cell(line_end - line_start, 8, "M.P. Potpis terapeuta", align="C")
 
+def generate_report_pdf(report: Report, output_filename: str = "report.pdf"):
+    pass
 
 def generate_report_pdf(
     patient_name: str = "NEPOZNATO IME PACIJENTA",
