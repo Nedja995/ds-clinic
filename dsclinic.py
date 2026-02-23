@@ -12,7 +12,7 @@ import src.api_gemini as api_gemini
 # import src.exporter as exporter
 from src import word_utils
 from src import pdf_maker
-from src.models import ReportItem
+from src.models import ReportItem, Report
 #
 import config
 #
@@ -27,8 +27,8 @@ SCRIPT_FILE = sys.argv[0]  # sys.executable #resource_path(".") #__file__
 ROOT_DIR = os.path.dirname(os.path.abspath(SCRIPT_FILE))
 
 
-print(f"\n---------- |DSCLINIC-{config.APP_VERSION}| Run programm with parameters: --------------")
-print(f"\n---------- ROOT_DIR: ${ROOT_DIR}.")
+print(f"---------- |DSCLINIC-{config.APP_VERSION}| Run programm with parameters: --------------")
+print(f"---------- ROOT_DIR: ${ROOT_DIR}.")
 
 
 config_json = {}
@@ -49,9 +49,9 @@ PITANJE = word_utils.normalize_whitespace(PITANJE)
 #         PITANJE = PITANJE.replace('  ', '')
 PITANJE = PITANJE.strip()
 AI_TASK_DESCRIPTION = PITANJE
-print(f"\n----------------------- AI TASK DESCRIPTION BEGIN: ----------------------")
-print(f"\n{AI_TASK_DESCRIPTION}")
-print(f"\n----------------------- AI TASK DESCRIPTION END.   ----------------------")
+print(f"----------------------- AI TASK DESCRIPTION BEGIN: ----------------------")
+print(f"{AI_TASK_DESCRIPTION}")
+print(f"----------------------- AI TASK DESCRIPTION END.   ----------------------")
 
 
 
@@ -71,32 +71,27 @@ def find_input_documents() -> List[str]:
     documents_filepaths = [os.path.join(INPUT_DIR, f) for f in documents_names]
     return documents_filepaths
 
-
-def pokreni_analizu_gemini():
-    documents_filepaths = find_input_documents()
-
-    # Call Gemini API to analyze lab result documents
-    results_dict: dict = api_gemini.analyze_docs(documents_filepaths=documents_filepaths)
-
-    print(f"\n---------- |GEMINI| - Analysis success. --------------\n")
-    print(f"{results_dict}")
-    print(f"\n-------------------------------------------------------------------\n")
-    print(f"---------------------------------------------------------------------")
-    formatted_json = json.dumps(results_dict, indent=4, sort_keys=False)
-    print(formatted_json)
+def obradi(data_dict: dict) -> Report:
+    # formatted_json = json.dumps(data_dict, indent=4, sort_keys=False)
+    # print(formatted_json)
     
 
     # GHENERISANJE IZVESTAJA
-    result = results_dict if results_dict else {}
+    result = data_dict if data_dict else {}
 
-    if isinstance(results_dict, list) and len(results_dict) > 0:
-        result = results_dict[0]
-    elif isinstance(results_dict, dict):
-        result = results_dict
+    if isinstance(data_dict, list) and len(data_dict) > 0:
+        result = data_dict[0]
+    elif isinstance(data_dict, dict):
+        result = data_dict
     else:
         print(f"\n\n---------- |ERROR|DSCLINIC| - Bad response: ------\n")
-        print(f"{results_dict}")
+        print(f"{data_dict}")
         print(f"\n-------------------------------------------------------------------\n")
+        
+    report: Report = Report()
+    report.ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
+    report.trenutni_datum = result.get("trenutni_datum", "NEPOZNATO")
+    report.strucno_misljenje_dijagnoza = result.get(
         
     ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
     datum = result.get("trenutni_datum", "NEPOZNATO")
@@ -134,25 +129,42 @@ def pokreni_analizu_gemini():
     )
     
     #
-    if 'true' in config_json['EXPORT_RAW_RESPONSE_JSON']:
-        raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"NALAZ_{output_filename}_{timestamp_str}.json")
-        with open(raw_response_output_filepath, "w") as file:
-            json.dump(formatted_json, file, indent=4) # Using indent for human-readable formatting
-        
-    print(f"\n--------------- PROGRAM COMPLETE --------------------------\n")
+    if "True" in config_json._DEBUG_EXPORT_RAW_RESPONSE_JSON:
+        if not os.path.exists(OUTPUT_DEBUG_DIR):
+            os.makedirs(OUTPUT_DEBUG_DIR)
+        raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response_{output_filename}_{timestamp_str}.json")
+        with open(raw_response_output_filepath, "w", encoding="utf-8") as file:
+            json.dump(data_dict, file, indent=4, ensure_ascii=False) # Using indent for human-readable formatting
+
+def pokreni_analizu_gemini():
+    documents_filepaths = find_input_documents()
+
+    # Call Gemini API to analyze lab result documents
+    data_dict: dict = api_gemini.analyze_docs(documents_filepaths=documents_filepaths)
+
+    print(f"---------- |GEMINI| - Analysis success. --------------")
+    print(f"{data_dict}")
+    print(f"------------------------------------------------------")
+    
+    return data_dict
 
 
 def main():
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
-    if not os.path.exists(OUTPUT_DEBUG_DIR):
-        os.makedirs(OUTPUT_DEBUG_DIR)
-    if not os.path.exists(INPUT_DIR):
-        os.makedirs(INPUT_DIR)
+    if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
+    if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)
 
-    # pokreni_analizu()
-    pokreni_analizu_gemini()
-
+    if "False" in config_json['_DEBUG_USE_RAW_JSON_RESPONSE']:
+        # pokreni_analizu()
+        response_json = pokreni_analizu_gemini()
+        
+    else:
+        # DEBUG 
+        raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response.json")
+        json_data = {}
+        with open(raw_response_output_filepath, "r", encoding="utf-8") as file:
+            json_data = json.load(file)
+            
+        
     if os.name == 'nt':
         os.startfile(OUTPUT_DIR)
     elif os.name == 'posix':

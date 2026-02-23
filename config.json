@@ -1,5 +1,6 @@
 {
-    "EXPORT_RAW_RESPONSE_JSON": "true",
+    "_DEBUG_USE_RAW_JSON_RESPONSE": "True",
+    "_DEBUG_EXPORT_RAW_RESPONSE_JSON": "True",
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "strucno_misljenje_dijagnoza_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza",
