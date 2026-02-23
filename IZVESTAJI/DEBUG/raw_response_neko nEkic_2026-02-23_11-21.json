@@ -1,0 +1,30 @@
+{
+    "ime_pacijenta": "Nije identifikovano",
+    "trenutni_datum": "23.02.2026",
+    "dijagnoza_bolesti": "Nije moguće utvrditi",
+    "dijagnoza_summarized": "Nedostaju medicinski dokumenti",
+    "dijagnoza": "Nema podataka",
+    "strucno_misljenje_dijagnoza_summarized": "Nisu priloženi medicinski nalazi, izveštaji ili dokumenti iz kojih bi se mogla izvršiti analiza.",
+    "preporucena_terapija_i_savet_summarized": "Molim vas priložite tekst nalaza ili slike dokumenata kako bih mogao generisati savet.",
+    "gde_je_problem": "Nedostatak ulaznih podataka",
+    "rezime": "Korisnik je zatražio analizu, ali poruka ne sadrži medicinsku dokumentaciju.",
+    "uzrok_problema": "Nema priloženih fajlova ili teksta",
+    "uzrok_problema_detaljno": "Sistem nije detektovao medicinske podatke u vašem zahtevu potrebne za obradu.",
+    "uzrok_problema_summarized": "Nedostaju podaci",
+    "nalazi": [
+        {
+            "misljenje_i_dijagnoza": "Nemoguća evaluacija",
+            "parametar": "Medicinska dokumentacija",
+            "vrednost": "Nije priložena",
+            "status": "Nedostaje",
+            "znacaj": "Kritično",
+            "parametar_i_vrednost": "Dokumentacija: Nula",
+            "dijagnoza": "Nema",
+            "gde_je_problem": "Ulazni podaci",
+            "rezime": "Nema nalaza za obradu",
+            "uzrok_problema": "Greška u unosu",
+            "uzrok_problema_detaljno": "Nisu dostavljeni podaci za analizu.",
+            "uzrok_problema_summarized": "Nema podataka"
+        }
+    ]
+}

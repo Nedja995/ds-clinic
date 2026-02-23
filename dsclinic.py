@@ -41,7 +41,7 @@ config_json = {}
 
 # Load config from a file
 CONFIG_JSON_PATH = os.path.join(ROOT_DIR, "config.json")
-with open(CONFIG_JSON_PATH, 'r') as f:
+with open(CONFIG_JSON_PATH, 'r', encoding='utf-8') as f:
     config_json = json.load(f)
     
 
@@ -98,7 +98,6 @@ def obradi(data_dict: dict) -> Report:
     # formatted_json = json.dumps(data_dict, indent=4, sort_keys=False)
     # print(formatted_json)
     
-
     # GHENERISANJE IZVESTAJA
     result = data_dict if data_dict else {}
 
@@ -136,7 +135,8 @@ def pokreni_analizu_gemini():
     documents_filepaths = find_input_documents()
 
     # Call Gemini API to analyze lab result documents
-    data_dict: dict = api_gemini.analyze_docs(documents_filepaths=documents_filepaths)
+    data_dict: dict = api_gemini.analyze_docs(ai_task_description=AI_TASK_DESCRIPTION, 
+                                              documents_filepaths=documents_filepaths)
 
     print(f"---------- |GEMINI| - Analysis success. --------------")
     print(f"{data_dict}")

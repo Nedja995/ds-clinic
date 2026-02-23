@@ -1,0 +1,73 @@
+{
+    "ime_pacijenta": "KRISTINA CAKIC",
+    "trenutni_datum": "21.02.2026",
+    "dijagnoza_bolesti": "Prolapsus valvulae mitralis (D=0.059)",
+    "dijagnoza_summarized": "Prolaps mitralne valvule, funkcionalno opterećenje centralnog nervnog sistema i disbalans homeostaze.",
+    "dijagnoza": "Primarna patomorfološka dijagnoza ukazuje na Prolaps mitralne valvule (D=0.059). Uočavaju se značajna odstupanja u biohemijskoj homeostazi (hemoglobin, gvožđe) i opterećenje CNS-a.",
+    "strucno_misljenje_dijagnoza_summarized": "NLS analiza ukazuje na visoku spektralnu sličnost sa prolapsom mitralne valvule. Grafički prikaz mozga prikazuje 'crne kvadrate' koji označavaju dekompenzaciju mehanizama adaptacije, iako lista patomorfologije ne pokazuje akutnu organsku bolest mozga (encefalopatija ima visok D koeficijent, što znači nisku verovatnoću). Ovo sugeriše funkcionalni i energetski pad, uz prisutan srčani problem.",
+    "preporucena_terapija_i_savet_summarized": "Preporučuje se kardiološki pregled (EHO srca) radi potvrde prolapsa mitralne valvule. Potrebna je prover krvne slike (gvožđe, hemoglobin) zbog indikacija anemije. Savetuje se detoksikacija i smanjenje stresa radi oporavka regulacionih mehanizama mozga (META-terapija je naznačena na prvoj strani).",
+    "gde_je_problem": "Kardiovaskularni sistem (mitralni zalistak), Centralni nervni sistem (regulacija), Krv (homeostaza).",
+    "rezime": "Pacijentkinja (21 god) sa nalazom koji ukazuje na srčanu anomaliju (prolaps) i izraženu dekompenzaciju adaptivnih mehanizama u mozgu, uz opterećenje toksinima i potencijalnu anemiju.",
+    "uzrok_problema": "Strukturna anomalija srca i toksičko opterećenje.",
+    "uzrok_problema_detaljno": "Niska vrednost D (0.059) kod prolapsa mitralne valvule sugeriše strukturni problem. Vizuelni prikaz mozga sa crnim kvadratima ukazuje na iscrpljenost neuro-regulativnih mehanizama, verovatno usled kombinovanog dejstva toksina (amebe, vakcine, mlečni proizvodi navedeni kao opterećenje) i metaboličkog stresa.",
+    "uzrok_problema_summarized": "Kombinacija srčane anomalije i toksičkog stresa koji iscrpljuje CNS.",
+    "problem_defined": "Visok stepen dekompenzacije CNS-a i sumnja na prolaps mitralne valvule.",
+    "nalazi": [
+        {
+            "misljenje_i_dijagnoza": "Pathomorphology: Mitral Valve Prolapse",
+            "parametar": "D koeficijent",
+            "vrednost": "0.059",
+            "status": "KRITIČNO",
+            "znacaj": "Visoka verovatnoća postojanja patologije (D < 0.425).",
+            "parametar_i_vrednost": "Mitral Valve Prolapse D=0.059",
+            "dijagnoza": "Prolapsus valvulae mitralis",
+            "gde_je_problem": "Srce (Mitralni zalistak)",
+            "rezime": "Jedina patologija sa izuzetno niskim D koeficijentom, što ukazuje na akutni ili hronični problem.",
+            "uzrok_problema": "Strukturna slabost zalistka.",
+            "uzrok_problema_detaljno": "Moguća genetska predispozicija ili stečeno stanje.",
+            "uzrok_problema_summarized": "Anomalija zalistka."
+        },
+        {
+            "misljenje_i_dijagnoza": "Vizuelni prikaz mozga (NLS Image)",
+            "parametar": "Simboli na slici",
+            "vrednost": "Crni kvadrati (Black squares)",
+            "status": "LOŠE",
+            "znacaj": "Dekompenzacija mehanizama adaptacije.",
+            "parametar_i_vrednost": "Decompensation of adaptation mechanisms",
+            "dijagnoza": "Funkcionalna iscrpljenost CNS-a",
+            "gde_je_problem": "Cerebrum (Subcortical nucleus)",
+            "rezime": "Slika pokazuje izražena patološka stanja (dekompenzaciju) u frontalnom i parijetalnom delu mozga.",
+            "uzrok_problema": "Stres regulacionih sistema.",
+            "uzrok_problema_detaljno": "Sistem ne uspeva da održi homeostazu usled preopterećenja.",
+            "uzrok_problema_summarized": "Dekompenzacija."
+        },
+        {
+            "misljenje_i_dijagnoza": "Biochemical Homeostasis",
+            "parametar": "Haemoglobin, Serum Iron, Erythrocytes",
+            "vrednost": "0.021 - 0.028",
+            "status": "UPOZORENJE",
+            "znacaj": "Ekstremno niske D vrednosti ukazuju na poremećaj ili snažnu rezonancu (potencijalna anemija).",
+            "parametar_i_vrednost": "Haemoglobin D=0.021",
+            "dijagnoza": "Sumnja na anemiju ili poremećaj krvi",
+            "gde_je_problem": "Krvotok / Metabolizam",
+            "rezime": "Markeri krvne slike pokazuju najveće odstupanje u biohemijskom delu.",
+            "uzrok_problema": "Nutritivni deficit ili hronični gubitak.",
+            "uzrok_problema_detaljno": "Nedostatak gvožđa ili loša apsorpcija.",
+            "uzrok_problema_summarized": "Metabolički disbalans."
+        },
+        {
+            "misljenje_i_dijagnoza": "Toxic Stress Load",
+            "parametar": "Amoebae, Vacczine, Dairy products",
+            "vrednost": "0.668 - 0.685",
+            "status": "SREDNJE",
+            "znacaj": "Prisustvo opterećenja, ali nije u kritičnoj zoni (<0.425).",
+            "parametar_i_vrednost": "Amoebae D=0.668",
+            "dijagnoza": "Opterećenje toksinima/mikroorganizmima",
+            "gde_je_problem": "Imuni sistem",
+            "rezime": "Najjači očitani stresori su amebe i ostaci vakcina/mlečni proizvodi.",
+            "uzrok_problema": "Ekspozicija spoljnim faktorima.",
+            "uzrok_problema_detaljno": "Akumulacija toksina koja otežava autoregulaciju.",
+            "uzrok_problema_summarized": "Toksičko opterećenje."
+        }
+    ]
+}

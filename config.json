@@ -1,5 +1,5 @@
 {
-    "_DEBUG_USE_RAW_JSON_RESPONSE": "True",
+    "_DEBUG_USE_RAW_JSON_RESPONSE": "False",
     "_DEBUG_EXPORT_RAW_RESPONSE_JSON": "True",
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "strucno_misljenje_dijagnoza_summarized",
@@ -8,8 +8,8 @@
         "NALAZI": "nalazi"
     },
     "PITANJE": [
-        "Procitaj podatke iz svih prilozenih dokumenata, nalaza, rezultata, izvestaja i ostalih podataka ",
-        "i ukazi na kriticne nalaze, predlozi moguce dijagnoze, gde su problemi i sta su uzroci problema. ",
+        "Procitaj podatke iz svih priloženih dokumenata, nalaza, rezultata, izveštaja i ostalih podataka ",
+        "i ukazi na kritične nalaze, predloži moguće dijagnoze, gde su problemi, sta su uzroci problema i definiši problem (u polje 'problem_defined'). ",
         "Predstavi podatke u json formatu, koristeci sledecu strukturu: ",
         "   {                                                           ",
         "        'ime_pacijenta',                                       ",
@@ -24,6 +24,7 @@
         "        'uzrok_problema',                                      ",
         "        'uzrok_problema_detaljno',                             ",
         "        'uzrok_problema_summarized',                           ",
+	    "        'problem_defined',                                     ",
         "        'nalazi': [                                            ",
         "           {                                                   ",
         "               'misljenje_i_dijagnoza',                        ",

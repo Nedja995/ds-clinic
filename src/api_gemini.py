@@ -78,6 +78,7 @@ def analyze_docs(ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
     # Analyze lab result documents
     try:
         results = analyze_docs2(model_name=model_name,
+                                ai_task_description=ai_task_description,
                                 documents_filepaths=documents_filepaths)
         print(f"\n---------- |GEMINI| - Analysis success. --------------")
         # print(f"{results}")
@@ -106,8 +107,8 @@ def analyze_docs(ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
 
 #
 def analyze_docs2(model_name: str = config.ARG_GEMINI_MODEL_NAME,
+                  ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
                   documents_filepaths: List[str] = []) -> dict:
-    task_description: str = config.ARG_AI_TASK_DESCRIPTION
     thinking_level = ARG_GEMINI_THINKING_LEVEL
     results: dict = {}
 
@@ -122,7 +123,7 @@ def analyze_docs2(model_name: str = config.ARG_GEMINI_MODEL_NAME,
         client=client,
         model_name=model_name,
         thinking_level=thinking_level,
-        task_description=task_description,
+        task_description=ai_task_description,
         documents_filepaths=documents_filepaths
     )
     # except Exception as e:
