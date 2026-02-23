@@ -4,12 +4,12 @@
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "rezime+uzrok_problema+uzrok_problema_detaljno+strucno_misljenje_dijagnoza_summarized+preporucena_terapija_i_savet_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza+uzrok_problema",
-        "PARAMETAR_APARATA": "parametar_i_vrednost+vrednost",
+        "PARAMETAR_APARATA": "parametar_i_vrednost",
         "NALAZI": "nalazi"
     },
     "PITANJE": [
         "Procitaj podatke iz svih priloženih dokumenata, nalaza, rezultata, izveštaja i ostalih podataka ",
-        "i ukazi na kritične nalaze, predloži moguće dijagnoze, gde su problemi, sta su uzroci problema i definiši problem (u polje 'problem_defined'). ",
+        "i fainlerovu skalu i slike organa ukazi na kritične nalaze, predloži moguće dijagnoze, gde su problemi, sta su uzroci problema i definiši problem (u polje 'problem_defined'). ",
         "Predstavi podatke u json formatu, koristeci sledecu strukturu: ",
         "   {                                                           ",
         "        'ime_pacijenta',                                       ",
@@ -24,7 +24,7 @@
         "        'uzrok_problema',                                      ",
         "        'uzrok_problema_detaljno',                             ",
         "        'uzrok_problema_summarized',                           ",
-	    "        'problem_defined',                                     ",
+        "        'problem_defined',                                     ",
         "        'nalazi': [                                            ",
         "           {                                                   ",
         "               'misljenje_i_dijagnoza',                        ",

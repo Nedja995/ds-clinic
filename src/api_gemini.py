@@ -144,8 +144,7 @@ def load_document(filepath: str) -> genai.types.Part:
         ext for ext in CONST_INPUT_SUPPORTED_EXTENSIONS if filepath.lower().endswith(ext)]
 
     if doc_extension and len(doc_extension) > 0:
-        print(
-            f"\n---- |GEMINI||DEBUG| Document format supported: {doc_extension[0]}.")
+        #print(f"\n---- |GEMINI||DEBUG| Document format supported: {doc_extension[0]}.")
         if doc_extension[0] in [".jpg", ".jpeg", ".png"]:
             # Document is Image file
             doc = types.Part.from_bytes(
