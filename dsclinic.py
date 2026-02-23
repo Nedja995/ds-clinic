@@ -94,6 +94,29 @@ def write_report_to_pdf(report: Report, filepath: str = "report.pdf"):
     )
     
     
+def text_from_keys(data_dict: dict, keys: str) -> str:
+    text = "NEPOZNATO"
+    
+    toks = keys.split('+')
+    if len(toks) == 1:
+        text = data_dict.get(keys, "NEPOZNATO")
+    elif len(toks) >= 2:
+        text = [f"{data_dict.get(key, "NEPOZNATO").strip()} " for key in toks]
+        text = "\n".join(text)
+        text = text.strip()
+        
+    return text
+
+def text_from_keys2(data_list: list[dict], keys: str) -> str:
+    text = "NEPOZNATO"
+    
+    for data_dict in data_list:
+        text = text_from_keys(data_dict, keys)
+        
+
+        
+    return text
+
 def obradi(data_dict: dict) -> Report:
     # formatted_json = json.dumps(data_dict, indent=4, sort_keys=False)
     # print(formatted_json)
@@ -112,13 +135,23 @@ def obradi(data_dict: dict) -> Report:
 
     ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
     datum = result.get("trenutni_datum", "NEPOZNATO")
-    terapija_i_saveti = result.get(config_json['MAPIRANJE']['PREPORUCENA_TERAPIJA_I_SAVET'], "NEPOZNATO")
+    #terapija_i_saveti = result.get(config_json['MAPIRANJE']['PREPORUCENA_TERAPIJA_I_SAVET'], "NEPOZNATO")
+    terapija_i_saveti = text_from_keys(result, config_json['MAPIRANJE']['PREPORUCENA_TERAPIJA_I_SAVET'])
     nalazi_list: list = result.get(config_json['MAPIRANJE']['NALAZI'], [])
     nalazi_models: List[ReportItem] = []
 
     for nalaz in nalazi_list:
-        misljenje: str = nalaz.get(config_json['MAPIRANJE']['EXPERTSKO_MISLJENJE'], "NEPOZNATO")
-        parametar_i_vrednost: str = nalaz.get(config_json['MAPIRANJE']['PARAMETAR_APARATA'], "NEPOZNATO")
+        #misljenje: str = nalaz.get(config_json['MAPIRANJE']['EXPERTSKO_MISLJENJE'], "NEPOZNATO")
+        #parametar_i_vrednost: str = nalaz.get(config_json['MAPIRANJE']['PARAMETAR_APARATA'], "NEPOZNATO")
+        misljenje = text_from_keys(data_dict=nalaz, keys=config_json['MAPIRANJE']['EXPERTSKO_MISLJENJE'])
+
+        misljenje = misljenje.replace('\n', ' ')
+        misljenje = word_utils.normalize_whitespace(misljenje)
+        
+        parametar_i_vrednost = text_from_keys(data_dict=nalaz, keys=config_json['MAPIRANJE']['PARAMETAR_APARATA'])
+        parametar_i_vrednost = parametar_i_vrednost.replace('\n', ' ')
+        parametar_i_vrednost = word_utils.normalize_whitespace(parametar_i_vrednost)
+        
         nalazi_models.append(ReportItem(misljenje=misljenje, parametar=parametar_i_vrednost))
 
     report: Report = Report()
@@ -150,27 +183,28 @@ def main():
     if not os.path.exists(INPUT_DIR): os.makedirs(INPUT_DIR)
 
     response_json = {}
+    report: Report = {}
 
     if "False" in config_json['_DEBUG_USE_RAW_JSON_RESPONSE']:
         #
         response_json = pokreni_analizu_gemini()
         # protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
-        response_data = obradi(response_json)
+        report = obradi(response_json)
     else:
         # DEBUG INPUT
         raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response.json")
         
         with open(raw_response_output_filepath, "r", encoding="utf-8") as file:
             response_json = json.load(file)
-            response_data = obradi(response_json)
+            report = obradi(response_json)
             f = 1   
     
-    write_report_to_pdf(response_data)
+    write_report_to_pdf(report)
     
     if "True" in config_json['_DEBUG_EXPORT_RAW_RESPONSE_JSON']:
         # DEBUG 
         # Output path
-        output_filename = "neko nEkic" #report.patient_name.replace(".", " ")
+        output_filename = report.patient_name.replace(".", " ")
         output_filename = output_filename.replace("/", "")
         current_date = datetime.datetime.now().strftime("%d.%m.%Y")
         timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")

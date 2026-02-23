@@ -117,8 +117,8 @@ class HolisticReport(FPDF):
             return lines
 
         for item in data:
-            misljenje = f" {item.misljenje}"
-            parametar = f" {item.parametar}"
+            misljenje = f"{item.misljenje}"
+            parametar = f"{item.parametar}"
             
             # Izračunavanje broja linija (-1mm tolerancije za besprekorno uklapanje)
             lines1 = get_lines(misljenje, col1_width - 2 * c_margin - 1)

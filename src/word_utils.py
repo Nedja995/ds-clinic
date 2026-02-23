@@ -9,4 +9,7 @@ def sredi_slova(text) -> str:
     return text
 
 def normalize_whitespace(string):
-    return re.sub(r'(\s)\1{1,}', r'\1', string)
+    txt = string.replace("  ", " ")
+    txt = txt.strip()
+    txt = re.sub(r'(\s)\1{1,}', r'\1', txt)
+    return txt
