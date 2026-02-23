@@ -1,8 +1,10 @@
 {
+    "EXPORT_RAW_RESPONSE_JSON": "true",
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "strucno_misljenje_dijagnoza_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza",
-        "PARAMETAR_APARATA": "parametar_i_vrednost"
+        "PARAMETAR_APARATA": "parametar_i_vrednost",
+        "NALAZI": "nalazi"
     },
     "PITANJE": [
         "Procitaj podatke iz svih prilozenih dokumenata, nalaza, rezultata, izvestaja i ostalih podataka ",

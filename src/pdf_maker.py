@@ -1,16 +1,21 @@
 ##
 # PDF Maker
 #
-import os
+import os, sys
 from typing import List
 
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
 from datetime import datetime
-from models import ReportItem
+from src.models import ReportItem
 
 
-CONST_FONTS_DIR = os.path.join("fonts")
+
+SCRIPT_FILE = sys.argv[0]  # sys.executable #resource_path(".") #__file__
+ROOT_DIR = os.path.dirname(os.path.abspath(SCRIPT_FILE))
+
+CONST_FONTS_DIR = os.path.join(ROOT_DIR, "fonts")
+print(f"\n--------------------- FONTS DIR: {CONST_FONTS_DIR} --------------\n")
 if not os.path.exists(CONST_FONTS_DIR):
     raise Exception("Missing resource fonts.")
 

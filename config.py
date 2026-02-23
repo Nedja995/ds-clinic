@@ -4,6 +4,9 @@
 from enum import StrEnum
 
 
+##### APP #####
+APP_VERSION = "v0.4"
+
 ######### PROGRAM RUN SETTINGS #########
 
 #### GEMINI

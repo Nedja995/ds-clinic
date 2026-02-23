@@ -14,6 +14,8 @@ from src import word_utils
 from src import pdf_maker
 from src.models import ReportItem
 #
+import config
+#
 #
 # import warnings
 # warnings.filterwarnings("ignore")
@@ -24,32 +26,42 @@ from src.models import ReportItem
 SCRIPT_FILE = sys.argv[0]  # sys.executable #resource_path(".") #__file__
 ROOT_DIR = os.path.dirname(os.path.abspath(SCRIPT_FILE))
 
-print(f"\n---------- |DSCLINIC| Run programm with parameters: --------------")
+
+print(f"\n---------- |DSCLINIC-{config.APP_VERSION}| Run programm with parameters: --------------")
 print(f"\n---------- ROOT_DIR: ${ROOT_DIR}.")
 
 
 config_json = {}
 
 # Load config from a file
-with open('config.json', 'r') as f:
+CONFIG_JSON_PATH = os.path.join(ROOT_DIR, "config.json")
+with open(CONFIG_JSON_PATH, 'r') as f:
     config_json = json.load(f)
     
 
 PITANJE = config_json['PITANJE']
 PITANJE = "".join(PITANJE)
-print(f"\n----------------------- AI TASK DESCRIPTION BEGIN: ----------------------")
-print(f"\n{PITANJE}")
-print(f"\n----------------------- AI TASK DESCRIPTION END.   ----------------------")
-PITANJE = re.sub(' +', ' ', PITANJE)
+# PITANJE = re.sub(' +', ' ', PITANJE)
+# PITANJE = re.sub("\s\s+", "", PITANJE)
+PITANJE = word_utils.normalize_whitespace(PITANJE)
+# if '  ' in PITANJE:
+#     while '  ' in PITANJE:
+#         PITANJE = PITANJE.replace('  ', '')
 PITANJE = PITANJE.strip()
-
 AI_TASK_DESCRIPTION = PITANJE
+print(f"\n----------------------- AI TASK DESCRIPTION BEGIN: ----------------------")
+print(f"\n{AI_TASK_DESCRIPTION}")
+print(f"\n----------------------- AI TASK DESCRIPTION END.   ----------------------")
+
+
 
 
 # Data paths
 DATA_DIR = ROOT_DIR
 INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
 OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
+OUTPUT_DEBUG_DIR = os.path.join(OUTPUT_DIR, "DEBUG")
+#
 
 def find_input_documents() -> List[str]:
     #documents_names = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.pdf') or f.lower().endswith('.jpg') or f.lower().endswith('.jpeg') or f.lower().endswith('.png')]
@@ -70,8 +82,9 @@ def pokreni_analizu_gemini():
     print(f"{results_dict}")
     print(f"\n-------------------------------------------------------------------\n")
     print(f"---------------------------------------------------------------------")
-    formatted_json = json.dumps(results_dict, indent=4, sort_keys=True)
+    formatted_json = json.dumps(results_dict, indent=4, sort_keys=False)
     print(formatted_json)
+    
 
     # GHENERISANJE IZVESTAJA
     result = results_dict if results_dict else {}
@@ -87,13 +100,13 @@ def pokreni_analizu_gemini():
         
     ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
     datum = result.get("trenutni_datum", "NEPOZNATO")
-    strucno_misljenje_dijagnoza = result.get(config_json['PREPORUCENA_TERAPIJA_I_SAVET'], "NEPOZNATO")
-    nalazi_list: list = result.get(config_json['NALAZI'], [])
+    strucno_misljenje_dijagnoza = result.get(config_json['MAPIRANJE']['PREPORUCENA_TERAPIJA_I_SAVET'], "NEPOZNATO")
+    nalazi_list: list = result.get(config_json['MAPIRANJE']['NALAZI'], [])
     nalazi_models: List[ReportItem] = []
 
     for nalaz in nalazi_list:
-        misljenje: str = nalaz.get(config_json['EXPERTSKO_MISLJENJE'], "NEPOZNATO")
-        parametar_i_vrednost: str = nalaz.get(config_json['PARAMETAR_APARATA'], "NEPOZNATO")
+        misljenje: str = nalaz.get(config_json['MAPIRANJE']['EXPERTSKO_MISLJENJE'], "NEPOZNATO")
+        parametar_i_vrednost: str = nalaz.get(config_json['MAPIRANJE']['PARAMETAR_APARATA'], "NEPOZNATO")
         nalazi_models.append(ReportItem(misljenje=misljenje, parametar=parametar_i_vrednost))
 
     # WRITE PDF REPORT
@@ -119,16 +132,21 @@ def pokreni_analizu_gemini():
         table_data=nalazi_models,
         output_filename=output_path
     )
-
-    # Write file
-   # exporter.write_report_file(pdf, output_path=output_path)
-
+    
+    #
+    if 'true' in config_json['EXPORT_RAW_RESPONSE_JSON']:
+        raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"NALAZ_{output_filename}_{timestamp_str}.json")
+        with open(raw_response_output_filepath, "w") as file:
+            json.dump(formatted_json, file, indent=4) # Using indent for human-readable formatting
+        
     print(f"\n--------------- PROGRAM COMPLETE --------------------------\n")
 
 
 def main():
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
+    if not os.path.exists(OUTPUT_DEBUG_DIR):
+        os.makedirs(OUTPUT_DEBUG_DIR)
     if not os.path.exists(INPUT_DIR):
         os.makedirs(INPUT_DIR)
 

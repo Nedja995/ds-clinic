@@ -233,37 +233,43 @@ def analyze_lab_result_docs(client: genai.Client,
     res = ""
 
     print(f"\n------- |GEMINI||INFO| Analysis: Start requests.")
-    for response in client.models.generate_content_stream(
-        model=model_name,
-        contents=contents,
-        config=generate_content_config
-    ):
-        print(f"\n----- |GEMINI| Analysis: Request finised. Checking response..")
-        # Check
-        if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
-            # PASS - Empty response
-            print(
-                f"\n----- |GEMINI||WARNING| Analysis: No candidates or content in response. Skipping...")
-            continue
+    try:
+        for response in client.models.generate_content_stream(
+            model=model_name,
+            contents=contents,
+            config=generate_content_config
+        ):
+            print(f"\n----- |GEMINI| Analysis: Request finised. Checking response..")
+            # Check
+            if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
+                # PASS - Empty response
+                print(
+                    f"\n----- |GEMINI||WARNING| Analysis: No candidates or content in response. Skipping...")
+                continue
 
-        # RESPONSE PARSING
-        responseText = response.text
+            # RESPONSE PARSING
+            responseText = response.text
 
-        # report = AnalysisReport.model_validate_json(response.text)
-        # print(f"\n---------- |GEMINI| - Analysis Report2:\n{report}\n")
-        filtered_text = responseText
-        #filtered_text: str = "".join(map(lambda x: word_utils.sredi_slova(x), responseText))
-        #filtered_text = filtered_text.replace("?", "")
-        # filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
-        # filtered_text = filtered_text.encode('latin-1', 'ignore').decode('latin-1')
-        # print(responseText, end="")
-        # results.append(responseText)
-        res += filtered_text
-        # res = res.replace("NLS Analiza: ", "")
-        # print(res, end="")
-        print(f"\n----- |GEMINI| Analysis: Request Checking response finished. Append to results..")
-        # --- END FOR LOOP ---
-
+            # report = AnalysisReport.model_validate_json(response.text)
+            # print(f"\n---------- |GEMINI| - Analysis Report2:\n{report}\n")
+            filtered_text = responseText
+            #filtered_text: str = "".join(map(lambda x: word_utils.sredi_slova(x), responseText))
+            #filtered_text = filtered_text.replace("?", "")
+            # filtered_text = responseText.encode('latin-1', 'replace').decode('latin-1')
+            # filtered_text = filtered_text.encode('latin-1', 'ignore').decode('latin-1')
+            # print(responseText, end="")
+            # results.append(responseText)
+            res += filtered_text
+            # res = res.replace("NLS Analiza: ", "")
+            # print(res, end="")
+            print(f"\n----- |GEMINI| Analysis: Request Checking response finished. Append to results..")
+            # --- END FOR LOOP ---
+    except Exception as e:
+        if "high demand" in str(e):
+            print(f"\n----------------- |GEMINI||FATAL| ALL MODELS ARE BUSY ----------------------------------------")
+            print(f"\n---------------------------  TRY AGAIN LATER           ----------------------------------------")
+        res = "{}"
+        
     print(f"\n------- |GEMINI| Analysis: Requests finished.")
 
     # Convert the JSON string to a Python dictionary
