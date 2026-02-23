@@ -231,6 +231,7 @@ class MedicinskaApp:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.getLogger('fontTools').setLevel(logging.WARNING)
     test_podaci = {
         "ime_pacijenta": "Marko Marković",
         "datum": "24.05.2024.",

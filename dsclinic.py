@@ -24,6 +24,8 @@ import config
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Silence noisy third-party loggers
+logging.getLogger('fontTools').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # PROGRAM PARAMETERS
