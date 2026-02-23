@@ -13,3 +13,8 @@ def normalize_whitespace(string):
     txt = txt.strip()
     txt = re.sub(r'(\s)\1{1,}', r'\1', txt)
     return txt
+
+def has_numbers(input_string):
+  """Checks if the input string contains any digit using regex."""
+  # The pattern r'\d' searches for any digit (0-9)
+  return bool(re.search(r'\d', input_string))

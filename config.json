@@ -4,7 +4,7 @@
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "rezime+uzrok_problema+uzrok_problema_detaljno+strucno_misljenje_dijagnoza_summarized+preporucena_terapija_i_savet_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza+uzrok_problema",
-        "PARAMETAR_APARATA": "parametar_i_vrednost",
+        "PARAMETAR_APARATA": "parametar_i_vrednost+vrednost",
         "NALAZI": "nalazi"
     },
     "PITANJE": [

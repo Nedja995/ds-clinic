@@ -143,12 +143,20 @@ def obradi(data_dict: dict) -> Report:
     for nalaz in nalazi_list:
         #misljenje: str = nalaz.get(config_json['MAPIRANJE']['EXPERTSKO_MISLJENJE'], "NEPOZNATO")
         #parametar_i_vrednost: str = nalaz.get(config_json['MAPIRANJE']['PARAMETAR_APARATA'], "NEPOZNATO")
+        
+        # MISLJENJE
         misljenje = text_from_keys(data_dict=nalaz, keys=config_json['MAPIRANJE']['EXPERTSKO_MISLJENJE'])
-
         misljenje = misljenje.replace('\n', ' ')
         misljenje = word_utils.normalize_whitespace(misljenje)
         
+        # PARAMETAR I VREDNOST
         parametar_i_vrednost = text_from_keys(data_dict=nalaz, keys=config_json['MAPIRANJE']['PARAMETAR_APARATA'])
+        # DIRTY FIX
+        toks = parametar_i_vrednost.split('\n')
+        if len(toks) >= 2 and not word_utils.has_numbers(toks[0]) and word_utils.has_numbers(toks[1]):
+            parametar_i_vrednost = f"{toks[0]} {toks[1]}"
+        else:
+            parametar_i_vrednost = f"{toks[0]}"
         parametar_i_vrednost = parametar_i_vrednost.replace('\n', ' ')
         parametar_i_vrednost = word_utils.normalize_whitespace(parametar_i_vrednost)
         
@@ -188,8 +196,12 @@ def main():
     if "False" in config_json['_DEBUG_USE_RAW_JSON_RESPONSE']:
         #
         response_json = pokreni_analizu_gemini()
-        # protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
-        report = obradi(response_json)
+        if not response_json or response_json is {} or len(response_json.items()) == 0:
+            response_json = None
+            pass
+        else:
+            # protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
+            report = obradi(response_json)
     else:
         # DEBUG INPUT
         raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response.json")
@@ -199,26 +211,28 @@ def main():
             report = obradi(response_json)
             f = 1   
     
-    write_report_to_pdf(report)
+    if response_json:
+        write_report_to_pdf(report)
     
-    if "True" in config_json['_DEBUG_EXPORT_RAW_RESPONSE_JSON']:
-        # DEBUG 
-        # Output path
-        output_filename = report.patient_name.replace(".", " ")
-        output_filename = output_filename.replace("/", "")
-        current_date = datetime.datetime.now().strftime("%d.%m.%Y")
-        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-        output_path = os.path.join(OUTPUT_DIR, f"NALAZ_{output_filename}_{timestamp_str}.pdf")
-        raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response_{output_filename}_{timestamp_str}.json")
-        #
-        if not os.path.exists(OUTPUT_DEBUG_DIR): os.makedirs(OUTPUT_DEBUG_DIR, exist_ok=True)
+        if os.name == 'nt': os.startfile(OUTPUT_DIR)
+        elif os.name == 'posix': os.system(f'open {OUTPUT_DIR}')
+    
+    if response_json:
+        if "True" in config_json['_DEBUG_EXPORT_RAW_RESPONSE_JSON']:
+            # DEBUG 
+            # Output path
+            output_filename = report.patient_name.replace(".", " ")
+            output_filename = output_filename.replace("/", "")
+            current_date = datetime.datetime.now().strftime("%d.%m.%Y")
+            timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+            output_path = os.path.join(OUTPUT_DIR, f"NALAZ_{output_filename}_{timestamp_str}.pdf")
+            raw_response_output_filepath = os.path.join(OUTPUT_DEBUG_DIR, f"raw_response_{output_filename}_{timestamp_str}.json")
+            #
+            if not os.path.exists(OUTPUT_DEBUG_DIR): os.makedirs(OUTPUT_DEBUG_DIR, exist_ok=True)
+            
+            with open(raw_response_output_filepath, "w", encoding="utf-8") as file:
+                json.dump(response_json, file, indent=4, ensure_ascii=False) # Using indent for human-readable formatting
         
-        with open(raw_response_output_filepath, "w", encoding="utf-8") as file:
-            json.dump(response_json, file, indent=4, ensure_ascii=False) # Using indent for human-readable formatting
-        
-    if os.name == 'nt': os.startfile(OUTPUT_DIR)
-    elif os.name == 'posix': os.system(f'open {OUTPUT_DIR}')
-
     input("Press Enter to exit...")
 
 
