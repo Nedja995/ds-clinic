@@ -28,14 +28,14 @@ print(f"\n---------- |DSCLINIC| Run programm with parameters: --------------")
 print(f"\n---------- ROOT_DIR: ${ROOT_DIR}.")
 
 
-config_args = {}
+config_json = {}
 
 # Load config from a file
 with open('config.json', 'r') as f:
-    config_args = json.load(f)
+    config_json = json.load(f)
     
 
-PITANJE = config_args['PITANJE']
+PITANJE = config_json['PITANJE']
 PITANJE = "".join(PITANJE)
 print(f"\n----------------------- AI TASK DESCRIPTION BEGIN: ----------------------")
 print(f"\n{PITANJE}")
@@ -43,7 +43,7 @@ print(f"\n----------------------- AI TASK DESCRIPTION END.   -------------------
 PITANJE = re.sub(' +', ' ', PITANJE)
 PITANJE = PITANJE.strip()
 
-AI_TASK_DESCRIPTION = config_args['AI_TASK_DESCRIPTION']
+AI_TASK_DESCRIPTION = PITANJE
 
 
 # Data paths
@@ -51,11 +51,11 @@ DATA_DIR = ROOT_DIR
 INPUT_DIR = os.path.join(DATA_DIR, "ULAZ")
 OUTPUT_DIR = os.path.join(DATA_DIR, "IZVESTAJI")
 
-
-
-
 def find_input_documents() -> List[str]:
-    documents_names = [f for f in os.listdir(INPUT_DIR) if os.path.splitext(f.lower()) in config_args["SUPPORTED_EXTENSIONS"]]
+    #documents_names = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.pdf') or f.lower().endswith('.jpg') or f.lower().endswith('.jpeg') or f.lower().endswith('.png')]
+    documents_names = os.listdir(INPUT_DIR)
+    documents_names = [f for f in documents_names if f.lower().endswith(tuple(config_json["SUPPORTED_EXTENSIONS"]))]
+    #documents_names = [f for f in documents_names if os.path.splitext(f.lower()) in config_json["SUPPORTED_EXTENSIONS"]]
     documents_filepaths = [os.path.join(INPUT_DIR, f) for f in documents_names]
     return documents_filepaths
 
@@ -87,20 +87,19 @@ def pokreni_analizu_gemini():
         
     ime_pacijenta = result.get("ime_pacijenta", "NEPOZNATO")
     datum = result.get("trenutni_datum", "NEPOZNATO")
-    strucno_misljenje_dijagnoza = result.get("strucno_misljenje_dijagnoza_summarized", "NEPOZNATO")
-    nalazi_list: list = result.get("nalazi", [])
+    strucno_misljenje_dijagnoza = result.get(config_json['PREPORUCENA_TERAPIJA_I_SAVET'], "NEPOZNATO")
+    nalazi_list: list = result.get(config_json['NALAZI'], [])
     nalazi_models: List[ReportItem] = []
 
     for nalaz in nalazi_list:
-        misljenje: str = nalaz.get("misljenje_i_dijagnoza", "NEPOZNATO")
-        parametar_i_vrednost: str = nalaz.get("parametar_i_vrednost", "NEPOZNATO")
+        misljenje: str = nalaz.get(config_json['EXPERTSKO_MISLJENJE'], "NEPOZNATO")
+        parametar_i_vrednost: str = nalaz.get(config_json['PARAMETAR_APARATA'], "NEPOZNATO")
         nalazi_models.append(ReportItem(misljenje=misljenje, parametar=parametar_i_vrednost))
 
     # WRITE PDF REPORT
 
     # ANALIZA TEXTA I NALAZAK PROTOKOLA
-    protokoli: list = [{"nalaz": "Neki nalaz", "terapija": [
-        "terapija1", "terapija2"], "napomena": "Napomena o terapiji"},]
+    #protokoli: list = [{"nalaz": "Neki nalaz", "terapija": ["terapija1", "terapija2"], "napomena": "Napomena o terapiji"},]
     # protokoli = analyze_content(text, BASE_SYNDROMS.VELIKA_BAZA)
 
     # WRITE PDF REPORT

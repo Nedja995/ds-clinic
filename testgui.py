@@ -5,7 +5,7 @@ import tkinter.messagebox
 class MedicinskaApp:
     def __init__(self, root, inicijalni_podaci=None):
         self.root = root
-        self.root.title("Medicinski Izveštaj - Unos Podataka")
+        self.root.title("DS Clinic Analiza")
         self.root.geometry("950x800")
 
         # --- 1. TOP TOOLBAR (Gornji panel) ---
@@ -17,8 +17,8 @@ class MedicinskaApp:
         self.lbl_status = tk.Label(
             self.top_frame, 
             textvariable=self.status_var, 
-            font=("Arial", 9, "bold"),
-            bg="#e0e0e0",
+            font=("Arial", 14, "bold"),
+            bg="#ff8f81",
             relief="sunken",
             width=20,
             anchor="w",
@@ -27,8 +27,12 @@ class MedicinskaApp:
         self.lbl_status.pack(side="left", padx=(0, 15))
 
         # Dugmad na vrhu
-        self.btn_pokreni = ttk.Button(self.top_frame, text="Pokreni analizu", command=self.toggle_analiza)
+        self.btn_pokreni = ttk.Button(self.top_frame, text="POKRENI ANALIZU", command=self.toggle_analiza)
         self.btn_pokreni.pack(side="left", padx=5)
+        
+        #  Dugme Sačuvaj podatke
+        self.btn_submit = ttk.Button(self.top_frame, text="SAČUVAJ PDF IZVEŠTAJ", state="enabled", command=self.prikupi_i_prosledi)
+        self.btn_submit.pack(side="left", padx=5)
 
         self.btn_cela = ttk.Button(self.top_frame, text="Cela analiza", state="disabled")
         self.btn_cela.pack(side="left", padx=5)
@@ -39,12 +43,41 @@ class MedicinskaApp:
             command=lambda: self.btn_clicked(self.btn_settings)
         )
         self.btn_settings.pack(side="left", padx=5)
+        
+        # --- 2. FOOTER (Donji panel) ---
+        # NOTE: Packed before the main_canvas so it stays fixed to the absolute bottom
+        self.footer_frame = ttk.Frame(self.root)
+        self.footer_frame.pack(side="bottom", fill="x")
 
-        # --- 2. CENTRALNI DEO (Skrolabilna forma) ---
+        self.lbl_footer_status = tk.Label(
+            self.footer_frame,
+            text="STATUS:",
+            font=("Arial", 12, "bold"),
+            fg="red"
+        )
+        self.lbl_footer_status.pack(side="left", padx=(10, 5), pady=5, fill="y")
+
+        self.lbl_status_details = tk.Label(
+            self.footer_frame,
+            text="IDLE - ADD DOCUMENTS AND START ANALYSIS",
+            font=("Arial", 12, "normal"),
+            fg="black",
+            anchor="w"
+        )
+        self.lbl_status_details.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=5)
+        
+        self.sep_footer = ttk.Separator(self.root, orient='horizontal')
+        self.sep_footer.pack(fill='x', pady=0, side=tk.BOTTOM)
+
+        # --- 3. CENTRALNI DEO (Skrolabilna forma) ---
         self.main_canvas = tk.Canvas(self.root)
+        
         self.scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=self.main_canvas.yview)
         self.scrollable_frame = ttk.Frame(self.main_canvas)
 
+        self.sep_header = ttk.Separator(self.scrollable_frame, orient='horizontal')
+        self.sep_header.pack(fill='x', pady=0)
+        
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
@@ -85,7 +118,7 @@ class MedicinskaApp:
         # Terapija
         self.lbl_terapija_tag = ttk.Label(self.scrollable_frame, text="PREPORUČENA TERAPIJA I SAVET:", font=font_label)
         self.lbl_terapija_tag.pack(anchor="w", **paddings)
-        self.txt_terapija = scrolledtext.ScrolledText(self.scrollable_frame, width=90, height=10, font=("Arial", 10))
+        self.txt_terapija = scrolledtext.ScrolledText(self.scrollable_frame, width=50, height=10, font=("Arial", 10))
         self.txt_terapija.pack(anchor="w", padx=10, pady=5)
 
         # Sekcija Nalazi
@@ -99,11 +132,6 @@ class MedicinskaApp:
 
         self.btn_dodaj_nalaz = ttk.Button(self.scrollable_frame, text="+ Dodaj novi nalaz", command=self.dodaj_red_za_nalaz)
         self.btn_dodaj_nalaz.pack(anchor="w", padx=10)
-        
-        self.sep_2 = ttk.Separator(self.scrollable_frame, orient='horizontal')
-        self.sep_2.pack(fill='x', pady=15)
-        self.btn_submit = ttk.Button(self.scrollable_frame, text="SAČUVAJ PODATKE", command=self.prikupi_i_prosledi)
-        self.btn_submit.pack(pady=20)
 
     def dodaj_red_za_nalaz(self, misljenje="", parametar=""):
         row_frame = ttk.Frame(self.nalazi_container)
@@ -146,6 +174,10 @@ class MedicinskaApp:
     def change_app_state(self, text):
         self.status_var.set(f"STATUS: {text}")
 
+    # Nova funkcija za izmenu footer detalja
+    def set_app_state_details(self, text):
+        self.lbl_status_details.config(text=text)
+
     def btn_cela_analiza_enable(self, enabled: bool = True):
         stanje = "normal" if enabled else "disabled"
         self.btn_cela.config(state=stanje)
@@ -153,15 +185,18 @@ class MedicinskaApp:
     def btn_clicked(self, button: ttk.Button):
         print(f"Kliknuto na: {button['text']}")
         self.change_app_state("Settings Open")
+        self.set_app_state_details("ADJUSTING SETTINGS...")
 
     def toggle_analiza(self):
-        if self.btn_pokreni["text"] == "Pokreni analizu":
-            self.btn_pokreni.config(text="Prekini analizu")
+        if self.btn_pokreni["text"] == "POKRENI ANALIZU":
+            self.btn_pokreni.config(text="PREKINI ANALIZU")
             self.change_app_state("Running")
+            self.set_app_state_details("ANALYSIS IN PROGRESS...")
             self.btn_cela_analiza_enable(True)
         else:
-            self.btn_pokreni.config(text="Pokreni analizu")
+            self.btn_pokreni.config(text="POKRENI ANALIZU")
             self.change_app_state("Idle")
+            self.set_app_state_details("IDLE - ADD DOCUMENTS AND START ANALYSIS")
             self.btn_cela_analiza_enable(False)
 
     def popuni_podatke(self, data):
@@ -188,6 +223,7 @@ class MedicinskaApp:
         import pprint
         pprint.pprint(rezultat)
         self.change_app_state("Saved")
+        self.set_app_state_details("DATA SAVED SUCCESSFULLY!")
         tkinter.messagebox.showinfo("Uspeh", "Podaci su spremni za vašu PDF funkciju.")
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from typing import List
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
 from datetime import datetime
-from src.models import ReportItem
+from models import ReportItem
 
 
 CONST_FONTS_DIR = os.path.join("fonts")
@@ -69,44 +69,82 @@ class HolisticReport(FPDF):
         self.set_xy(10, curr_y)
         self.cell(190, 5, f"Datum: {date}", align="R", ln=True)
         self.ln(8)  # Razmak do tabele
-
+        
     def draw_table(self, data: List[ReportItem] = []):
         # Definicija širina kolona (ukupno 190mm za A4)
         col1_width = 85
         col2_width = 105
-        row_height = 10  # Povećana visina ćelije prema vašem zahtevu
+        header_height = 10
+        line_height = 5  # Visina jedne linije teksta unutar multi_cell-a
 
         # --- ZAGLAVLJE TABELE ---
         self.set_font(FONT_BOLD, "", 10)
         self.set_fill_color(235, 235, 235)  # Svetlo siva boja
         self.set_draw_color(50, 50, 50)    # Boja ivica
 
-        self.cell(col1_width, row_height, " Ekspertsko mišljenje", border=1, fill=True)
-        self.cell(col2_width, row_height, " Parametar aparata (Original)", border=1, fill=True, ln=True)
+        self.cell(col1_width, header_height, " Ekspertsko mišljenje", border=1, fill=True)
+        self.cell(col2_width, header_height, " Parametar aparata (Original)", border=1, fill=True, ln=True)
 
         # --- PODACI TABELE ---
         self.set_font(FONT_NORMAL, "", 10)
-        i = 0
+        
+        # Očitavanje podrazumevane fpdf unutrašnje margine za siguran proračun prostora
+        c_margin = getattr(self, "c_margin", 1)
+        
+        # Pomoćna funkcija za računanje ukupnog broja linija koje će tekst zauzeti
+        def get_lines(text, max_w):
+            if not text: return 1
+            lines = 0
+            for paragraph in text.split('\n'):
+                words = paragraph.split(' ')
+                current_line = ""
+                for word in words:
+                    if current_line == "":
+                        current_line = word
+                    else:
+                        test_line = current_line + " " + word
+                        # Ako dodavanje nove reči prelazi dozvoljenu širinu, prelazimo u novu liniju
+                        if self.get_string_width(test_line) > max_w:
+                            lines += 1
+                            current_line = word
+                        else:
+                            current_line = test_line
+                lines += 1
+            return lines
+
         for item in data:
-            # if i == 0:
-            #     i = i + 2
-            #     item.misljenje = "fsdfsd fs sdf sfsd fsd fsd fsdfsd sd sd fsdf sdf s fsd sd sd fsdf sdf sdf sdfsdf sdfsdsfsdf sdf sdf dsfssdfsdf sdfsdfsdf sdf sddsfsdfsd"
-            # Koristimo cell za fiksnu visinu ili multi_cell ako je tekst predugačak
-            # Ovde koristimo cell jer su podaci kratki, ali sa paddingom
-            if len(item.misljenje) > 50: item.misljenje = item.misljenje[:50]
-            if len(item.parametar) > 50: item.parametar = item.parametar[:50]
-                # x = self.get_x()
-                # y = self.get_y()
-                # # Move to top right of the first cell
-                # #self.set_xy(x + col1_width, y)
-                # self.multi_cell(0, 0, f" {item.misljenje}", border=1, ln=3)
-                # # 3. Reset position for the second cell
-                # # Move X to (start + width of first cell) and Y back to start
-                # self.set_xy(x + col1_width, y)
-                # self.multi_cell(0, 6, f" {item.parametar}", border=1, ln=2)
-            #else:
-            self.cell(col1_width, row_height, f" {item.misljenje}", border=1)
-            self.cell(col2_width, row_height, f" {item.parametar}", border=1, ln=True)
+            misljenje = f" {item.misljenje}"
+            parametar = f" {item.parametar}"
+            
+            # Izračunavanje broja linija (-1mm tolerancije za besprekorno uklapanje)
+            lines1 = get_lines(misljenje, col1_width - 2 * c_margin - 1)
+            lines2 = get_lines(parametar, col2_width - 2 * c_margin - 1)
+            
+            max_lines = max(lines1, lines2)
+            row_height = max_lines * line_height + 4  # +4mm za gornji i donji unutrašnji razmak (padding)
+            
+            # Provera da li novi red probija dno stranice (page break check)
+            page_bottom = getattr(self, "page_break_trigger", self.h - self.b_margin)
+            if self.get_y() + row_height > page_bottom:
+                self.add_page()
+            
+            x = self.get_x()
+            y = self.get_y()
+            
+            # 1. Crtanje okvira ćelija
+            self.rect(x, y, col1_width, row_height)
+            self.rect(x + col1_width, y, col2_width, row_height)
+            
+            # 2. Ispis teksta prve kolone (pomeren za y + 2mm dole zbog estetskog padding-a)
+            self.set_xy(x, y + 2)
+            self.multi_cell(col1_width, line_height, misljenje, border=0, align="L")
+            
+            # 3. Ispis teksta druge kolone
+            self.set_xy(x + col1_width, y + 2)
+            self.multi_cell(col2_width, line_height, parametar, border=0, align="L")
+            
+            # 4. Vraćanje pokazivača ispod upravo iscrtanog dinamičkog reda
+            self.set_xy(x, y + row_height)
 
         self.ln(10)
 
@@ -166,14 +204,14 @@ def generate_report_pdf(
 if __name__ == "__main__":
     # Sample Data Input
     data_input = [
-        ReportItem(misljenje="Povećan očni pritisak (Glaukom)",
+        ReportItem(misljenje="Povećan očni pritisak (Glaukom) i jos neki poremecaj da bude sto duzi text ovde blab bla htrh rh rthrh rh r.",
                    parametar="02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
         ReportItem(misljenje="Manjak vitamina B2",
                    parametar="02.06.25 Vitamin B2, riboflavin D=1,452"),
         ReportItem(misljenje="Poremecaj funkcije debelog creva (Moguci Kolitis)",
                    parametar="02.06.25 Large Intestine ( DD ) D=1,419"),
         ReportItem(misljenje="Upalni procesi besike",
-                   parametar="02.06.25 Bladder Meridian (BL) D=1,409"),
+                   parametar="02.06.25 Bladder Meridian (BL) D=1,409 a i ovde za parametar da probamo sa dugackim texto neki nesto hhahahfd dsfsdfsd fs sd."),
         ReportItem(misljenje="Deficit vitamina B12 (Rizik od anemije)",
                    parametar="02.06.25 Vitamin B12 , cobalamin D=1,400"),
     ]
