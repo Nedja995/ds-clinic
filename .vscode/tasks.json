@@ -1,0 +1,31 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "markdownlint",
+            "problemMatcher": [
+                "$markdownlint"
+            ],
+            "label": "markdownlint: Lint all Markdown files in the workspace with markdownlint"
+        },
+        {
+            "type": "shell",
+            "command": "python -m autopep8 --in-place --aggressive --aggressive ${file}",
+            "group": "build",
+            "label": "autopep8: Format current Python file",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "Install requirements",
+            "type": "shell",
+            "command": "python -m pip install -r requirements.txt",
+            "problemMatcher": []
+        }
+    ],
+    "presentation": {
+        "reveal": "always"
+    }
+}

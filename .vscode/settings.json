@@ -8,5 +8,14 @@
     "python.formatting.autopep8Args": [
         "--max-line-length",
         "500"
-  ],
+],
+"geminicodeassist.chat.changeView": "Default diff view",
+"geminicodeassist.customCommands": {
+    "add-comment": "add some comments to my code"
+},
+"geminicodeassist.enableTelemetry": false,
+"geminicodeassist.inlineSuggestions.nextEditPredictions": true,
+"geminicodeassist.outlines.automaticOutlineGeneration": false,
+"geminicodeassist.project": "278038315476",
+"geminicodeassist.inlineSuggestions.suggestionSpeed": "Fast",
 }

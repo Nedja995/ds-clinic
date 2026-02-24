@@ -199,6 +199,8 @@ def analyze_lab_result_docs(client: genai.Client,
     ]
     tools = [
         types.Tool(google_search=types.GoogleSearch()),
+        #types.Tool(url_context=types.UrlContext()),
+        #types.Tool(enterprise_web_search=types.EnterpriseWebSearch())
     ]
 
     # CONTENT CONFIG

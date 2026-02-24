@@ -1,12 +1,12 @@
 ##
 # PDF Maker
 #
-import os, sys
-from typing import List
+import os
+import sys
+from datetime import datetime
 
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
-from datetime import datetime
 from src.models import ReportItem, Report
 
 
@@ -29,6 +29,11 @@ CONST_FONTS: dict = {
     "BoldItalic": {"name": "Arial-Unicode-Bold-Italic.ttf", "filename": "Arial-Unicode-Bold-Italic.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "Arial-Unicode-Bold-Italic.ttf")},
 }
 
+# Image path definition
+CONST_LOGO_PATH: str = os.path.join(ROOT_DIR, "resources",  "logo.png")
+if not os.path.exists(CONST_FONTS_DIR):
+    raise Exception("Missing resource logo.")
+
 FONT_NORMAL = CONST_FONTS["Normal"]["name"]
 FONT_BOLD = CONST_FONTS["Bold"]["name"]
 FONT_ITALIC = CONST_FONTS["Italic"]["name"]
@@ -50,10 +55,31 @@ class HolisticReport(FPDF):
         # self.set_auto_page_break(auto=True, margin=15)
 
     def draw_header(self):
-        # Top Title
+        title = "HOLISTIČKI CENTAR DAR PRIRODE"
+        
+        # Prepare Top Title Font
         self.set_font(FONT_BOLD, "", 16)
+        
+        # 1 px ≈ 0.264583 mm at 96 DPI -> 50 px ≈ 13.23 mm
+        logo_size_mm = 23.0  
+        text_width = self.get_string_width(title)
+        
+        # Calculate exactly where the text begins when centered
+        # epw is Effective Page Width (page width minus left and right margins in fpdf2)
+        center_x = self.l_margin + (self.epw / 2)
+        text_start_x = center_x - (text_width / 2)
+        
+        # Render the logo precisely to the left of the label
+        if os.path.exists(CONST_LOGO_PATH):
+            logo_x = text_start_x - logo_size_mm - 7  # 4mm horizontal gap
+            logo_y = self.get_y() + (5 - logo_size_mm) / 2  # Centered vertically relative to the 15mm row
+            
+            # The .image() method explicitly places elements without moving the cursor 
+            self.image(str(CONST_LOGO_PATH), x=logo_x, y=logo_y, w=logo_size_mm, h=logo_size_mm)
+
+        # Top Title
         self.set_text_color(0, 51, 102)
-        self.cell(0, 15, "HOLISTIČKI CENTAR DAR PRIRODE", align="C", ln=True, new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 15, title, align="C", ln=True, new_x="LMARGIN", new_y="NEXT")
 
         # Horizontal Line
         self.set_draw_color(0, 0, 0)
@@ -74,7 +100,7 @@ class HolisticReport(FPDF):
         self.cell(190, 5, f"Datum: {date}", align="R", ln=True)
         self.ln(8)  # Razmak do tabele
         
-    def draw_table(self, data: List[ReportItem] = []):
+    def draw_table(self, data: list[ReportItem] | None = []):
         # Definicija širina kolona (ukupno 190mm za A4)
         col1_width = 85
         col2_width = 105
@@ -191,7 +217,7 @@ def generate_report_pdf(
     patient_name: str = "NEPOZNATO IME PACIJENTA",
     report_date: str = "NEPOZNAT DATUM",
     terapija_i_saveti: str = "NEPOZNATA TERAPIJA I SAVET",
-    table_data: List[ReportItem] = [],
+    table_data: list[ReportItem] | None = [],
     output_filename: str = "report.pdf"
 ):
     # Initialize PDF
@@ -222,8 +248,7 @@ if __name__ == "__main__":
                    parametar="02.06.25 Vitamin B12 , cobalamin D=1,400"),
     ]
 
-    output_path = os.path.join(
-        '.', f"sample_output_report_{datetime.now().strftime("%Y%m%d_%H-%M")}.pdf")
+    output_path = os.path.join('.', f"sample_output_report_{datetime.now().strftime("%Y%m%d_%H-%M")}.pdf")
 
     generate_report_pdf(
         patient_name="DRAGAN STAMENKOVIĆ",
