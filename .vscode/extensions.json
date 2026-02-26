@@ -2,6 +2,13 @@
     "recommendations": [
         "ms-python.python",
         "ms-python.autopep8",
-        "tomoki1207.pdf"
+        "tomoki1207.pdf",
+        "nickdemayo.vscode-json-editor",
+        "yzhang.markdown-all-in-one",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "donjayamanne.python-environment-manager",
+        "ms-python.vscode-python-envs",
+        "kevinrose.vsc-python-indent"
     ]
 }

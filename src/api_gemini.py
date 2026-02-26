@@ -34,12 +34,7 @@ class AnalysisReport(BaseModel):
 
 # API INITIALIZATION
 def gemini_client_connect() -> genai.Client:
-    '''
-    Google Gemini Api client initialization and connection.
-
-    :return: Description
-    :rtype: Client
-    '''
+    print(f"---------- |GEMINI| Client initialization begin. ----------")
     client: genai.Client = None
 
     try:
@@ -51,9 +46,9 @@ def gemini_client_connect() -> genai.Client:
             # project=GOOGLE_PROJECT_ID,
             # location=GOOGLE_PROJECT_LOCATION
         )
-        print(f"\n---------- |GEMINI| - Client initialization success. ----------")
+        print(f"\n---------- |GEMINI| Client initialization success. ----------")
     except Exception as e:
-        print(f"\n\n---------- |ERROR|GEMINI| - Client initialization failed. ----------")
+        print(f"\n\n---------- |GEMINI||ERROR| Client initialization failed. ----------")
         print(f"\nEXCEPTION:\n{str(e)}")
         print(f"\n----------------------------------")
     finally:

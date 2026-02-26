@@ -34,6 +34,12 @@ Check ```config.py```
 pyinstaller --onefile dsclinic.py
 ```
 
+### VSCode Project Configuration
+
+- Windows: `"autopep8.interpreter":["${workspaceFolder}/.venv/Scripts/python.exe"]`
+
+- Unix: `"autopep8.interpreter":["${workspaceFolder}/.venv/bin/python"]`
+
 ### Output format
 
 - nalaz
