@@ -55,32 +55,29 @@ class HolisticReport(FPDF):
         # self.set_auto_page_break(auto=True, margin=15)
 
     def draw_header(self):
-        title = "HOLISTIČKI CENTAR DAR PRIRODE"
+        row_height_mm = 20
+        title: str = "HOLISTIČKI CENTAR DAR PRIRODE"
         
-        # Prepare Top Title Font
+        ## TITLE
         self.set_font(FONT_BOLD, "", 16)
-        
-        # 1 px ≈ 0.264583 mm at 96 DPI -> 50 px ≈ 13.23 mm
-        logo_size_mm = 23.0  
-        text_width = self.get_string_width(title)
-        
-        # Calculate exactly where the text begins when centered
-        # epw is Effective Page Width (page width minus left and right margins in fpdf2)
-        center_x = self.l_margin + (self.epw / 2)
-        text_start_x = center_x - (text_width / 2)
-        
-        # Render the logo precisely to the left of the label
-        if os.path.exists(CONST_LOGO_PATH):
-            logo_x = text_start_x - logo_size_mm - 7  # 4mm horizontal gap
-            logo_y = self.get_y() + (5 - logo_size_mm) / 2  # Centered vertically relative to the 15mm row
-            
-            # The .image() method explicitly places elements without moving the cursor 
-            self.image(str(CONST_LOGO_PATH), x=logo_x, y=logo_y, w=logo_size_mm, h=logo_size_mm)
-
-        # Top Title
         self.set_text_color(0, 51, 102)
-        self.cell(0, 15, title, align="C", ln=True, new_x="LMARGIN", new_y="NEXT")
+        self.set_fill_color(235, 235, 235)
+        self.cell(0, row_height_mm, title, align="C", ln=True, new_x="LMARGIN", new_y="NEXT", fill=False)
 
+        # Calculate exactly where the text begins when centered
+        #title_width = self.get_string_width(title)
+        #title_center_x = self.l_margin + (self.epw / 2) # epw is Effective Page Width (page width minus left and right margins in fpdf2)
+        #text_start_x = title_center_x - (title_width / 2)
+        
+        ## LOGO
+        logo_size_mm = 28.0 # 1 px ≈ 0.264583 mm at 96 DPI -> 50 px ≈ 13.23 mm
+        if os.path.exists(CONST_LOGO_PATH):
+            # Render the logo precisely to the left of the label
+            logo_x = logo_size_mm / 2 #text_start_x - logo_size_mm - 7  # 7mm horizontal gap
+            logo_y = self.get_y() - logo_size_mm - 1 #+ (row_height_mm - logo_size_mm) / 2
+            # The .image() method explicitly places elements without moving the cursor 
+            self.image(CONST_LOGO_PATH, x=logo_x, y=logo_y, w=logo_size_mm, h=logo_size_mm, keep_aspect_ratio=True)
+            
         # Horizontal Line
         self.set_draw_color(0, 0, 0)
         self.set_line_width(0.4)
