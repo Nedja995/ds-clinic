@@ -262,10 +262,28 @@ def analyze_lab_result_docs(client: genai.Client,
             print(f"\n----- |GEMINI| Analysis: Request Checking response finished. Append to results..")
             # --- END FOR LOOP ---
     except Exception as e:
+    #     if "high demand" in str(e):
+    #         print(f"\n----------------- |GEMINI||FATAL| ALL MODELS ARE BUSY ----------------------------------------")
+    #         print(f"\n---------------------------  TRY AGAIN LATER           ----------------------------------------")
+    #     res = "{}"
+        print(f"\n\n---------- |ERROR|GEMINI| - Analyze failed with exception: ------")
+        print(f"{str(e)}")
+        print(f"\n-------------------------------------------------------------------")
+        # CHECK IS GEMINI MODEL EXPERIENCING HIG DEMAND
         if "high demand" in str(e):
-            print(f"\n----------------- |GEMINI||FATAL| ALL MODELS ARE BUSY ----------------------------------------")
-            print(f"\n---------------------------  TRY AGAIN LATER           ----------------------------------------")
-        res = "{}"
+            # Try again with different model
+            if model_name == config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW:
+                model_name = config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
+            elif model_name == config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW:
+                model_name = config.GEMINI_MODELS.GEMINI_3_PRO_IMAGE_PREVIEW
+            else:
+                model_name = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+            results = analyze_docs2(
+                model_name=model_name, documents_filepaths=documents_filepaths)
+    finally:
+        client.close()
+        client = None
+
         
     print(f"\n------- |GEMINI| Analysis: Requests finished.")
 
