@@ -5,7 +5,7 @@ from enum import StrEnum
 
 
 ##### APP #####
-APP_VERSION = "v0.9"
+APP_VERSION = "v1.0"
 
 ######### PROGRAM RUN SETTINGS #########
 

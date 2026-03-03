@@ -87,12 +87,17 @@ def analyze_docs(ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
             # Try again with different model
             if model_name == config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW:
                 model_name = config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
+                results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
             elif model_name == config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW:
-                model_name = config.GEMINI_MODELS.GEMINI_3_PRO_IMAGE_PREVIEW
+                # model_name = config.GEMINI_MODELS.GEMINI_3_PRO_IMAGE_PREVIEW
+                #results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
+                results = {}
+                pass
             else:
-                model_name = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
-            results = analyze_docs2(
-                model_name=model_name, documents_filepaths=documents_filepaths)
+                results = {}
+                #model_name = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+            # results = analyze_docs2(
+            #     model_name=model_name, documents_filepaths=documents_filepaths)
     finally:
         client.close()
         client = None
@@ -236,7 +241,7 @@ def analyze_lab_result_docs(client: genai.Client,
             contents=contents,
             config=generate_content_config
         ):
-            print(f"\n----- |GEMINI| Analysis: Request finised. Checking response..")
+            print(f"----- |GEMINI| Analysis: Request finised. Checking response..")
             # Check
             if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
                 # PASS - Empty response
@@ -259,7 +264,7 @@ def analyze_lab_result_docs(client: genai.Client,
             res += filtered_text
             # res = res.replace("NLS Analiza: ", "")
             # print(res, end="")
-            print(f"\n----- |GEMINI| Analysis: Request Checking response finished. Append to results..")
+            print(f"----- |GEMINI| Analysis: Request Checking response finished. Append to results..")
             # --- END FOR LOOP ---
     except Exception as e:
     #     if "high demand" in str(e):
@@ -274,12 +279,17 @@ def analyze_lab_result_docs(client: genai.Client,
             # Try again with different model
             if model_name == config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW:
                 model_name = config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
+                results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
             elif model_name == config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW:
-                model_name = config.GEMINI_MODELS.GEMINI_3_PRO_IMAGE_PREVIEW
+                # model_name = config.GEMINI_MODELS.GEMINI_3_PRO_IMAGE_PREVIEW
+                #results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
+                results = {}
+                pass
             else:
-                model_name = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
-            results = analyze_docs2(
-                model_name=model_name, documents_filepaths=documents_filepaths)
+                results = {}
+                #model_name = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+            # results = analyze_docs2(
+            #     model_name=model_name, documents_filepaths=documents_filepaths)
     finally:
         client.close()
         client = None
