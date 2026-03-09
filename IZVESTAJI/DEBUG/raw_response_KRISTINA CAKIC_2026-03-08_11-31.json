@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Na osnovu NLS (Nonlinear Analysis) izveštaja, dominantan patološki nalaz ukazuje na visoku verovatnoću prolapsa mitralne valvule (srčanog zaliska) uz prateća odstupanja u biohemijskoj homeostazi koja snažno sugerišu anemiju (sniženi parametri za hemoglobin, gvožđe i eritrocite). Takođe, uočeno je značajno energetsko/funkcionalno opterećenje neuro-endokrinog sistema (hipofiza, talamus, hipotalamus). \n\nPreporuke:\n1. Kardiološki pregled: Obavezan ultrazvuk srca (eho) radi potvrde dijagnoze prolapsa mitralne valvule.\n2. Laboratorija: Uraditi standardnu krvnu sliku (KKS), gvožđe u serumu i feritin radi potvrde anemije.\n3. Terapija: U zavisnosti od laboratorijskih nalaza, verovatno će biti potrebna suplementacija gvožđem i vitaminima (B kompleks, C vitamin).\n4. Životni stil: Izbegavanje prekomernog stresa, umerena fizička aktivnost (nakon konsultacije sa kardiologom) i adekvatan odmor.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Kritičan nalaz u sekciji patomorfologije. Vrednost D=0,059 ukazuje na veoma visoku spektralnu sličnost sa patologijom prolapsa mitralnog zaliska. Ovo je primarna sumnja na organski poremećaj.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Indikatori krvne slike pokazuju visoko odstupanje od homeostaze (veoma niske D vrednosti). Ovo ukazuje na nedostatak gvožđa i anemiju.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021; SERUM IRON D=0,022; ERYTHROCYTES D=0,028"
+        },
+        {
+            "expertsko_misljenje": "Promene u beloj krvnoj lozi koje mogu ukazivati na imunološku reakciju ili upalni proces.",
+            "parametar_i_vrednost": "BASOPHILS D=0,028; SEGMENTED NEUTROPHILS D=0,029; MONOCYTES D=0,032"
+        },
+        {
+            "expertsko_misljenje": "Ekstremno niske vrednosti (visoka rezonanca) u delu organopreparata ukazuju na stres ili funkcionalni poremećaj centralnog nervnog i endokrinog sistema (hipofiza).",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS D=0,008; DIENCEPHALON D=0,011; HYPOTHALAMUS D=0,015"
+        },
+        {
+            "expertsko_misljenje": "Biohemijski parametri koji ukazuju na metabolički status i funkciju jetre/bubrega su takođe u disbalansu.",
+            "parametar_i_vrednost": "SERUM ALPHAAMYLASE D=0,031; BLOOD UREA D=0,035; SERUM CREATININE D=0,038"
+        }
+    ]
+}

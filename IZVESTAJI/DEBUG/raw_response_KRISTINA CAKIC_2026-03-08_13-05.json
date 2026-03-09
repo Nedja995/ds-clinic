@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026.",
+    "preporucena_terapija_i_savet": "Rezime: NLS (nelinearna analiza) ukazuje na primarna opterećenja u kardiovaskularnom sistemu i hematološkom statusu. Uzrok problema: Detektovana je visoka spektralna sličnost sa prolapsom mitralne valvule i biohemijskim disbalansom krvne slike (anemija, upalni procesi). Stručno mišljenje: Nalazi ukazuju na strukturnu promenu na srcu (prolaps) i sideropenijsku anemiju uz prisustvo inflamatornih markera. Preporučena terapija i savet: Hitno se savetuje kardiološki pregled (EHO srca) radi potvrde prolapsa. Neophodno je uraditi laboratorijske analize krvi (KKS, gvožđe, CRP) radi korelacije sa biohemijskim parametrima izveštaja. Preporučuje se odmor, izbegavanje teškog fizičkog napora dok se ne uradi kardiološka evaluacija, i suplementacija vitaminima B kompleksa i mineralima po potvrdi deficita.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Kritičan nalaz sa veoma niskom D vrednošću (0,059), što u NLS dijagnostici ukazuje na visoku verovatnoću prisustva poremećaja. Slike preseka srca potvrđuju zone opterećenja (crveni trouglovi) i kompenzovanih oštećenja.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE (D=0,059)"
+        },
+        {
+            "expertsko_misljenje": "Izuzetno niske vrednosti ukazuju na značajan deficit ili poremećaj u krvnoj slici, sugerišući anemiju i smanjen kapacitet prenosa kiseonika.",
+            "parametar_i_vrednost": "HAEMOGLOBIN (D=0,021), SERUM IRON (D=0,022), ERYTHROCYTES (D=0,028)"
+        },
+        {
+            "expertsko_misljenje": "Niska vrednost ukazuje na prisustvo akutnog ili hroničnog upalnog procesa u organizmu.",
+            "parametar_i_vrednost": "C - REACTIVE PROTEIN (D=0,040)"
+        },
+        {
+            "expertsko_misljenje": "Ukazuje na hormonsku neravnotežu, posebno u vezi sa štitnom žlezdom i hormonom rasta.",
+            "parametar_i_vrednost": "SOMATOTROPIC HORMONE (D=0,034), COMMON THYROXINE (D=0,041)"
+        },
+        {
+            "expertsko_misljenje": "Umereno opterećenje toksinima i mikroorganizmima, uključujući amebe i ostatke vakcina, što može dodatno opterećivati imuni sistem.",
+            "parametar_i_vrednost": "Amoebae (D=0,668), Vacczine (D=0,677)"
+        }
+    ]
+}

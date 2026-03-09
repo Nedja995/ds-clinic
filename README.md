@@ -28,10 +28,20 @@ Check ```config.py```
 
 ## Development
 
-### Make Windows executable
+### Make Windows executable (CLI)
 
 ```bash
-pyinstaller --onefile dsclinic.py
+pyinstaller --noconfirm --onefile --console --name "DSClinic_v2_0_1" --paths "src" src/main.py
+```
+
+### Make Windows executable (GUI)
+
+```bash
+pyinstaller --noconfirm --onefile --windowed --name "DSClinicGUI2" --paths "src" src/gui_dsclinic/main.py
+```
+
+```bash
+pyinstaller --noconfirm --onefile --windowed --name "DSClinicGUI" --paths "src" testgui.py
 ```
 
 ### VSCode Project Configuration

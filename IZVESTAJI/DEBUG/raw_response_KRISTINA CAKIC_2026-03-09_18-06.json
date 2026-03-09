@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Rezime: NLS (nelinearna analiza) ukazuje na opterećenje centralnog nervnog sistema (hipofiza, talamus, mozak), moguće prisustvo toksina (amebe, mlečni proizvodi) i disbalans u biohemijskoj homeostazi (hemoglobin, gvožđe, eritrociti). Uzrok problema sažeto: Toksično opterećenje, nutritivni deficiti i stres na nivou nervnog i kardiovaskularnog sistema. Uzrok problema detaljno: Prisutno je opterećenje toksinima, intolerancija ili osetljivost na određene namirnice (mlečni proizvodi), kao i mogući pad imuniteta (timus, antioksidansi). Na srcu su vidljivi znaci astenizacije i dekompenzacije adaptacionih mehanizama, uz patomorfološki signal za prolaps mitralne valvule. Stručno mišljenje i dijagnoza: Sumnja na anemiju (nizak koeficijent za hemoglobin i gvožđe), prolaps mitralne valvule i opterećenje nervnog sistema. Preporučena terapija i savet: Preporučuje se detaljna laboratorijska analiza krvi (krvna slika, gvožđe, hemoglobin), kardiološki pregled (EHO srca) radi potvrde prolapsa mitralne valvule, detoksikacija organizma, korekcija ishrane (izbegavanje mlečnih proizvoda) i suplementacija vitaminima B kompleksa i antioksidansima.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Veoma niske D vrednosti ukazuju na visoku rezonancu i mogući problem sa anemijom, nedostatkom gvožđa i smanjenim brojem eritrocita. Potrebna je provera krvne slike klasičnim laboratorijskim metodama.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021, SERUM IRON D=0,022, ERYTHROCYTES D=0,028"
+        },
+        {
+            "expertsko_misljenje": "Patomorfološki signal ukazuje na mogući prolaps mitralne valvule. Slike preseka srca pokazuju dekompenzaciju adaptacionih mehanizama i izražena patološka stanja. Preporučuje se ultrazvuk srca.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Izraženo opterećenje i stres na nivou centralnog nervnog sistema i endokrine regulacije (hipofiza).",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS D=0,008, CEREBRUM REGIO MOTORICA D=0,010, DIENCEPHALON D=0,011"
+        },
+        {
+            "expertsko_misljenje": "Prisutno toksično opterećenje organizma, moguća osetljivost na mlečne proizvode i prisustvo parazita/ameba u sistemu.",
+            "parametar_i_vrednost": "amoebae D=0,668, dairy products D=0,685, Food toxins D=0,685"
+        },
+        {
+            "expertsko_misljenje": "Mogući deficit vitamina B kompleksa i smanjena funkcija timusa (imuniteta). Preporučuje se suplementacija i jačanje imunog sistema.",
+            "parametar_i_vrednost": "Vitamin B1 D=0,617, Vitamin B2 D=0,668, thymus D=0,668"
+        }
+    ]
+}

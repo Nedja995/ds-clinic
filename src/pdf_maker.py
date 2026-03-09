@@ -7,32 +7,24 @@ from datetime import datetime
 
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
-from src.models import ReportItem, Report
+from models import DSClinicReport, DSClinicReportCriticalIssue
+import utils
+from logger import setup_logger
+
+logger = setup_logger()
 
 
-SCRIPT_FILE = sys.argv[0]  # sys.executable #resource_path(".") #__file__
-ROOT_DIR = os.path.dirname(os.path.abspath(SCRIPT_FILE))
+FONTS_DIR = utils.get_resource_dirpath("fonts")
+logger.info(f"Fonts directory: {FONTS_DIR}")
+if not os.path.exists(FONTS_DIR):
+    raise Exception(f"Missing resource fonts directory at: '{FONTS_DIR}'.")
 
-CONST_FONTS_DIR = os.path.join(ROOT_DIR, "fonts")
-print(f"\n--------------------- FONTS DIR: {CONST_FONTS_DIR} --------------\n")
-if not os.path.exists(CONST_FONTS_DIR):
-    raise Exception("Missing resource fonts.")
-
-CONST_FONTS: dict = {
-    # "Normal": { "name": "DejaVu", "filename": "DejaVuSans.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "DejaVuSans.ttf") },
-    # "Bold": { "name": "DejaVu-Bold", "filename": "DejaVuSans-Bold.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "DejaVuSans-Bold.ttf")},
-    # "Italic": { "name": "DejaVu-Oblique", "filename": "DejaVuSans-Oblique.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "DejaVuSans-Oblique.ttf")},
-    # "BoldItalic": { "name": "DejaVu-BoldOblique", "filename": "DejaVuSans-BoldOblique.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "DejaVuSans-BoldOblique.ttf")},
-    "Normal": {"name": "Arial Unicode MS", "filename": "Arial-Unicode-Regular.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "Arial-Unicode-Regular.ttf")},
-    "Bold": {"name": "Arial Unicode MS Bold", "filename": "Arial-Unicode-Bold.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "Arial-Unicode-Bold.ttf")},
-    "Italic": {"name": "Arial Unicode MS Italic", "filename": "Arial-Unicode-Italic.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "Arial-Unicode-Italic.ttf")},
-    "BoldItalic": {"name": "Arial-Unicode-Bold-Italic.ttf", "filename": "Arial-Unicode-Bold-Italic.ttf", "file_path": os.path.join(CONST_FONTS_DIR, "Arial-Unicode-Bold-Italic.ttf")},
+CONST_FONTS: dict[str, dict[str, str]] = {
+    "Normal": {"name": "Arial Unicode MS", "filename": "Arial-Unicode-Regular.ttf"},
+    "Bold": {"name": "Arial Unicode MS Bold", "filename": "Arial-Unicode-Bold.ttf"},
+    "Italic": {"name": "Arial Unicode MS Italic", "filename": "Arial-Unicode-Italic.ttf"},
+    "BoldItalic": {"name": "Arial-Unicode-Bold-Italic.ttf", "filename": "Arial-Unicode-Bold-Italic.ttf"},
 }
-
-# Image path definition
-CONST_LOGO_PATH: str = os.path.join(ROOT_DIR, "resources",  "logo.png")
-if not os.path.exists(CONST_FONTS_DIR):
-    raise Exception("Missing resource logo.")
 
 FONT_NORMAL = CONST_FONTS["Normal"]["name"]
 FONT_BOLD = CONST_FONTS["Bold"]["name"]
@@ -40,15 +32,24 @@ FONT_ITALIC = CONST_FONTS["Italic"]["name"]
 FONT_BOLD_ITALIC = CONST_FONTS["BoldItalic"]["name"]
 
 
+# Image path definition
+LOGO_PATH: str = utils.get_resource_filepath("logo.png")
+if not os.path.exists(LOGO_PATH):
+    raise Exception("Missing resource logo.")
+
+
 class HolisticReport(FPDF):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        logger.info("Initializing PDF generator...")
+        super().__init__(orientation="p", unit="mm", format="A4", *args, **kwargs)
+        
 
+        logger.info("  - Configuring Unicode Fonts...")
         # 2. Configure Unicode Fonts
-        self.add_font(FONT_NORMAL, "", CONST_FONTS["Normal"]["file_path"])
-        self.add_font(FONT_BOLD, "", CONST_FONTS["Bold"]["file_path"])
-        self.add_font(FONT_ITALIC, "", CONST_FONTS["Italic"]["file_path"])
-        self.add_font(FONT_BOLD_ITALIC, "", CONST_FONTS["BoldItalic"]["file_path"])
+        self.add_font(FONT_NORMAL, "", os.path.join(FONTS_DIR, CONST_FONTS["Normal"]["filename"]))
+        self.add_font(FONT_BOLD, "", os.path.join(FONTS_DIR, CONST_FONTS["Bold"]["filename"]))
+        self.add_font(FONT_ITALIC, "", os.path.join(FONTS_DIR, CONST_FONTS["Italic"]["filename"]))
+        self.add_font(FONT_BOLD_ITALIC, "", os.path.join(FONTS_DIR, CONST_FONTS["BoldItalic"]["filename"]))
         self.set_font(FONT_NORMAL, "", 10)
 
         self.add_page()
@@ -71,12 +72,12 @@ class HolisticReport(FPDF):
         
         ## LOGO
         logo_size_mm = 28.0 # 1 px ≈ 0.264583 mm at 96 DPI -> 50 px ≈ 13.23 mm
-        if os.path.exists(CONST_LOGO_PATH):
+        if os.path.exists(LOGO_PATH):
             # Render the logo precisely to the left of the label
             logo_x = logo_size_mm / 2 #text_start_x - logo_size_mm - 7  # 7mm horizontal gap
             logo_y = self.get_y() - logo_size_mm - 1 #+ (row_height_mm - logo_size_mm) / 2
             # The .image() method explicitly places elements without moving the cursor 
-            self.image(CONST_LOGO_PATH, x=logo_x, y=logo_y, w=logo_size_mm, h=logo_size_mm, keep_aspect_ratio=True)
+            self.image(LOGO_PATH, x=logo_x, y=logo_y, w=logo_size_mm, h=logo_size_mm, keep_aspect_ratio=True)
             
         # Horizontal Line
         self.set_draw_color(0, 0, 0)
@@ -97,7 +98,7 @@ class HolisticReport(FPDF):
         self.cell(190, 5, f"Datum: {date}", align="R", ln=True)
         self.ln(8)  # Razmak do tabele
         
-    def draw_table(self, data: list[ReportItem] | None = []):
+    def draw_table(self, data: list[DSClinicReportCriticalIssue] | None = []):
         # Definicija širina kolona (ukupno 190mm za A4)
         col1_width = 85
         col2_width = 105
@@ -140,8 +141,8 @@ class HolisticReport(FPDF):
             return lines
 
         for item in data:
-            misljenje = f"{item.misljenje}"
-            parametar = f"{item.parametar}"
+            misljenje = f"{item.expertsko_misljenje}"
+            parametar = f"{item.parametar_i_vrednost}"
             
             # Izračunavanje broja linija (-1mm tolerancije za besprekorno uklapanje)
             lines1 = get_lines(misljenje, col1_width - 2 * c_margin - 1)
@@ -207,18 +208,25 @@ class HolisticReport(FPDF):
         self.set_font(FONT_ITALIC, "", 9)
         self.cell(line_end - line_start, 8, "M.P. Potpis terapeuta", align="C")
 
-def generate_report_pdf(report: Report, output_filename: str = "report.pdf"):
-    pass
+def export_report(report: DSClinicReport, output_filename: str = "report.pdf"):
+    generate_report_pdf(
+        patient_name=report.patient_name,
+        report_date=report.report_date,
+        terapija_i_saveti=report.preporucena_terapija_i_savet,
+        table_data=report.nalazi,
+        output_filename=output_filename
+    )
+
 
 def generate_report_pdf(
     patient_name: str = "NEPOZNATO IME PACIJENTA",
     report_date: str = "NEPOZNAT DATUM",
     terapija_i_saveti: str = "NEPOZNATA TERAPIJA I SAVET",
-    table_data: list[ReportItem] | None = [],
+    table_data: list[DSClinicReportCriticalIssue] | None = [],
     output_filename: str = "report.pdf"
 ):
     # Initialize PDF
-    pdf = HolisticReport(orientation="P", unit="mm", format="A4")
+    pdf = HolisticReport()
     pdf.draw_header()
     pdf.draw_patient_info(patient_name, report_date)
     pdf.draw_table(table_data)
@@ -226,22 +234,22 @@ def generate_report_pdf(
 
     # Output
     pdf.output(output_filename)
-    print(f"Report generated: {output_filename}")
+    logger.info(f"Report generated: {output_filename}")
 
 
 # --- Example Usage ---
 if __name__ == "__main__":
     # Sample Data Input
     data_input = [
-        ReportItem(misljenje="Povećan očni pritisak (Glaukom) i jos neki poremecaj da bude sto duzi text ovde blab bla htrh rh rthrh rh r.",
+        DSClinicReportCriticalIssue(misljenje="Povećan očni pritisak (Glaukom) i jos neki poremecaj da bude sto duzi text ovde blab bla htrh rh rthrh rh r.",
                    parametar="02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
-        ReportItem(misljenje="Manjak vitamina B2",
+        DSClinicReportCriticalIssue(misljenje="Manjak vitamina B2",
                    parametar="02.06.25 Vitamin B2, riboflavin D=1,452"),
-        ReportItem(misljenje="Poremecaj funkcije debelog creva (Moguci Kolitis)",
+        DSClinicReportCriticalIssue(misljenje="Poremecaj funkcije debelog creva (Moguci Kolitis)",
                    parametar="02.06.25 Large Intestine ( DD ) D=1,419"),
-        ReportItem(misljenje="Upalni procesi besike",
+        DSClinicReportCriticalIssue(misljenje="Upalni procesi besike",
                    parametar="02.06.25 Bladder Meridian (BL) D=1,409 a i ovde za parametar da probamo sa dugackim texto neki nesto hhahahfd dsfsdfsd fs sd."),
-        ReportItem(misljenje="Deficit vitamina B12 (Rizik od anemije)",
+        DSClinicReportCriticalIssue(misljenje="Deficit vitamina B12 (Rizik od anemije)",
                    parametar="02.06.25 Vitamin B12 , cobalamin D=1,400"),
     ]
 

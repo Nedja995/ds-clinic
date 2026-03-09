@@ -9,8 +9,32 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
-        },{
+            "console": "integratedTerminal",
+            "args": [ 
+                "-v",
+            ]
+        },
+                {
+            "name": "Python Debugger: Current File2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "{workspaceFolder}/src",
+            "console": "integratedTerminal",
+            "args": [ 
+                "-v",
+            ]
+        },
+        {
+            "name": "Python Debugger: Current File3",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "module": "src.main",
+            "cwd": "${workspaceFolder}",
+    },
+        {
             "name": "Python Debugger: DSClinic",
             "type": "debugpy",
             "request": "launch",

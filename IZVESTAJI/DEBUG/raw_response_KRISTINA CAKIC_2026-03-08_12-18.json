@@ -1,0 +1,23 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Na osnovu NLS (nelinearne analize), dominantan patološki nalaz ukazuje na strukturnu promenu na srcu, konkretno prolaps mitralne valvule. Uzrok problema je verovatno urođena ili stečena slabost vezivnog tkiva zaliska, što dovodi do nepravilnog zatvaranja. Preporučuje se: 1. Obavezna kardiološka obrada (auskultacija i ultrazvuk srca/eho) radi kliničke potvrde nalaza. 2. Izbegavanje teških fizičkih napora i takmičarskog sporta dok se ne utvrdi stepen prolapsa. 3. Profilaksa bakterijskog endokarditisa (uz konsultaciju lekara) pre stomatoloških ili hirurških intervencija. 4. Ishrana bogata magnezijumom i hidratacija. Primećeno je i latentno opterećenje toksinima i alergenima, pa se savetuje blaga detoksikacija.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Kritičan nalaz sa veoma niskom D vrednošću (0,059), što u NLS dijagnostici ukazuje na visoku verovatnoću prisustva aktivnog patološkog procesa ili anatomske promene. Zahteva hitnu verifikaciju standardnim dijagnostičkim metodama (EHO srca).",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE (D=0,059)"
+        },
+        {
+            "expertsko_misljenje": "Nalaz ukazuje na potencijalno latentno stanje ili predispoziciju, s obzirom da je D vrednost između 0.425 i 1.0. Nije akutno, ali zahteva oftalmološko praćenje.",
+            "parametar_i_vrednost": "OPTIC NERVE ATROPHY (D=0,642)"
+        },
+        {
+            "expertsko_misljenje": "Vrednosti biohemijskih parametara (hemoglobin, gvožđe, eritrociti) pokazuju visoku spektralnu sličnost sa referentnim uzorcima (veoma niske D vrednosti), što u ovom kontekstu najčešće ukazuje na homeostazu pod kontrolom, ali se savetuje standardna laboratorijska analiza krvi radi potvrde statusa, posebno zbog srčanog nalaza.",
+            "parametar_i_vrednost": "BIOCHEMICAL HOMEOSTASIS (Haemoglobin D=0,021, Serum Iron D=0,022)"
+        },
+        {
+            "expertsko_misljenje": "Detektovano prisustvo toksičnih opterećenja (vakcine, amebe, mlečni proizvodi) sa srednjim vrednostima D (0,6 - 0,7), što ukazuje na hronično ili latentno opterećenje imunog sistema, a ne na akutnu intoksikaciju.",
+            "parametar_i_vrednost": "TOXINS (Amoebae D=0,668, Vacczine D=0,677)"
+        }
+    ]
+}

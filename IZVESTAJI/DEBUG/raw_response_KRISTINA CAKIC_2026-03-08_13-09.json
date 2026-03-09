@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026.",
+    "preporucena_terapija_i_savet": "Na osnovu NLS analize, glavni zdravstveni rizici su vezani za kardiovaskularni sistem (sumnja na prolaps mitralne valvule) i hematološki status (indikacije za anemiju i nedostatak gvožđa). Takođe je evidentno značajno funkcionalno opterećenje centralnog nervnog sistema i hipofize. Preporučuje se: 1. Kardiološki pregled sa ultrazvukom srca radi potvrde stanja zaliska. 2. Laboratorijske analize krvi (kompletna krvna slika, gvožđe, feritin) radi potvrde anemije. 3. Nutritivna podrška bogata gvožđem i vitaminima B kompleksa (posebno B1). 4. Smanjenje stresa radi rasterećenja neuro-endokrinog sistema.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Najkritičniji patomorfološki nalaz sa veoma niskim D koeficijentom (visoka verovatnoća). Ukazuje na strukturnu nepravilnost srčanog zaliska. Vizuelni prikaz srca takođe pokazuje zone opterećenja (crveni markeri) i dekompenzacije (crni marker).",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Parametri biohemijske homeostaze ukazuju na značajan disbalans u krvnoj slici, specifično sugerišući anemiju i smanjene rezerve gvožđa.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021; SERUM IRON D=0,022; ERYTHROCYTES D=0,028"
+        },
+        {
+            "expertsko_misljenje": "Ekstremno niska vrednost entropije ukazuje na visoku rezonancu, odnosno funkcionalno opterećenje ili poremećaj u radu hipofize, koja je ključna za hormonsku regulaciju.",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS D=0,008"
+        },
+        {
+            "expertsko_misljenje": "Ukazuje na potencijalni nedostatak vitamina B1, što može doprineti neurološkim simptomima ili umoru.",
+            "parametar_i_vrednost": "Vitamin B1, thiamine D=0,617"
+        },
+        {
+            "expertsko_misljenje": "Prisutno opterećenje imunog sistema i potencijalna osetljivost na određene toksine iz hrane i okruženja.",
+            "parametar_i_vrednost": "Amoebae D=0,668; Vacczine D=0,677; Dairy products D=0,685"
+        }
+    ]
+}

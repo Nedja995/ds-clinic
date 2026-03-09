@@ -1,0 +1,23 @@
+{
+    "patient_name": "Kristina Cakic",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Rezime: Nelinearna analiza (NLS) ukazuje na izrazene promene na kardiovaskularnom sistemu, disbalans krvne slike i opterecenje nervnog sistema. Uzrok problema sazeto: Toksicno opterecenje organizma i pad adaptacionih mehanizama. Uzrok problema detaljno: Prisustvo toksina iz hrane, mlecnih proizvoda i ameba, uz astenizaciju regulacionih mehanizama srca (vidljivo na skenovima). Strucno misljenje dijagnoza: Sumnja na prolaps mitralne valvule, anemiju i hormonski disbalans usled stresa hipofize. Preporucena terapija i savet: Obavezna kardioloska evaluacija (ECHO srca) radi potvrde prolapsa. Laboratorijska provera kompletne krvne slike, gvozdja i hormonskog statusa. Preporucuje se detoksikacija organizma i korekcija ishrane.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Visoka spektralna slicnost sa patologijom prolapsa mitralne valvule. Skenovi srca pokazuju astenizaciju regulacionih mehanizama. Potreban je ultrazvuk srca.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Veoma niske vrednosti koeficijenta ukazuju na disbalans u krvnoj slici, mogucu anemiju ili nedostatak gvozdja.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021, SERUM IRON D=0,022"
+        },
+        {
+            "expertsko_misljenje": "Izrazen stres na nivou prednjeg reznja hipofize i centralnog nervnog sistema, sto moze biti uzrok hormonskog disbalansa.",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS D=0,008"
+        },
+        {
+            "expertsko_misljenje": "Prisustvo toksicnog opterecenja organizma koje moze ometati normalan rad imunoloskog i digestivnog sistema.",
+            "parametar_i_vrednost": "amoebae D=0,668, dairy products D=0,685"
+        }
+    ]
+}

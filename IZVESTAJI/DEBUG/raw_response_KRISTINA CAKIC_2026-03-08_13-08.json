@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Na osnovu NLS (nelinearne) analize, dominantan patomorfološki nalaz ukazuje na visoku verovatnoću prolapsa mitralne valvule (D=0,059). Takođe, uočava se značajno energetsko opterećenje centralnog nervnog sistema (hipofiza, hipotalamus) i parametri koji sugerišu potencijalnu anemiju (hemoglobin, gvožđe). Preporučuje se: 1. Obavezan kardiološki pregled sa ehokardiografijom radi potvrde stanja mitralnog zaliska. 2. Laboratorijska analiza krvi (kompletna krvna slika, gvožđe, feritin) radi provere statusa anemije. 3. Suplementacija vitaminima B kompleksa (posebno B1, B2, B12) prema nalazima deficita. 4. Smanjenje stresa i umerena fizička aktivnost dok se ne obavi kardiološka evaluacija.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Izuzetno niska D vrednost (0,059) ukazuje na visoku spektralnu sličnost sa etalonom bolesti, što sugeriše prisustvo prolapsa mitralnog zaliska. Ovo je najkritičniji nalaz u izveštaju i zahteva kliničku potvrdu.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Veoma niske vrednosti (visoka rezonanca) za parametre krvne slike ukazuju na disbalans i potrebu za proverom anemije usled nedostatka gvožđa.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021; SERUM IRON D=0,022; ERYTHROCYTES D=0,028"
+        },
+        {
+            "expertsko_misljenje": "Ukazuje na visoko funkcionalno opterećenje i fokus organizma na hipofizu i motorne regije mozga, što može biti posledica stresa ili hormonske regulacije.",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS D=0,008; CEREBRUM REGIO MOTORICA D=0,010"
+        },
+        {
+            "expertsko_misljenje": "Vizuelni prikaz preseka srca pokazuje prisustvo markera astenizacije (slabljenja) regulacionih mehanizama (crveni trouglovi), što korelira sa sumnjom na strukturne promene zaliska.",
+            "parametar_i_vrednost": "LONGITUDINAL/TRANSVERSAL SECTION OF HEART (Visual Markers)"
+        },
+        {
+            "expertsko_misljenje": "Najniže D vrednosti u tabeli vitamina sugerišu najveći deficit ili potrebu organizma za vitaminima B grupe.",
+            "parametar_i_vrednost": "Vitamin B1 D=0,617; Vitamin B2 D=0,668; Vitamin B12 D=0,677"
+        }
+    ]
+}

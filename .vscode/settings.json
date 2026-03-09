@@ -1,21 +1,40 @@
 {
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "**/markdownlint.json",
+                "**/markdownlint.jsonc",
+                "**/.markdownlint.json",
+                "**/.markdownlint.jsonc"
+            ],
+            "url": "https://raw.githubusercontent.com/DavidAnson/markdownlint/v0.40.0/schema/markdownlint-config-schema.json"
+        }
+    ],
     "python.logging.level": "DEBUG",
     "python.logging.enabled": true,
-     "autopep8.interpreter": [
-        "${workspaceFolder}/.venv/bin/python"
-    ],
-    "python.formatting.provider": "autopep8",
-    "python.formatting.autopep8Args": [
+    "python.analysis.extraPaths": ["./src"],
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    "python-envs.defaultEnvManager": "ms-python.python:pipenv",
+    "autopep8.interpreter": [
+            "${workspaceFolder}/.venv/Scripts/python.exe"
+        ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8",
+        "logging.level": "DEBUG",
+        "python.logging.enabled": true,
+    },
+    "autopep8.args": [
         "--max-line-length",
         "500"
     ],
-"geminicodeassist.chat.changeView": "Default diff view",
-"geminicodeassist.customCommands": {
-    "add-comment": "add some comments to my code"
-},
-"geminicodeassist.enableTelemetry": false,
-"geminicodeassist.inlineSuggestions.nextEditPredictions": true,
-"geminicodeassist.outlines.automaticOutlineGeneration": false,
-"geminicodeassist.project": "278038315476",
-"geminicodeassist.inlineSuggestions.suggestionSpeed": "Fast",
+
+    "geminicodeassist.chat.changeView": "Default diff view",
+    "geminicodeassist.customCommands": {
+        "add-comment": "add some comments to my code"
+    },
+    "geminicodeassist.enableTelemetry": false,
+    "geminicodeassist.inlineSuggestions.nextEditPredictions": true,
+    "geminicodeassist.outlines.automaticOutlineGeneration": false,
+    "geminicodeassist.project": "278038315476",
+    "geminicodeassist.inlineSuggestions.suggestionSpeed": "Fast",
 }

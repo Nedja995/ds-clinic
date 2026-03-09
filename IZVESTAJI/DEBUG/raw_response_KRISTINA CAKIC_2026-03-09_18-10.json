@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026.",
+    "preporucena_terapija_i_savet": "Rezime: NLS analiza ukazuje na visoku rezonancu sa patomorfološkim stanjem prolapsa mitralne valvule, opterećenje centralnog nervnog sistema i moguće hematološke disbalanse. Uzrok problema sažeto: Stres adaptacionih mehanizama srca, nutritivni deficiti i toksično opterećenje. Uzrok problema detaljno: Slike preseka srca pokazuju zone dekompenzacije adaptacionih mehanizama. Prisutno je opterećenje toksinima (amebe, mlečni proizvodi) i manjak vitamina B kompleksa. Stručno mišljenje i dijagnoza: Sumnja na prolaps mitralne valvule i anemiju usled nedostatka gvožđa. Preporučena terapija i savet: Obavezna konsultacija sa kardiologom i ultrazvuk srca radi potvrde prolapsa mitralne valvule. Uraditi laboratorijske analize krvi (krvna slika, gvožđe). Korigovati ishranu i uvesti suplementaciju vitaminima B kompleksa.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Visoka rezonanca koja ukazuje na sumnju na prolaps mitralne valvule. Slike preseka srca potvrđuju zone dekompenzacije adaptacionih mehanizama.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Indikacija na mogući disbalans u krvnoj slici, sumnja na anemiju ili nedostatak gvožđa.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021, SERUM IRON D=0,022"
+        },
+        {
+            "expertsko_misljenje": "Izraženo opterećenje centralnog nervnog sistema, posebno prednjeg režnja hipofize.",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS D=0,008"
+        },
+        {
+            "expertsko_misljenje": "Toksično opterećenje organizma, moguća osetljivost na mlečne proizvode i prisustvo parazita.",
+            "parametar_i_vrednost": "amoebae D=0,668, dairy products D=0,685"
+        },
+        {
+            "expertsko_misljenje": "Mogući deficit vitamina B1 i B2, što može uticati na energetski metabolizam.",
+            "parametar_i_vrednost": "Vitamin B1 D=0,617, Vitamin B2 D=0,668"
+        }
+    ]
+}

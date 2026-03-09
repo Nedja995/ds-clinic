@@ -1,0 +1,23 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Rezime: NLS analiza ukazuje na primarne probleme u kardiovaskularnom sistemu i krvnoj slici, uz značajno opterećenje neuro-endokrinog sistema. Uzrok problema: Najverovatniji uzrok tegoba je kombinacija potencijalne anemije (nedostatak gvožđa) i strukturne promene na srčanom zalisku (prolaps), uz prateći stres centralnog nervnog sistema. Stručno mišljenje: Postoji visoka statistička verovatnoća (niska D vrednost) za prolaps mitralnog zaliska i biohemijski disbalans gvožđa i hemoglobina. Preporučena terapija i savet: 1. Obavezan kardiološki pregled sa ehokardiografijom (UZ srca) radi potvrde prolapsa mitralnog zaliska. 2. Laboratorijska analiza krvi (KKS, gvožđe, feritin) radi potvrde anemije. 3. Suplementacija vitaminima B kompleksa i gvožđem (isključivo nakon laboratorijske potvrde). 4. Higijensko-dijetetski režim za smanjenje stresa zbog visokog opterećenja moždanih struktura.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Kritičan nalaz u sekciji patomorfologije sa veoma niskom D vrednošću (visoka verovatnoća prisustva). Ukazuje na strukturnu nepravilnost zaliska koja može izazivati zamaranje ili aritmije.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE (D=0,059)"
+        },
+        {
+            "expertsko_misljenje": "Izuzetno niske vrednosti disperzije ukazuju na značajan poremećaj homeostaze krvi, specifično u vezi sa prenosom kiseonika i nivoom gvožđa.",
+            "parametar_i_vrednost": "HAEMOGLOBIN (D=0,021), SERUM IRON (D=0,022), ERYTHROCYTES (D=0,028)"
+        },
+        {
+            "expertsko_misljenje": "Ukazuje na visoko funkcionalno opterećenje ili disregulaciju glavnih centara u mozgu i endokrinom sistemu (hipofiza).",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS (D=0,008), CEREBRUM REGIO MOTORICA (D=0,010), HYPOTHALAMUS (D=0,015)"
+        },
+        {
+            "expertsko_misljenje": "Najveći deficit u vitaminskom statusu primećen je kod vitamina B grupe, što korelira sa neurološkim opterećenjem i mogućom anemijom.",
+            "parametar_i_vrednost": "Vitamin B1 (D=0,617), Vitamin B2 (D=0,668)"
+        }
+    ]
+}

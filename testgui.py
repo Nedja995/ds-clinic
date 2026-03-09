@@ -13,7 +13,7 @@ class MedicinskaApp:
 
         # --- 1. TOP TOOLBAR (Gornji panel) ---
         self.top_frame = ttk.Frame(self.root)
-        self.top_frame.pack(side="top", fill="x", padx=10, pady=10)
+        self.top_frame.pack(side="top", fill="x", padx=5, pady=5)
 
         # Status Labela (Instance variable)
         self.status_var = tk.StringVar(value="STATUS: Idle")

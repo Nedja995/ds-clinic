@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026.",
+    "preporucena_terapija_i_savet": "Rezime: NLS analiza ukazuje na primarno opterećenje kardiovaskularnog sistema i značajne biohemijske disbalanse u krvnoj slici, uz visoku osetljivost nervnog i endokrinog sistema. Uzrok problema: Detektovano je prisustvo toksičnih opterećenja (uključujući reakcije na mlečne proizvode i vakcine) i nedostatak određenih aminokiselina i vitamina, što dovodi do stresa regulatornih mehanizama. Stručno mišljenje/Dijagnoza: Najkritičniji nalaz je visoka verovatnoća prolapsa mitralne valvule (D=0,059) i poremećaji krvne slike (hemoglobin, gvožđe). Preporučena terapija i savet: Hitno se savetuje konvencionalna medicinska potvrda nalaza (EHO srca kod kardiologa i kompletna krvna slika sa statusom gvožđa). Preporučuje se izbegavanje mlečnih proizvoda (detektovano kao opterećenje), suplementacija vitaminima B grupe i aminokiselinama prema nalazu, te tehnike relaksacije za nervni sistem.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Kritičan nalaz koji ukazuje na visoku verovatnoću strukturne ili funkcionalne promene na srčanom zalisku. Zahteva obavezan ultrazvuk srca.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE (D=0,059)"
+        },
+        {
+            "expertsko_misljenje": "Izuzetno niske vrednosti D parametra ukazuju na značajan disbalans i visoku verovatnoću anemije ili deficita gvožđa.",
+            "parametar_i_vrednost": "HAEMOGLOBIN (D=0,021), SERUM IRON (D=0,022), ERYTHROCYTES (D=0,028)"
+        },
+        {
+            "expertsko_misljenje": "Ukazuje na opterećenje centralnog nervnog sistema i endokrine regulacije (hipofiza). Mogući simptomi su umor, hormonski disbalans ili stres.",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS (D=0,008), CEREBRUM (D=0,010), HYPOTHALAMUS (D=0,015)"
+        },
+        {
+            "expertsko_misljenje": "Identifikovani glavni toksični stresori i intolerancije koje opterećuju imuni sistem.",
+            "parametar_i_vrednost": "Amoebae (D=0,668), Vaccine (D=0,677), Dairy products (D=0,685)"
+        },
+        {
+            "expertsko_misljenje": "Nutritivni deficiti koji mogu doprineti neurološkim i metaboličkim problemima.",
+            "parametar_i_vrednost": "Vitamin B1 (D=0,617), Leucine (D=0,650)"
+        }
+    ]
+}

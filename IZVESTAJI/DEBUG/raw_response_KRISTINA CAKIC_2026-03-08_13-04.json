@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Na osnovu NLS (nelinearne analize), glavni zdravstveni rizik je vezan za kardiovaskularni sistem. Najkritičniji nalaz ukazuje na prolaps mitralne valvule sa veoma visokim stepenom spektralne sličnosti (D=0,059). Takođe, uočavaju se značajna odstupanja u biohemijskoj homeostazi koja sugerišu na potencijalnu anemiju (nizak D za hemoglobin i gvožđe). Preporučuje se: 1. Obavezan pregled kardiologa i ultrazvuk srca (ehokardiografija) radi potvrde stanja mitralnog zaliska. 2. Laboratorijske analize krvi (kompletna krvna slika, gvožđe, feritin) radi provere anemije. 3. Suplementacija vitaminima B kompleksa (posebno B1) uz konsultaciju sa lekarom. 4. Izbegavanje preteranog fizičkog napora do kardiološke potvrde.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Kritičan nalaz. Vrednost D < 0.1 ukazuje na veoma visoku verovatnoću prisustva strukturne promene na srčanom zalisku. Zahteva kliničku potvrdu.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE (Prolaps mitralne valvule) D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Niske vrednosti D u sekciji biohemijske homeostaze ukazuju na poremećaj regulacije ili deficit ovih parametara, što budi sumnju na anemiju.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021; SERUM IRON D=0,022; ERYTHROCYTES D=0,028"
+        },
+        {
+            "expertsko_misljenje": "Najizraženija rezonanca u grupi vitamina, što može ukazivati na deficit tiamina (B1) koji je važan za funkciju srca i nervnog sistema.",
+            "parametar_i_vrednost": "Vitamin B1, thiamine D=0,617"
+        },
+        {
+            "expertsko_misljenje": "Prikazani toksini i opterećenja imaju više D vrednosti (>0.6), što znači da su manje akutni od srčanih problema, ali ukazuju na prisustvo opterećenja organizma.",
+            "parametar_i_vrednost": "amoebae D=0,668; Vacczine D=0,677; dairy products D=0,685"
+        },
+        {
+            "expertsko_misljenje": "Vizuelni prikaz srca (uzdužni i poprečni presek) sa markerima koji verovatno ukazuju na kompenzovane ili dekompenzovane poremećaje adaptacije tkiva.",
+            "parametar_i_vrednost": "LONGITUDINAL / TRANSVERSAL SECTION OF HEART (Slike 1 i 2)"
+        }
+    ]
+}

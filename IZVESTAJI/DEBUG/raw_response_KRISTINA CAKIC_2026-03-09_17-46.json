@@ -1,0 +1,27 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Rezime: Nelinearna analiza (NLS) ukazuje na energetski i funkcionalni disbalans centralnog nervnog sistema, kardiovaskularnog sistema i biohemijske homeostaze. Uzrok problema sazeto: Toksicno opterecenje organizma, nutritivni deficiti i stres regulacionih mehanizama. Uzrok problema detaljno: Detektovano je opterecenje toksinima (amebe, mlecni proizvodi), moguci deficit vitamina B grupe, kao i znaci astenizacije i kompenzovanih poremecaja adaptacije na srcanom misicu. Strucno misljenje i dijagnoza: Suspektan prolaps mitralne valvule, moguca anemija (nizak hemoglobin i gvozdje) i disfunkcija hipofize i nervnog sistema. Preporucena terapija i savet: Obavezna provera kompletne krvne slike i nivoa gvozdja u serumu klasicnim laboratorijskim metodama. Preporucuje se kardioloski pregled sa ehokardiografijom radi potvrde stanja mitralne valvule. Uvesti suplementaciju vitaminima B kompleksa, korigovati ishranu (privremeno iskljuciti mlecne proizvode) i sprovesti detoksikaciju organizma.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Veoma niske vrednosti koeficijenta ukazuju na visok stepen verovatnoce disbalansa. Moguca je anemija usled nedostatka gvozdja, te je neophodna klasicna laboratorijska potvrda.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021; SERUM IRON D=0,022"
+        },
+        {
+            "expertsko_misljenje": "Visoka rezonanca koja ukazuje na moguci prolaps mitralne valvule. Slike preseka srca takodje pokazuju zone astenizacije i kompenzovanih poremecaja adaptacije. Potreban je ultrazvuk srca.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE D=0,059"
+        },
+        {
+            "expertsko_misljenje": "Najnize vrednosti koeficijenta u organopreparatima ukazuju na znacajno opterecenje ili funkcionalni disbalans prednjeg reznja hipofize i motornog regiona mozga.",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS D=0,008; CEREBRUM REGIO MOTORICA D=0,010"
+        },
+        {
+            "expertsko_misljenje": "Prisutno je toksicno opterecenje organizma, sa posebnim naglaskom na osetljivost na mlecne proizvode i moguce prisustvo parazita (amebe).",
+            "parametar_i_vrednost": "amoebae D=0,668; dairy products D=0,685"
+        },
+        {
+            "expertsko_misljenje": "Ukazuje na potencijalni deficit vitamina B1, sto moze doprineti neuroloskim i metabolickim simptomima.",
+            "parametar_i_vrednost": "Vitamin B1, thiamine D=0,617"
+        }
+    ]
+}
