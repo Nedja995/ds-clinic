@@ -36,7 +36,7 @@
                 "--clean",
                 "--noconfirm",
                 "--paths", "${workspaceFolder}/src",
-                "${workspaceFolder}/src/main.py"
+                "${workspaceFolder}/src/dsclinic_cli.py"
             ],
             "group": {
                 "kind": "build",

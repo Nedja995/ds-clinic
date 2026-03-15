@@ -3,8 +3,8 @@ import datetime
 import json
 from typing import List
 from google.genai import types as genai_types
-from models import DSClinicReport, DSClinicReportCriticalIssue
-import word_utils, utils, config, pdf_maker
+from models import DSClinicReport
+import config, pdf_maker
 from api_gemini import client as api_gemini_client
 from api_gemini import utils as api_gemini_utils
 
@@ -13,7 +13,7 @@ from logger import setup_logger
 logger = setup_logger()
 
 def process_documents(input_dir: str, output_dir: str, debug_mode: bool = False, model_name: str = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW.value):
-    """Glavna funkcija koju poziva main.py konzolna aplikacija"""
+    """Glavna funkcija koju poziva dsclinic_cli.py konzolna aplikacija"""
     model_name = config.GEMINI_MODEL
     
     output_debug_dir = os.path.join(output_dir, "DEBUG")

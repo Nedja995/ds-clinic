@@ -64,7 +64,7 @@ def get_resource_filepath(filename: str) -> str:
 def get_input_data_dirpath(dir_name: str = "ULAZ") -> str:
     """
     Constructs and validates the path to the input data directory.
-    Note: This is a utility function; main.py constructs this path from arguments.
+    Note: This is a utility function; dsclinic_cli.py constructs this path from arguments.
     """
     dirpath = os.path.join(get_base_dir_path(), dir_name)
     if not os.path.exists(dirpath):
@@ -75,7 +75,7 @@ def get_output_data_dirpath(dir_name: str = "IZVESTAJI") -> str:
     """
     Constructs the path to the output data directory, creating it if it
     does not exist.
-    Note: This is a utility function; main.py constructs this path from arguments.
+    Note: This is a utility function; dsclinic_cli.py constructs this path from arguments.
     """
     dirpath = os.path.join(get_base_dir_path(), dir_name)
     if not os.path.exists(dirpath):

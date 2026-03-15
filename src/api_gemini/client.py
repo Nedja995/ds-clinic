@@ -7,7 +7,6 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 from models import DSClinicReport
-import config
 from logger import setup_logger
 
 logger = setup_logger()

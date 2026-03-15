@@ -12,9 +12,12 @@
     ],
     "python.logging.level": "DEBUG",
     "python.logging.enabled": true,
-    "python.analysis.extraPaths": ["./src"],
+    "python.analysis.extraPaths": [
+        "./src",
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/.venv/Lib/site-packages"
+    ],
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
-    "python-envs.defaultEnvManager": "ms-python.python:pipenv",
     "autopep8.interpreter": [
             "${workspaceFolder}/.venv/Scripts/python.exe"
         ],
@@ -37,4 +40,5 @@
     "geminicodeassist.outlines.automaticOutlineGeneration": false,
     "geminicodeassist.project": "278038315476",
     "geminicodeassist.inlineSuggestions.suggestionSpeed": "Fast",
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
 }
