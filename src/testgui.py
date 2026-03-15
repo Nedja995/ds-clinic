@@ -6,7 +6,7 @@ from dsclinic import process_documents
 
 logger = setup_logger()
 
-class MedicinskaApp:
+class DSClinicAppGUI:
     def __init__(self, root, inicijalni_podaci=None):
         self.root = root
         self.root.title("DS Clinic Analiza")
@@ -178,7 +178,6 @@ class MedicinskaApp:
     def change_app_state(self, text):
         self.status_var.set(f"STATUS: {text}")
 
-    # Nova funkcija za izmenu footer detalja
     def set_app_state_details(self, text):
         self.lbl_status_details.config(text=text)
 
@@ -203,13 +202,6 @@ class MedicinskaApp:
             self.set_app_state_details("IDLE - ADD DOCUMENTS AND START ANALYSIS")
             self.set_btn_analyze_enabled(False)
 
-    def popuni_podatke(self, data):
-        self.ent_ime.insert(0, data.get("ime_pacijenta", ""))
-        self.ent_datum.insert(0, data.get("datum", ""))
-        self.txt_terapija.insert("1.0", data.get("terapija_i_savet", ""))
-        for n in data.get("nalazi", []):
-            self.dodaj_red_za_nalaz(misljenje=n.get("misljenje", ""), parametar=n.get("parametar_aparata", ""))
-
     def _clicked_btn_export_pdf(self):
         rezultat = {
             "ime_pacijenta": self.ent_ime.get(),
@@ -230,6 +222,14 @@ class MedicinskaApp:
         self.set_app_state_details("DATA SAVED SUCCESSFULLY!")
         tkinter.messagebox.showinfo("Uspeh", "Podaci su spremni za vašu PDF funkciju.")
 
+    def popuni_podatke(self, data):
+        self.ent_ime.insert(0, data.get("ime_pacijenta", ""))
+        self.ent_datum.insert(0, data.get("datum", ""))
+        self.txt_terapija.insert("1.0", data.get("terapija_i_savet", ""))
+        for n in data.get("nalazi", []):
+            self.dodaj_red_za_nalaz(misljenje=n.get("misljenje", ""), parametar=n.get("parametar_aparata", ""))
+
+
 if __name__ == "__main__":
     # import logging
     # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -242,5 +242,5 @@ if __name__ == "__main__":
     }
 
     root = tk.Tk()
-    app = MedicinskaApp(root, inicijalni_podaci=test_podaci)
+    app = DSClinicAppGUI(root, inicijalni_podaci=test_podaci)
     root.mainloop()
