@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import logging
-from ds_clinic.app import process_documents
+from dsclinic import process_documents
 import utils
 import config
 from logger import setup_logger # type: ignore
