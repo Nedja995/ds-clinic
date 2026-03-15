@@ -31,20 +31,20 @@ class MedicinskaApp:
         self.lbl_status.pack(side="left", padx=(0, 15))
 
         # Dugmad na vrhu
-        self.btn_pokreni = ttk.Button(self.top_frame, text="POKRENI ANALIZU", command=self.toggle_analiza)
-        self.btn_pokreni.pack(side="left", padx=5)
+        self.btn_analyze = ttk.Button(self.top_frame, text="POKRENI ANALIZU", command=self._clicked_btn_analyze)
+        self.btn_analyze.pack(side="left", padx=5)
         
         #  Dugme Sačuvaj podatke
-        self.btn_submit = ttk.Button(self.top_frame, text="SAČUVAJ PDF IZVEŠTAJ", state="enabled", command=self.prikupi_i_prosledi)
+        self.btn_submit = ttk.Button(self.top_frame, text="SAČUVAJ PDF IZVEŠTAJ", state="enabled", command=self._clicked_btn_export_pdf)
         self.btn_submit.pack(side="left", padx=5)
 
-        self.btn_cela = ttk.Button(self.top_frame, text="Cela analiza", state="disabled")
-        self.btn_cela.pack(side="left", padx=5)
+        self.btn_full_report = ttk.Button(self.top_frame, text="Cela analiza", state="disabled")
+        self.btn_full_report.pack(side="left", padx=5)
 
         self.btn_settings = ttk.Button(
             self.top_frame, 
             text="Podešavanja", 
-            command=lambda: self.btn_clicked(self.btn_settings)
+            command=lambda: self._clicked_button(self.btn_settings)
         )
         self.btn_settings.pack(side="left", padx=5)
         
@@ -182,26 +182,26 @@ class MedicinskaApp:
     def set_app_state_details(self, text):
         self.lbl_status_details.config(text=text)
 
-    def btn_cela_analiza_enable(self, enabled: bool = True):
-        stanje = "normal" if enabled else "disabled"
-        self.btn_cela.config(state=stanje)
+    def set_btn_analyze_enabled(self, enabled: bool = True):
+        state = "normal" if enabled else "disabled"
+        self.btn_full_report.config(state=state)
 
-    def btn_clicked(self, button: ttk.Button):
+    def _clicked_button(self, button: ttk.Button):
         print(f"Kliknuto na: {button['text']}")
         self.change_app_state("Settings Open")
         self.set_app_state_details("ADJUSTING SETTINGS...")
 
-    def toggle_analiza(self):
-        if self.btn_pokreni["text"] == "POKRENI ANALIZU":
-            self.btn_pokreni.config(text="PREKINI ANALIZU")
+    def _clicked_btn_analyze(self):
+        if self.btn_analyze["text"] == "POKRENI ANALIZU":
+            self.btn_analyze.config(text="PREKINI ANALIZU")
             self.change_app_state("Running")
             self.set_app_state_details("ANALYSIS IN PROGRESS...")
-            self.btn_cela_analiza_enable(True)
+            self.set_btn_analyze_enabled(True)
         else:
-            self.btn_pokreni.config(text="POKRENI ANALIZU")
+            self.btn_analyze.config(text="POKRENI ANALIZU")
             self.change_app_state("Idle")
             self.set_app_state_details("IDLE - ADD DOCUMENTS AND START ANALYSIS")
-            self.btn_cela_analiza_enable(False)
+            self.set_btn_analyze_enabled(False)
 
     def popuni_podatke(self, data):
         self.ent_ime.insert(0, data.get("ime_pacijenta", ""))
@@ -210,7 +210,7 @@ class MedicinskaApp:
         for n in data.get("nalazi", []):
             self.dodaj_red_za_nalaz(misljenje=n.get("misljenje", ""), parametar=n.get("parametar_aparata", ""))
 
-    def prikupi_i_prosledi(self):
+    def _clicked_btn_export_pdf(self):
         rezultat = {
             "ime_pacijenta": self.ent_ime.get(),
             "datum": self.ent_datum.get(),

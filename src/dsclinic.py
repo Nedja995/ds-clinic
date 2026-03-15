@@ -12,6 +12,7 @@ from logger import setup_logger
 
 logger = setup_logger()
 
+
 def process_documents(input_dir: str, output_dir: str, debug_mode: bool = False, model_name: str = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW.value):
     """Glavna funkcija koju poziva dsclinic_cli.py konzolna aplikacija"""
     model_name = config.GEMINI_MODEL
