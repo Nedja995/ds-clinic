@@ -1,9 +1,10 @@
 import tkinter as tk
-from logger import setup_logger
 from tkinter import ttk, scrolledtext
 import tkinter.messagebox
+from logger import setup_logger
+from dsclinic import process_documents
 
-logger = setup_logger.setup_logger()
+logger = setup_logger()
 
 class MedicinskaApp:
     def __init__(self, root, inicijalni_podaci=None):
