@@ -115,9 +115,11 @@ class DSClinicView:
         self.txt_terapija = scrolledtext.ScrolledText(self.report_form_frame, width=50, height=10, font=("Arial", 10))
         self.txt_terapija.pack(side="top", fill="x", pady=5)
 
-        # Sekcija Nalazi
+        # SEPARATOR
         ttk.Separator(self.report_form_frame, orient='horizontal').pack(fill='x', pady=15)
-        ttk.Label(self.report_form_frame, text="NALAZI:", font=font_label).pack(side="top", fill="x")
+
+        # Sekcija Nalazi
+        ttk.Label(self.report_form_frame, text="NALAZI:", font=font_label).pack(side="top", fill="x", **paddings)
         
         self.nalazi_container = ttk.Frame(self.report_form_frame)
         self.nalazi_container.pack(side="top", fill="x", pady=5)
@@ -126,9 +128,9 @@ class DSClinicView:
         table_header_frame = ttk.Frame(self.nalazi_container, height=20)
         table_header_frame.pack(side="top", fill="x", pady=2)
         lbl_m = ttk.Label(table_header_frame, text="Mišljenje")
-        lbl_m.place(relx=0.0, rely=0.0, relwidth=0.5, relheight=1.0)
+        lbl_m.place(relx=0.0, rely=0.0, relwidth=0.6, relheight=1.0)
         lbl_p = ttk.Label(table_header_frame, text="Parametar")
-        lbl_p.place(relx=0.5, rely=0.0, relwidth=0.5, relheight=1.0)
+        lbl_p.place(relx=0.61, rely=0.0, relwidth=0.3, relheight=1.0)
 
         self.btn_dodaj_nalaz = ttk.Button(self.report_form_frame, text="+ Dodaj novi nalaz")
         self.btn_dodaj_nalaz.pack(side="top", fill="x")
@@ -136,22 +138,22 @@ class DSClinicView:
 
 
     def add_finding_row(self, misljenje: str = "", parametar: str = ""):
-        row_frame = ttk.Frame(self.nalazi_container)
+        row_frame = ttk.Frame(self.nalazi_container, height=60)
         row_frame.pack(fill="x", pady=2)
 
         # --- MIŠLJENJE LEVO ---
-        ent_m = ttk.Entry(row_frame, width=45)
-        ent_m.insert(0, misljenje)
-        ent_m.pack(side="left", padx=5, expand=True)
+        ent_m = scrolledtext.ScrolledText(row_frame, font=("Arial", 10), )
+        ent_m.insert("1.0", misljenje)
+        ent_m.place(relx=0.0, rely=0.0, relwidth=0.6, relheight=1.0)
 
         # --- PARAMETAR DESNO ---
-        ent_p = ttk.Entry(row_frame, width=20)
-        ent_p.insert(0, parametar)
-        ent_p.pack(side="left", padx=5)
+        ent_p = scrolledtext.ScrolledText(row_frame, font=("Arial", 10))
+        ent_p.insert("1.0", parametar)
+        ent_p.place(relx=0.61, rely=0.0, relwidth=0.3, relheight=1.0)
 
-        btn_ukloni = ttk.Button(row_frame, text="X", width=3)
+        btn_ukloni = ttk.Button(row_frame, text="X")
         btn_ukloni.config(command=lambda rf=row_frame: self.remove_finding_row(rf))
-        btn_ukloni.pack(side="left")
+        btn_ukloni.place(relx=0.92, rely=0.0, relwidth=0.08, relheight=1.0)
 
         # Čuvanje u listu kao instance variables objekti unutar rečnika
         self.nalazi_rows.append({
@@ -176,8 +178,8 @@ class DSClinicView:
             nalazi=[]
         )
         for row in self.nalazi_rows:
-            p_val = row["parametar"].get()
-            m_val = row["misljenje"].get()
+            p_val = row["parametar"].get("1.0", tk.END).strip()
+            m_val = row["misljenje"].get("1.0", tk.END).strip()
             if p_val or m_val:
                 rezultat.nalazi.append(MedicalCriticalFindingModel(
                     expertsko_misljenje=m_val, 
