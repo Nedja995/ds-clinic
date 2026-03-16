@@ -83,3 +83,10 @@ def get_output_data_dirpath(dir_name: str = "IZVESTAJI") -> str:
         os.makedirs(dirpath, exist_ok=True)
         logger.info(f"Created missing output directory at '{dirpath}'.")
     return dirpath
+
+
+def open_file_from_filepath(filepath: str):
+    if os.name == 'nt':
+        os.startfile(filepath)
+    elif os.name == 'posix':
+        os.system(f'open "{filepath}"')

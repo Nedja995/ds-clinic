@@ -10,18 +10,18 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": [ 
+            "args": [
                 "-v",
             ]
         },
-                {
+        {
             "name": "Python Debugger: Current File2",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "cwd": "{workspaceFolder}/src",
             "console": "integratedTerminal",
-            "args": [ 
+            "args": [
                 "-v",
             ]
         },
@@ -33,7 +33,17 @@
             "console": "integratedTerminal",
             "module": "src.main",
             "cwd": "${workspaceFolder}",
-    },
+        },
+        {
+            "name": "Python Debugger: GUI",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/dsclinic_gui/dsclinic_gui_app.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-v",
+            ]
+        },
         {
             "name": "Python Debugger: DSClinic",
             "type": "debugpy",

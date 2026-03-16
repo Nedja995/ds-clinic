@@ -82,7 +82,7 @@ def setup_logger(name: str = "dsclinic", log_dir_name: str = "logs", level: int 
     if level is not None:
         logger.setLevel(level)
     else:
-        #logger.setLevel(level)
+        logger.setLevel(level=logging.INFO)
         pass
     
     # --- Define Logging Formats ---

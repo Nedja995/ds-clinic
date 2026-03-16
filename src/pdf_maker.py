@@ -1,13 +1,14 @@
 ##
 # PDF Maker
 #
+import logging
 import os
 import sys
 from datetime import datetime
 
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
-from models import DSClinicReport, DSClinicReportCriticalIssue
+from models import MedicalReportModel, MedicalCriticalFindingModel
 import utils
 from logger import setup_logger
 
@@ -98,7 +99,7 @@ class HolisticReport(FPDF):
         self.cell(190, 5, f"Datum: {date}", align="R", ln=True)
         self.ln(8)  # Razmak do tabele
         
-    def draw_table(self, data: list[DSClinicReportCriticalIssue] | None = []):
+    def draw_table(self, data: list[MedicalCriticalFindingModel] | None = []):
         # Definicija širina kolona (ukupno 190mm za A4)
         col1_width = 85
         col2_width = 105
@@ -208,7 +209,7 @@ class HolisticReport(FPDF):
         self.set_font(FONT_ITALIC, "", 9)
         self.cell(line_end - line_start, 8, "M.P. Potpis terapeuta", align="C")
 
-def export_report(report: DSClinicReport, output_filename: str = "report.pdf"):
+def export_medical_report_pdf(report: MedicalReportModel, output_filename: str = "report.pdf"):
     generate_report_pdf(
         patient_name=report.patient_name,
         report_date=report.report_date,
@@ -222,7 +223,7 @@ def generate_report_pdf(
     patient_name: str = "NEPOZNATO IME PACIJENTA",
     report_date: str = "NEPOZNAT DATUM",
     terapija_i_saveti: str = "NEPOZNATA TERAPIJA I SAVET",
-    table_data: list[DSClinicReportCriticalIssue] | None = [],
+    table_data: list[MedicalCriticalFindingModel] | None = [],
     output_filename: str = "report.pdf"
 ):
     # Initialize PDF
@@ -239,17 +240,19 @@ def generate_report_pdf(
 
 # --- Example Usage ---
 if __name__ == "__main__":
+    logger.setLevel(logging.DEBUG)
+    
     # Sample Data Input
     data_input = [
-        DSClinicReportCriticalIssue(misljenje="Povećan očni pritisak (Glaukom) i jos neki poremecaj da bude sto duzi text ovde blab bla htrh rh rthrh rh r.",
+        MedicalCriticalFindingModel(misljenje="Povećan očni pritisak (Glaukom) i jos neki poremecaj da bude sto duzi text ovde blab bla htrh rh rthrh rh r.",
                    parametar="02.06.25 Glaucoma / glaucoma ( GLC1A gene) D=1,433"),
-        DSClinicReportCriticalIssue(misljenje="Manjak vitamina B2",
+        MedicalCriticalFindingModel(misljenje="Manjak vitamina B2",
                    parametar="02.06.25 Vitamin B2, riboflavin D=1,452"),
-        DSClinicReportCriticalIssue(misljenje="Poremecaj funkcije debelog creva (Moguci Kolitis)",
+        MedicalCriticalFindingModel(misljenje="Poremecaj funkcije debelog creva (Moguci Kolitis)",
                    parametar="02.06.25 Large Intestine ( DD ) D=1,419"),
-        DSClinicReportCriticalIssue(misljenje="Upalni procesi besike",
+        MedicalCriticalFindingModel(misljenje="Upalni procesi besike",
                    parametar="02.06.25 Bladder Meridian (BL) D=1,409 a i ovde za parametar da probamo sa dugackim texto neki nesto hhahahfd dsfsdfsd fs sd."),
-        DSClinicReportCriticalIssue(misljenje="Deficit vitamina B12 (Rizik od anemije)",
+        MedicalCriticalFindingModel(misljenje="Deficit vitamina B12 (Rizik od anemije)",
                    parametar="02.06.25 Vitamin B12 , cobalamin D=1,400"),
     ]
 

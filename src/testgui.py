@@ -63,7 +63,7 @@ class DSClinicAppGUI:
 
         self.lbl_status_details = tk.Label(
             self.footer_frame,
-            text="IDLE - ADD DOCUMENTS AND START ANALYSIS",
+            text="ADD DOCUMENTS AND START ANALYSIS",
             font=("Arial", 12, "normal"),
             fg="black",
             anchor="w"
@@ -176,7 +176,7 @@ class DSClinicAppGUI:
                 break
 
     def change_app_state(self, text):
-        self.status_var.set(f"STATUS: {text}")
+        self.status_var.set(f"{text}")
 
     def set_app_state_details(self, text):
         self.lbl_status_details.config(text=text)

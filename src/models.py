@@ -1,15 +1,15 @@
 from pydantic import BaseModel, Field
 
 
-class DSClinicReportCriticalIssue(BaseModel):
-    expertsko_misljenje: str = Field(description="Misljenje i dijagnoza i uzrok problema.")
-    parametar_i_vrednost: str = Field(description="Parametar i vrednost.")
+class MedicalCriticalFindingModel(BaseModel):
+    expertsko_misljenje: str = Field(description="Misljenje i dijagnoza i uzrok problema.", default="")
+    parametar_i_vrednost: str = Field(description="Parametar i vrednost.", default="")
 
-class DSClinicReport(BaseModel):
-    patient_name: str = Field(description="Ime i prezime pacijenta.")
-    report_date: str = Field(description="Datum izvještaja.")
-    preporucena_terapija_i_savet: str = Field(description="rezime, uzrok problema sazeto, uzrok problema detaljno, strucno misljenje dijagnoza summarized i preporucena terapija i savet summarized.")
-    nalazi: list[DSClinicReportCriticalIssue] = Field(description="Lista kritičnih nalaza sa ekspertskim mišljenjem i referentnim parametrima/vrednostima.")
+class MedicalReportModel(BaseModel):
+    patient_name: str = Field(description="Ime i prezime pacijenta.", default="")
+    report_date: str = Field(description="Datum izvještaja.", default="")
+    preporucena_terapija_i_savet: str = Field(description="rezime, uzrok problema sazeto, uzrok problema detaljno, strucno misljenje dijagnoza summarized i preporucena terapija i savet summarized.", default="")
+    nalazi: list[MedicalCriticalFindingModel] = Field(description="Lista kritičnih nalaza sa ekspertskim mišljenjem i referentnim parametrima/vrednostima.", default=[])
 
 
 # ---- MODELI ZA KREIRANJE KRAJNJEG PDF-a ----

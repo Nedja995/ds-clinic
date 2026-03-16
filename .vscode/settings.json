@@ -14,7 +14,12 @@
     "python.logging.enabled": true,
     "python.analysis.extraPaths": [
         "./src",
+        "./src/**",
+        "./src/**/**",
+        "./src/**/**/**",
+        ".venv/Lib/site-packages",
         "${workspaceFolder}/src",
+        "${workspaceFolder}/src/**",
         "${workspaceFolder}/.venv/Lib/site-packages"
     ],
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",

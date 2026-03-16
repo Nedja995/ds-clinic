@@ -6,7 +6,7 @@ from typing import Iterator
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
-from models import DSClinicReport
+from models import MedicalReportModel
 from logger import setup_logger
 
 logger = setup_logger()
@@ -93,7 +93,7 @@ class MedicalAnalyzerClient:
             tools=tools,
             max_output_tokens=65535,  # <-- Enabled here!
             response_mime_type="application/json",
-            response_schema=DSClinicReport,
+            response_schema=MedicalReportModel,
             thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.HIGH),
             system_instruction=(
                 "You are an expert medical data analyst using equally both holistic and traditional medical data.",
@@ -128,7 +128,7 @@ class MedicalAnalyzerClient:
         structured_config = types.GenerateContentConfig(
             temperature=0.1, # Even lower temp for strict JSON compliance
             response_mime_type="application/json",
-            response_schema=DSClinicReport, # Pass the Pydantic model directly!
+            response_schema=MedicalReportModel, # Pass the Pydantic model directly!
         )
         
         logger.debug("Sending analysis request to Gemini API...")
@@ -151,10 +151,10 @@ class MedicalAnalyzerClient:
         
         logger.debug(f"Streaming completed: received {chunk_count} chunks")
                 
-    def initial_analysis_report_from_chat_stream(self, documents: list[types.Part], question: str) -> DSClinicReport:
+    def initial_analysis_report_from_chat_stream(self, documents: list[types.Part], question: str) -> MedicalReportModel:
         logger.info("Starting medical analysis with Google AI (Streaming JSON)...")
         start_time = time.time()
-        parsed_report: DSClinicReport = None
+        parsed_report: MedicalReportModel = None
         accumulated_json: str = ""
         
         # 1. Stream the Structured JSON chunks
@@ -168,7 +168,7 @@ class MedicalAnalyzerClient:
         
         # 2. Parse the accumulated JSON string into the Pydantic model
         try:
-            parsed_report = DSClinicReport.model_validate_json(accumulated_json)
+            parsed_report = MedicalReportModel.model_validate_json(accumulated_json)
             
             elapsed_time = time.time() - start_time
             logger.info(f"Successfully parsed and validated medical report (completed in {elapsed_time:.2f}s)")
