@@ -119,6 +119,7 @@ class DSClinicController:
     def start_task(self):
         """Initializes and starts the background worker."""
         self.stop_event.clear() # Reset the cancel signal
+        
         self.view.var_btn_analyze.set("Cancel")
         self.view.update_status("Running", "Running heavy task...")
         self.view.progress_bar['value'] = 0

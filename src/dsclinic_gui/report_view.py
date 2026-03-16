@@ -11,10 +11,23 @@ class DSClinicView:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("DS Clinic Analiza")
-        self.root.geometry("950x800")
         self.root.minsize(600, 500)
-        
+        # Set centered window
+        window_width = 950
+        window_height = 800
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x_cordinate = int((screen_width/2) - (window_width/2))
+        y_cordinate = int((screen_height/2) - (window_height/2))
+        self.root.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
+
         self.nalazi_rows = []
+
+        self.s = ttk.Style()
+        self.s.configure('DebugRed.TFrame', background="#FF000008")
+        self.s.configure('DebugGreen.TFrame', background="#00FF000E")
+        self.s.configure('DebugBlue.TFrame', background="#0000FF11")
+        self.s.configure('DebugYellow.TFrame', background="#FFFF000E")
         
         self._setup_ui()
 
@@ -81,47 +94,57 @@ class DSClinicView:
         paddings = {'padx': 10, 'pady': 10}
         font_label = ("Arial", 10, "bold")
 
-        # Okvir za Ime i Datum
+        ## Frame for Ime i Datum (Horizontal)
         self.header_row = ttk.Frame(self.scrollable_frame)
-        self.header_row.pack(fill="x", **paddings)
+        self.header_row.pack(side="top", fill="x", expand=True, **paddings)
 
         ttk.Label(self.header_row, text="Ime pacijenta:", font=font_label).pack(side="left", padx=(0, 5))
         self.ent_ime = ttk.Entry(self.header_row, width=35)
-        self.ent_ime.pack(side="left", padx=(0, 25))
+        self.ent_ime.pack(side="left", padx=(0, 15))
 
         ttk.Label(self.header_row, text="Datum:", font=font_label).pack(side="left", padx=(0, 5))
         self.ent_datum = ttk.Entry(self.header_row, width=15)
         self.ent_datum.pack(side="left")
 
+        ## Frame for critical founding (Vertical)
+        self.report_form_frame = ttk.Frame(self.scrollable_frame)
+        self.report_form_frame.pack(side="top", fill="x", **paddings)
+
         # Terapija
-        ttk.Label(self.scrollable_frame, text="PREPORUČENA TERAPIJA I SAVET:", font=font_label).pack(anchor="w", **paddings)
-        self.txt_terapija = scrolledtext.ScrolledText(self.scrollable_frame, width=50, height=10, font=("Arial", 10))
-        self.txt_terapija.pack(anchor="w", padx=10, pady=5)
+        ttk.Label(self.report_form_frame, text="PREPORUČENA TERAPIJA I SAVET:", font=font_label).pack(side="top", fill="x", **paddings)
+        self.txt_terapija = scrolledtext.ScrolledText(self.report_form_frame, width=50, height=10, font=("Arial", 10))
+        self.txt_terapija.pack(side="top", fill="x", pady=5)
 
         # Sekcija Nalazi
-        ttk.Separator(self.scrollable_frame, orient='horizontal').pack(fill='x', pady=15)
-        ttk.Label(self.scrollable_frame, text="NALAZI:", font=font_label).pack(anchor="w", padx=10)
+        ttk.Separator(self.report_form_frame, orient='horizontal').pack(fill='x', pady=15)
+        ttk.Label(self.report_form_frame, text="NALAZI:", font=font_label).pack(side="top", fill="x")
         
-        self.nalazi_container = ttk.Frame(self.scrollable_frame)
-        self.nalazi_container.pack(fill="x", padx=10, pady=5)
+        self.nalazi_container = ttk.Frame(self.report_form_frame)
+        self.nalazi_container.pack(side="top", fill="x", pady=5)
 
-        self.btn_dodaj_nalaz = ttk.Button(self.scrollable_frame, text="+ Dodaj novi nalaz")
-        self.btn_dodaj_nalaz.pack(anchor="w", padx=10)
+        # TABLE HEADER FRAME
+        table_header_frame = ttk.Frame(self.nalazi_container, height=20)
+        table_header_frame.pack(side="top", fill="x", pady=2)
+        lbl_m = ttk.Label(table_header_frame, text="Mišljenje")
+        lbl_m.place(relx=0.0, rely=0.0, relwidth=0.5, relheight=1.0)
+        lbl_p = ttk.Label(table_header_frame, text="Parametar")
+        lbl_p.place(relx=0.5, rely=0.0, relwidth=0.5, relheight=1.0)
+
+        self.btn_dodaj_nalaz = ttk.Button(self.report_form_frame, text="+ Dodaj novi nalaz")
+        self.btn_dodaj_nalaz.pack(side="top", fill="x")
+
+
 
     def add_finding_row(self, misljenje: str = "", parametar: str = ""):
         row_frame = ttk.Frame(self.nalazi_container)
         row_frame.pack(fill="x", pady=2)
 
-        # --- ZAMENJEN REDOSLED: MIŠLJENJE LEVO ---
-        lbl_m = ttk.Label(row_frame, text="Mišljenje:")
-        lbl_m.pack(side="left")
+        # --- MIŠLJENJE LEVO ---
         ent_m = ttk.Entry(row_frame, width=45)
         ent_m.insert(0, misljenje)
-        ent_m.pack(side="left", padx=5)
+        ent_m.pack(side="left", padx=5, expand=True)
 
         # --- PARAMETAR DESNO ---
-        lbl_p = ttk.Label(row_frame, text="Parametar:")
-        lbl_p.pack(side="left")
         ent_p = ttk.Entry(row_frame, width=20)
         ent_p.insert(0, parametar)
         ent_p.pack(side="left", padx=5)
@@ -135,9 +158,7 @@ class DSClinicView:
             "frame": row_frame, 
             "parametar": ent_p, 
             "misljenje": ent_m,
-            "btn_ukloni": btn_ukloni,
-            "lbl_p": lbl_p,
-            "lbl_m": lbl_m
+            "btn_ukloni": btn_ukloni
         })
 
     def remove_finding_row(self, frame: ttk.Frame):
