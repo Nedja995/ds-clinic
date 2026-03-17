@@ -58,10 +58,10 @@ class DSClinicView:
         ttk.Separator(self.footer_frame, orient='horizontal').pack(fill='x', pady=0, side=tk.TOP)
 
         progress_bar_frame = ttk.Frame(self.footer_frame, height=15) 
-        progress_bar_frame.pack(expand=False, fill='x', side=tk.TOP, padx=2, pady=0)
+        progress_bar_frame.pack(expand=False, fill='x', side=tk.TOP, padx=0, pady=0)
         progress_bar_frame.pack_propagate(False) # Prevents the frame from resizing to fit the progressbar
-        self.progress_bar = ttk.Progressbar(progress_bar_frame, mode='determinate', value=25)
-        self.progress_bar.pack(fill="x", padx=0, pady=0)
+        self.progress_bar = ttk.Progressbar(progress_bar_frame, mode='determinate')
+        self.progress_bar.pack(fill="x", padx=0, pady=0, expand=True)
 
         self.lbl_footer_status = tk.Label(self.footer_frame, text="STATUS:", font=("Arial", 10, "bold"), fg="red")
         self.lbl_footer_status.pack(side="left", padx=(5, 0), pady=0)
