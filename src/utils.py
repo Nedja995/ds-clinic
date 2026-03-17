@@ -31,6 +31,9 @@ def get_base_dir_path() -> str:
         base_path = os.path.dirname(sys.executable)
         logger.debug(f"Running as frozen executable. Base path: {base_path}")
     elif not app_entry_filepath or not isinstance(app_entry_filepath, str) or not os.path.exists(app_entry_filepath):
+        # TODO: CHECK
+        # Running as a Console app
+        # sys.argv[0] exists
         base_path = app_entry_filepath
         logger.debug(f"Running as console app. Base path: {base_path}")  
     else:

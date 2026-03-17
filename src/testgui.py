@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 import tkinter.messagebox
 from logger import setup_logger
-from dsclinic import process_documents
+from dsclinic import analyze_inputs_and_export_report
 
 logger = setup_logger()
 

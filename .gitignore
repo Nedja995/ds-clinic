@@ -1,8 +1,9 @@
+# Custom Project
+dsclinic_v0_9.exe
+src/api_gemini/api_gemini.txt
 
 
-
-### macOS ###
-# General
+# MacOS
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -231,4 +232,3 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-dsclinic_v0_9.exe

@@ -11,7 +11,7 @@ from logger import setup_logger
 import utils
 from models import MedicalReportModel
 from pdf_maker import export_medical_report_pdf
-from dsclinic import process_documents
+from dsclinic import analyze_inputs_and_export_report
 import config
 #
 from dsclinic_gui.report_view import DSClinicView
@@ -145,7 +145,7 @@ class DSClinicController:
 
         try:
             # Pozivamo glavnu logiku iz dsclinic.py
-            process_documents(
+            analyze_inputs_and_export_report(
                 input_dir=input_dir,
                 output_dir=output_dir,
                 model_name=config.GEMINI_MODEL,
@@ -179,8 +179,6 @@ class DSClinicController:
             else:
                 self.view.update_status("Finished", f"Finished: {msg['result']}")
                 self.view.var_btn_analyze.set("Analyze")
-            
-            #self.view.var_btn_analyze.set("Analyze")
         except queue.Empty:
             pass
         finally:

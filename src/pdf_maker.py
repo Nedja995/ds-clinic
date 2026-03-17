@@ -218,11 +218,26 @@ def export_medical_report_pdf(report: MedicalReportModel, output_filename: str =
         output_filename=output_filename
     )
 
+def generate_report_pdf_bytes(
+    data: MedicalReportModel,
+    output_filename: str = "report.pdf"
+):
+    # Initialize PDF
+    pdf = HolisticReport()
+    pdf.draw_header()
+    pdf.draw_patient_info(data.patient_name, data.report_date)
+    pdf.draw_table(data.nalazi)
+    pdf.draw_footer_section(data.preporucena_terapija_i_savet)
+
+    data = pdf.buffer
+    logger.info(f"Report generated (bytes): {len(data)}")
+    return data
+
 
 def generate_report_pdf(
-    patient_name: str = "NEPOZNATO IME PACIJENTA",
-    report_date: str = "NEPOZNAT DATUM",
-    terapija_i_saveti: str = "NEPOZNATA TERAPIJA I SAVET",
+    patient_name: str = "NEPOZNATO",
+    report_date: str = "NEPOZNATO",
+    terapija_i_saveti: str = "NEPOZNATO",
     table_data: list[MedicalCriticalFindingModel] | None = [],
     output_filename: str = "report.pdf"
 ):

@@ -5,7 +5,7 @@ import logging
 from logger import setup_logger
 import utils
 import config
-from dsclinic import process_documents
+from dsclinic import analyze_inputs_and_export_report
 
 
 
@@ -60,7 +60,7 @@ def main():
 
     try:
         # Pozivamo glavnu logiku iz dsclinic.py
-        process_documents(
+        analyze_inputs_and_export_report(
             input_dir=input_dir,
             output_dir=output_dir,
             model_name=config.GEMINI_MODEL,

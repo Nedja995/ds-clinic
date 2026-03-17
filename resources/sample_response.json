@@ -1,0 +1,27 @@
+{
+    "patient_name": "Kristina Cakić",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Rezime: NLS analiza ukazuje na izraženo opterećenje centralnog nervnog sistema (posebno hipofize), kardiovaskularnog sistema sa znacima prolapsa mitralne valvule, kao i na biohemijski disbalans u vidu mogućeg deficita gvožđa i hemoglobina. Uzrok problema sažeto: Kombinacija toksičnog opterećenja, nutritivnih deficita i stresa na nivou neuroendokrinog sistema. Uzrok problema detaljno: Nizak koeficijent spektralne sličnosti kod hipofize i delova mozga ukazuje na neuroendokrinu disregulaciju. Prisutni su znaci opterećenja toksinima iz hrane i okoline, što iscrpljuje adaptacione mehanizme. Na srcu su vizuelno detektovane zone dekompenzacije adaptacionih mehanizama, što korelira sa nalazom prolapsa mitralne valvule. Stručno mišljenje i dijagnoza: Suspektan prolaps mitralne valvule, neuroendokrini disbalans, moguća anemija i toksično opterećenje organizma. Preporučena terapija i savet: Obavezan kardiološki pregled (EHO srca) radi potvrde stanja mitralne valvule. Preporučuje se detoksikacija organizma, eliminacija mlečnih proizvoda iz ishrane, te suplementacija gvožđem (uz proveru krvne slike), vitaminima B kompleksa i antioksidansima.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Izražen disbalans i stres na nivou endokrinog sistema i centralnog nervnog sistema. Nizak koeficijent ukazuje na visoku rezonancu i moguće funkcionalne smetnje.",
+            "parametar_i_vrednost": "ADENO-HYPOPHYSIS (D=0,008), CEREBRUM REGIO MOTORICA (D=0,010)"
+        },
+        {
+            "expertsko_misljenje": "Moguća anemija ili poremećaj u metabolizmu gvožđa. Vrednosti ukazuju na potrebu za proverom kompletne krvne slike.",
+            "parametar_i_vrednost": "HAEMOGLOBIN (D=0,021), SERUM IRON (D=0,022)"
+        },
+        {
+            "expertsko_misljenje": "Patomorfološki nalaz koji ukazuje na strukturne promene na srčanom zalisku. Vizuelni prikaz srca takođe pokazuje zone dekompenzacije adaptacionih mehanizama.",
+            "parametar_i_vrednost": "MITRAL VALVE PROLAPSE (D=0,059)"
+        },
+        {
+            "expertsko_misljenje": "Opterećenje organizma patogenima i nutritivnim alergenima, što može izazvati gastrointestinalne i sistemske smetnje.",
+            "parametar_i_vrednost": "amoebae (D=0,668), dairy products (D=0,685)"
+        },
+        {
+            "expertsko_misljenje": "Povećana potreba ili deficit vitamina B grupe, koji su ključni za nervni sistem i energetski metabolizam.",
+            "parametar_i_vrednost": "Vitamin B1, thiamine (D=0,617)"
+        }
+    ]
+}

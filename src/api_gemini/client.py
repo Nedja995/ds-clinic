@@ -21,20 +21,28 @@ class Models(StrEnum):
 
 class GeminiConfig(BaseModel):
     api_key: str = Field(default_factory=lambda: os.getenv("GOOGLE_API_KEY", ""))
-    model_name: str = "gemini-3-pro-review" #Models = Field(default=Models.GEMINI_3_PRO_PREVIEW)
+    model_name: str = "gemini-3-pro-preview" #Models = Field(default=Models.GEMINI_3_PRO_PREVIEW)
 
 
 class MedicalAnalyzerClient:
+    """Client for interacting with the Gemini API for medical report analysis."""
+    client: genai.Client = None
+    chat_session: genai_types.ChatSession = None
+    ai_config: genai_types.GenerateContentConfig = None
+
     def __init__(self, config: GeminiConfig = None):
         logger.info("Initializing MedicalAnalyzerClient...")
         self.config = config or GeminiConfig()
         if not self.config.api_key:
             logger.error("GOOGLE_API_KEY environment variable is missing")
             raise ValueError("GOOGLE_API_KEY environment variable is missing.")
+        
         logger.debug(f"Using model: {self.config.model_name}")
+        
         self._initialise_client()
         self._initialize_ai_config()
         self.initialize_chat_session()
+        
         logger.info("MedicalAnalyzerClient initialized successfully")
 
     def _initialise_client(self):
@@ -114,8 +122,41 @@ class MedicalAnalyzerClient:
             ]
         )
         logger.debug(f"{' ' * 4}AI configuration initialized successfully")
+                
+    def initial_analysis_report_from_chat_stream(self, documents: list[genai_types.Part], question: str) -> MedicalReportModel:
+        logger.info("Run initial medical analysis from chat stream (Streaming JSON).")
+        start_time = time.time()
+        parsed_report: MedicalReportModel = None
+        accumulated_json: str = ""
+        
+        # 1. Stream the Structured JSON chunks
+        #logger.debug(f"Processing {len(documents)} documents with question: {question}...")
+        for chunk in self._initial_analysis_run_chat_stream(documents, question):
+            #print(chunk, end="", flush=True) # Print without newlines and flush buffer immediately for the typing effect
+            #logger.debug(chunk)
+            accumulated_json += chunk
+        
+        elapsed_time = time.time() - start_time
+        logger.info(f"{' ' * 2}Successfully complited in {elapsed_time:.2f}s.")
+        logger.info(f"{' ' * 2}Accumulated response size: {len(accumulated_json)} characters.")
+        logger.debug(f"{' ' * 2}Formatting and validating structured data...")
+        
+        # 2. Parse the accumulated JSON string into the Pydantic model
+        elapsed_time = time.time() - start_time
+        try:
+            parsed_report = MedicalReportModel.model_validate_json(accumulated_json)
+            logger.info(f"{' ' * 2}Successfully parsed and validated response in {elapsed_time:.2f}s)")
+        except ValueError as e:
+            logger.error(f"\nValidation error parsing report after {elapsed_time:.2f}s: {str(e)}")
+            logger.debug(f"Raw response (first 500 chars): {accumulated_json[:500]}...") # Log only first 500 chars
+            logger.warning("Falling back to raw response output")
+        except Exception as e:
+            logger.error(f"\nUnexpected error parsing report after {elapsed_time:.2f}s: {str(e)}", exc_info=True)
+            logger.debug(f"Raw response (first 500 chars): {accumulated_json[:500]}...") # Log only first 500 chars
+            
+        return parsed_report
 
-    def initial_anlysis_run_chat_stream(self, documents: list[genai_types.Part], predefined_question: str) -> Iterator[str]:
+    def _initial_analysis_run_chat_stream(self, documents: list[genai_types.Part], predefined_question: str) -> Iterator[str]:
         logger.debug(f"Run initial analysis chat")
         # logger.debug(f"{'' * 2}Processing {len(documents)} document(s)")
         # logger.debug(f"{'' * 2}Question: {predefined_question}")
@@ -152,50 +193,6 @@ class MedicalAnalyzerClient:
                 yield chunk.text
         
         logger.debug(f"Streaming completed: received {chunk_count} chunks")
-                
-    def initial_analysis_report_from_chat_stream(self, documents: list[genai_types.Part], question: str) -> MedicalReportModel:
-        logger.info("Run initial medical analysis from chat stream (Streaming JSON).")
-        start_time = time.time()
-        parsed_report: MedicalReportModel = None
-        accumulated_json: str = ""
-        
-        # 1. Stream the Structured JSON chunks
-        #logger.debug(f"Processing {len(documents)} documents with question: {question}...")
-        for chunk in self.initial_anlysis_run_chat_stream(documents, question):
-            #print(chunk, end="", flush=True) # Print without newlines and flush buffer immediately for the typing effect
-            #logger.debug(chunk)
-            accumulated_json += chunk
-        
-        logger.debug(f"Accumulated response size: {len(accumulated_json)} characters")
-        logger.debug("Formatting and validating structured data...")
-        
-        # 2. Parse the accumulated JSON string into the Pydantic model
-        try:
-            parsed_report = MedicalReportModel.model_validate_json(accumulated_json)
-            
-            elapsed_time = time.time() - start_time
-            logger.info(f"Successfully parsed and validated medical report (completed in {elapsed_time:.2f}s)")
-            #logger.debug(f"Report contains {len(parsed_report.severe_abnormalities) if parsed_report.severe_abnormalities else 0} severe abnormalities")
-            
-            # Format it nicely for the final report
-            # report_text = (
-            #     f"PATIENT SUMMARY:\n{parsed_report.patient_summary}\n\n"
-            #     f"SEVERE ABNORMALITIES:\n" + "\n".join([f"- {item}" for item in parsed_report.severe_abnormalities]) + "\n\n"
-            #     f"RECOMMENDATIONS:\n" + "\n".join([f"- {item}" for item in parsed_report.recommended_followups])
-            # )
-            #logger.info(f"Successfully parsed Pydantic schema! Report:\n{report_text}")
-        except ValueError as e:
-            elapsed_time = time.time() - start_time
-            logger.error(f"\nValidation error parsing report after {elapsed_time:.2f}s: {str(e)}")
-            logger.debug(f"Raw response (first 500 chars): {accumulated_json[:500]}...") # Log only first 500 chars
-            logger.warning("Falling back to raw response output")
-        except Exception as e:
-            elapsed_time = time.time() - start_time
-            logger.error(f"\nUnexpected error parsing report after {elapsed_time:.2f}s: {str(e)}", exc_info=True)
-            logger.debug(f"Raw response (first 500 chars): {accumulated_json[:500]}...") # Log only first 500 chars
-            
-        return parsed_report
-
 
     def ask_followup_stream(self, follow_up_question: str) -> Iterator[str]:
         logger.debug(f"Sending follow-up question: {follow_up_question[:100]}...")
