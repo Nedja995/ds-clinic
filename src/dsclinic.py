@@ -123,8 +123,6 @@ def find_input_documents(input_dir: str) -> list[str]:
 
 def make_output_filepath(patient_name: str, extension: str, output_dir: str | None) -> str:
     if not output_dir: output_dir = utils.get_output_data_dirpath()
-        
-        
     timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
     output_path = os.path.join(output_dir, f"NALAZ_{patient_name}_{timestamp_str}.{extension}")
     return output_path
