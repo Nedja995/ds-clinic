@@ -267,43 +267,43 @@ class DSClinicView:
         patient_card = self._card(sf, "Podaci o pacijentu")
         patient_card.pack(fill="x", **PAD)
 
-        pr = ttk.Frame(patient_card, style="Panel.TFrame", padding=(12, 0, 12, 12))
+        pr = ttk.Frame(patient_card, style="Panel.TFrame", padding=(12, 0, 12, 2))
         pr.pack(fill="x")
 
         ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
         self.ent_ime = ttk.Entry(pr, width=36, font=FI)
-        self.ent_ime.pack(side="left", padx=(6, 28), ipady=2)
+        self.ent_ime.pack(side="left", padx=(6, 28), ipady=2, pady=4)
 
         ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
         self.ent_datum = ttk.Entry(pr, width=14, font=FI)
-        self.ent_datum.pack(side="left", padx=(6, 0), ipady=2)
+        self.ent_datum.pack(side="left", padx=(6, 0), ipady=2, pady=4)
 
         # Card: Terapija
         therapy_card = self._card(sf, "Preporučena terapija i savet")
         therapy_card.pack(fill="x", **PAD)
 
         self.txt_terapija = self._scrolled_text(therapy_card, height=9)
-        self.txt_terapija.pack(fill="x", padx=12, pady=(0, 12))
+        self.txt_terapija.pack(fill="x", padx=0, pady=(0, 0))
 
         # Card: Nalazi
         nalazi_card = self._card(sf, "Nalazi")
         nalazi_card.pack(fill="x", **PAD)
 
         th = ttk.Frame(nalazi_card, style="THead.TFrame", height=26)
-        th.pack(fill="x", padx=12, pady=(0, 1))
+        th.pack(fill="x", padx=0, pady=(0, 2))
         th.pack_propagate(False)
         ttk.Label(th, text="Mišljenje / Objašnjenje", style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
         ttk.Label(th, text="Parametar i vrednost", style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
 
         self.nalazi_container = ttk.Frame(nalazi_card, style="Rows.TFrame")
-        self.nalazi_container.pack(fill="x", padx=12)
+        self.nalazi_container.pack(fill="x", padx=0)
 
         self.btn_dodaj_nalaz = ttk.Button(
             nalazi_card, text="＋   Dodaj novi nalaz",
             style="Accent.TButton",
             command=lambda: self.add_finding_row()
         )
-        self.btn_dodaj_nalaz.pack(fill="x", padx=12, pady=(4, 12))
+        self.btn_dodaj_nalaz.pack(fill="x", padx=2, pady=(4, 4))
 
         ttk.Frame(sf, height=24).pack()
 
@@ -349,12 +349,12 @@ class DSClinicView:
         row_bg    = ROW_A         if self._row_parity % 2 else ROW_B
 
         row_frame = ttk.Frame(self.nalazi_container, style=row_style, height=72)
-        row_frame.pack(fill="x", pady=(0, 1))
+        row_frame.pack(fill="x", pady=(0, 0))
         row_frame.pack_propagate(False)
 
         ent_m = self._scrolled_text(row_frame, height=1, bg=row_bg)
         ent_m.insert("1.0", misljenje)
-        ent_m.place(relx=0.0,   rely=0.06, relwidth=0.595, relheight=0.88)
+        ent_m.place(relx=0.0, rely=0.06, relwidth=0.595, relheight=0.88)
 
         ent_p = self._scrolled_text(row_frame, height=1, bg=row_bg)
         ent_p.insert("1.0", parametar)
