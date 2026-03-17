@@ -177,29 +177,21 @@ class DSClinicView:
     # ── Toolbar ───────────────────────────────────────────────────────────────
 
     def _build_toolbar(self):
-        self.top_frame = ttk.Frame(self.root, style="Toolbar.TFrame",
-                                   padding=(0, 6))
+        self.top_frame = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(0, 6))
         self.top_frame.pack(side="top", fill="x")
 
         self.var_btn_analyze = tk.StringVar(value="Analyze")
-        self.btn_analyze     = self._tb_btn(self.top_frame,
-                                            textvariable=self.var_btn_analyze)
+        self.btn_analyze     = self._tb_btn(self.top_frame, textvariable=self.var_btn_analyze)
         self.btn_submit      = self._tb_btn(self.top_frame, text="Export")
-        self.btn_full_report = self._tb_btn(self.top_frame, text="Details",
-                                            state="disabled")
-        self.btn_settings    = self._tb_btn(self.top_frame, text="Settings",
-                                            side="right")
+        self.btn_full_report = self._tb_btn(self.top_frame, text="Details", state="disabled")
+        self.btn_settings    = self._tb_btn(self.top_frame, text="Settings", side="right")
 
-        ttk.Frame(self.root, style="Shadow.TFrame", height=2).pack(
-            side="top", fill="x")
+        ttk.Frame(self.root, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
-    def _tb_btn(self, parent, text="", textvariable=None,
-                state="normal", side="left") -> ttk.Button:
+    def _tb_btn(self, parent, text="", textvariable=None,state="normal", side="left") -> ttk.Button:
         kw: dict = dict(style="Toolbar.TButton", state=state)
-        btn = (ttk.Button(parent, textvariable=textvariable, **kw)
-               if textvariable else ttk.Button(parent, text=text, **kw))
-        btn.pack(side=side,
-                 padx=(6, 0) if side == "left" else (0, 6))
+        btn = (ttk.Button(parent, textvariable=textvariable, **kw) if textvariable else ttk.Button(parent, text=text, **kw))
+        btn.pack(side=side, padx=(6, 0) if side == "left" else (0, 6))
         return btn
 
     # ── Footer ────────────────────────────────────────────────────────────────
@@ -216,23 +208,17 @@ class DSClinicView:
         self.progress_bar = ttk.Progressbar(pb_host, mode="determinate")
         self.progress_bar.pack(fill="x", expand=True)
 
-        ttk.Separator(self.footer_frame, orient="horizontal").pack(
-            fill="x", side="top")
+        ttk.Separator(self.footer_frame, orient="horizontal").pack(fill="x", side="top")
 
-        status_row = ttk.Frame(self.footer_frame, style="Footer.TFrame",
-                               padding=(8, 3))
+        status_row = ttk.Frame(self.footer_frame, style="Footer.TFrame", padding=(8, 3))
         status_row.pack(fill="x")
 
-        self.lbl_footer_status = ttk.Label(
-            status_row, text="STATUS:", style="StatusKey.TLabel")
+        self.lbl_footer_status = ttk.Label(status_row, text="STATUS:", style="StatusKey.TLabel")
         self.lbl_footer_status.pack(side="left")
 
         self.var_status = tk.StringVar(value="Idle")
-        self.lbl_status_details = ttk.Label(
-            status_row, textvariable=self.var_status,
-            style="StatusVal.TLabel", anchor="w")
-        self.lbl_status_details.pack(side="left", fill="x", expand=True,
-                                     padx=(5, 0))
+        self.lbl_status_details = ttk.Label(status_row, textvariable=self.var_status, style="StatusVal.TLabel", anchor="w")
+        self.lbl_status_details.pack(side="left", fill="x", expand=True, padx=(5, 0))
 
     # ── Scrollable canvas ─────────────────────────────────────────────────────
 
@@ -242,8 +228,7 @@ class DSClinicView:
 
         # tk.Canvas: no ttk equivalent, kept intentionally
         self.main_canvas = tk.Canvas(wrap, bg=BG, highlightthickness=0)
-        self.scrollbar   = ttk.Scrollbar(wrap, orient="vertical",
-                                         command=self.main_canvas.yview)
+        self.scrollbar   = ttk.Scrollbar(wrap, orient="vertical", command=self.main_canvas.yview)
         self.scrollable_frame = ttk.Frame(self.main_canvas)
 
         self.scrollable_frame.bind(
@@ -252,8 +237,7 @@ class DSClinicView:
                 scrollregion=self.main_canvas.bbox("all"))
         )
 
-        self._win_id = self.main_canvas.create_window(
-            (0, 0), window=self.scrollable_frame, anchor="nw")
+        self._win_id = self.main_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         self.main_canvas.configure(yscrollcommand=self.scrollbar.set)
 
         self.main_canvas.bind(
@@ -263,8 +247,7 @@ class DSClinicView:
         )
 
         def _wheel(ev):
-            delta = (int(-1 * ev.delta / 120) if ev.delta
-                     else (-1 if ev.num == 4 else 1))
+            delta = (int(-1 * ev.delta / 120) if ev.delta else (-1 if ev.num == 4 else 1))
             self.main_canvas.yview_scroll(delta, "units")
 
         self.main_canvas.bind_all("<MouseWheel>", _wheel)
@@ -284,17 +267,14 @@ class DSClinicView:
         patient_card = self._card(sf, "Podaci o pacijentu")
         patient_card.pack(fill="x", **PAD)
 
-        pr = ttk.Frame(patient_card, style="Panel.TFrame",
-                       padding=(12, 0, 12, 12))
+        pr = ttk.Frame(patient_card, style="Panel.TFrame", padding=(12, 0, 12, 12))
         pr.pack(fill="x")
 
-        ttk.Label(pr, text="Ime pacijenta:",
-                  style="FormLabel.TLabel").pack(side="left")
+        ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
         self.ent_ime = ttk.Entry(pr, width=36, font=FI)
         self.ent_ime.pack(side="left", padx=(6, 28), ipady=2)
 
-        ttk.Label(pr, text="Datum:",
-                  style="FormLabel.TLabel").pack(side="left")
+        ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
         self.ent_datum = ttk.Entry(pr, width=14, font=FI)
         self.ent_datum.pack(side="left", padx=(6, 0), ipady=2)
 
@@ -312,12 +292,8 @@ class DSClinicView:
         th = ttk.Frame(nalazi_card, style="THead.TFrame", height=26)
         th.pack(fill="x", padx=12, pady=(0, 1))
         th.pack_propagate(False)
-        ttk.Label(th, text="Mišljenje / Objašnjenje",
-                  style="THeadLabel.TLabel").place(
-            relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
-        ttk.Label(th, text="Parametar i vrednost",
-                  style="THeadLabel.TLabel").place(
-            relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
+        ttk.Label(th, text="Mišljenje / Objašnjenje", style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
+        ttk.Label(th, text="Parametar i vrednost", style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
 
         self.nalazi_container = ttk.Frame(nalazi_card, style="Rows.TFrame")
         self.nalazi_container.pack(fill="x", padx=12)
@@ -340,12 +316,10 @@ class DSClinicView:
         strip = ttk.Frame(outer, style="Strip.TFrame", height=30)
         strip.pack(fill="x")
         strip.pack_propagate(False)
-        ttk.Label(strip, text=title.upper(),
-                  style="CardTitle.TLabel").pack(fill="both", expand=True)
+        ttk.Label(strip, text=title.upper(), style="CardTitle.TLabel").pack(fill="both", expand=True)
         return outer
 
-    def _scrolled_text(self, parent, height=5,
-                       bg=PANEL) -> scrolledtext.ScrolledText:
+    def _scrolled_text(self, parent, height=5, bg=PANEL) -> scrolledtext.ScrolledText:
         """
         scrolledtext.ScrolledText wraps tk.Text — ttk.Style cannot theme
         tk.Text internals, so widget-level options are correct here.
@@ -414,8 +388,7 @@ class DSClinicView:
         result = MedicalReportModel(
             patient_name=self.ent_ime.get(),
             report_date=self.ent_datum.get(),
-            preporucena_terapija_i_savet=self.txt_terapija.get(
-                "1.0", tk.END).strip(),
+            preporucena_terapija_i_savet=self.txt_terapija.get("1.0", tk.END).strip(),
             nalazi=[]
         )
         for row in self.nalazi_rows:
