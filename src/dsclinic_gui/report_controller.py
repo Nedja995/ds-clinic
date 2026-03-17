@@ -6,16 +6,20 @@ import time
 import tkinter as tk
 from tkinter import filedialog
 import tkinter.messagebox
+#
 from logger import setup_logger
-from models import MedicalReportModel, MedicalCriticalFindingModel
-from dsclinic import process_documents
+import utils
+from models import MedicalReportModel
 from pdf_maker import export_medical_report_pdf
+from dsclinic import process_documents
+import config
+#
 from dsclinic_gui.report_view import DSClinicView
 from dsclinic_gui.widgets.dialogs import CustomMessageBox
-import utils
 
 
 logger = setup_logger()
+
 
 class DSClinicController:
     def __init__(self, root: tk.Tk, model: MedicalReportModel, view: DSClinicView):
@@ -124,7 +128,7 @@ class DSClinicController:
         self.view.update_status("Running", "Running heavy task...")
         self.view.progress_bar['value'] = 0
 
-        self.worker_thread = threading.Thread(target=self.heavy_work_logic, daemon=True)
+        self.worker_thread = threading.Thread(target=self._task_initial_analyzis, daemon=True)
         self.worker_thread.start()
 
     def cancel_task(self):
@@ -133,7 +137,57 @@ class DSClinicController:
         self.view.var_btn_analyze.set("Analyze")
         self.stop_event.set()
 
-    def heavy_work_logic(self):
+    def _task_initial_analyzis(self):
+        base_dir = utils.get_base_dir_path()
+        
+        input_dir = utils.get_input_data_dirpath()
+        output_dir = utils.get_output_data_dirpath()
+
+        try:
+            # Pozivamo glavnu logiku iz dsclinic.py
+            process_documents(
+                input_dir=input_dir,
+                output_dir=output_dir,
+                model_name=config.GEMINI_MODEL,
+                debug_response=False
+            )
+        except Exception as e:
+            logger.critical(f"Greška tokom izvršavanja: {str(e)}", exc_info=True)
+            self.output_queue.put({"status": "failed", "result": str(e)})
+            return # Exit the thread immediately
+
+        # Task completed fully
+        self.output_queue.put({"status": "complete", "result": "Anlyzing completed successfully!"})
+
+
+    def check_queue(self):
+        """Check task state and update the UI."""
+        try:
+            msg = self.output_queue.get_nowait()
+            if msg["status"] == "cancelled":
+                self.view.update_status("Cancelled", "Task was Cancelled.")
+            elif msg["status"] == "complete":
+                self.view.progress_bar['value'] = 100
+                self.view.update_status("Analiza zavrsena", "Analiza je zavrsena.")
+                self.view.var_btn_analyze.set("Analyze")
+            elif msg["status"] == "processing":
+                #self.view.progress_bar['value'] = int(msg["result"])
+                self.view.update_status("Analysing", f"Processing step {msg['result']}%")
+            elif msg["status"] == "failed":
+                self.view.update_status("Failed", msg["result"])
+                self.view.var_btn_analyze.set("Analyze")
+            else:
+                self.view.update_status("Finished", f"Finished: {msg['result']}")
+                self.view.var_btn_analyze.set("Analyze")
+            
+            #self.view.var_btn_analyze.set("Analyze")
+        except queue.Empty:
+            pass
+        finally:
+            # CALL AGAIN AFTER 1s
+            self.root.after(1000, self.check_queue)
+
+    def _task_simulate_heavy_work(self):
         """The worker loop that respects the stop_event."""
         for i in range(1, 101):
             # 2. THE CHECK: Does the UI want us to stop?
@@ -150,26 +204,3 @@ class DSClinicController:
 
         # Task completed fully
         self.output_queue.put({"status": "complete", "result": "Success!"})
-
-    def check_queue(self):
-        """Listen for thread exit signals."""
-        try:
-            msg = self.output_queue.get_nowait()
-            if msg["status"] == "cancelled":
-                self.view.update_status("Cancelled", "Task was Cancelled.")
-            elif msg["status"] == "complete":
-                self.view.progress_bar['value'] = 100
-                self.view.update_status("Analiza zavrsena", "Analiza je zavrsena.")
-                self.view.var_btn_analyze.set("Analyze")
-            elif msg["status"] == "processing":
-                #self.view.progress_bar['value'] = int(msg["result"])
-                self.view.update_status("Analysing", f"Processing step {msg['result']}%")
-            else:
-                self.view.update_status("Finished", f"Finished: {msg['result']}")
-                self.view.var_btn_analyze.set("Analyze")
-            
-            #self.view.var_btn_analyze.set("Analyze")
-        except queue.Empty:
-            pass
-        finally:
-            self.root.after(100, self.check_queue)

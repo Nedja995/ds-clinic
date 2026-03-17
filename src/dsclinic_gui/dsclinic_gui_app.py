@@ -3,6 +3,8 @@ from dsclinic_gui.report_controller import DSClinicController
 from dsclinic_gui.report_view import DSClinicView
 from logger import setup_logger
 import logging
+import config
+import utils
 from models import MedicalReportModel
 
 #
@@ -32,6 +34,13 @@ class DSClinicAppGUI(tk.Tk):
 if __name__ == "__main__":
     # Config
     logger.setLevel(logging.DEBUG)
+
+    logger.info(f" DSClinicGUI v{config.APP_VERSION} run with parameters:\n")
+    # Pravljenje apsolutnih putanja pomoću PyInstaller-safe funkcije
+    base_dir = utils.get_base_dir_path()
+    logger.info(f"{' ' * 3}- Root directory: {base_dir}.")
+    logger.info("="*60)
+    
     
     # Initial / Test Data
     test_podaci = {

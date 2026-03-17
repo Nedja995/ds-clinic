@@ -3,9 +3,10 @@ import datetime
 import json
 from typing import List
 from google.genai import types as genai_types
-from models import MedicalReportModel
 import config
+from utils import open_file_from_filepath
 import pdf_maker
+from models import MedicalReportModel
 from api_gemini import client as api_gemini_client
 from api_gemini import utils as api_gemini_utils
 
@@ -14,24 +15,26 @@ from logger import setup_logger
 logger = setup_logger()
 
 
+
+
 def process_documents(input_dir: str,
                       output_dir: str,
-                      debug_mode: bool = False,
-                      model_name: str = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+                      model_name: str,
+                      debug_export_response: bool = True,
+                      debug_response: bool = False
                       ):
-    """Glavna funkcija koju poziva dsclinic_cli.py konzolna aplikacija"""
+    """Glavna funkcija"""
     model_name = config.GEMINI_MODEL
 
     output_debug_dir = os.path.join(output_dir, "DEBUG")
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    if not os.path.exists(input_dir):
-        os.makedirs(input_dir)
+    if not os.path.exists(output_dir): os.makedirs(output_dir)
+    if not os.path.exists(input_dir): os.makedirs(input_dir)
 
-    if not debug_mode:
+    if not debug_response:
+        # 
         documents_filepaths = find_input_documents(input_dir)
         if not documents_filepaths:
-            logger.error(f"Nisu pronađeni fajlovi za analizu u folderu: {input_dir}")
+            logger.error(f"Files not found in input directory: {input_dir}")
             return
 
         input_documents_parts: list[genai_types.Part] = []
@@ -60,11 +63,7 @@ def process_documents(input_dir: str,
         response_json = report.model_dump() if report else {}
         logger.info("USPEH: Izveštaj je uspešno generisan!")
 
-        # Otvaranje foldera
-        if os.name == 'nt':
-            os.startfile(output_dir)
-        elif os.name == 'posix':
-            os.system(f'open "{output_dir}"')
+        open_file_from_filepath(output_dir)
     else:
         # DEBUG MODE: Čita iz lokalnog fajla
         raw_response_output_filepath = os.path.join(output_debug_dir, f"raw_response.json")
@@ -83,23 +82,25 @@ def process_documents(input_dir: str,
         logger.debug("Raw json writen to /Debug/ directory.")
 
         # Čuvanje JSON kopije
-        if config.json_config['_DEBUG_EXPORT_RAW_RESPONSE_JSON'] == "True":
+        if debug_export_response:
             output_filename = report.patient_name.replace(".", " ").replace("/", "")
             timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
             raw_response_output_filepath = os.path.join(output_debug_dir, f"raw_response_{output_filename}_{timestamp_str}.json")
 
-            if not os.path.exists(output_debug_dir):
-                os.makedirs(output_debug_dir, exist_ok=True)
+            if not os.path.exists(output_debug_dir): os.makedirs(output_debug_dir, exist_ok=True)
+            
             with open(raw_response_output_filepath, "w", encoding="utf-8") as file:
                 json.dump(response_json, file, indent=4, ensure_ascii=False)
 
 
 def find_input_documents(input_dir: str) -> List[str]:
     if not os.path.exists(input_dir):
+        logger.error(f"Input directory not found: {input_dir}")
         return []
-    documents_names = os.listdir(input_dir)
+    # List files
+    filepaths = os.listdir(input_dir)
     # Ensure extensions have a dot prefix for endswith() to work correctly
-    supported_exts = tuple(f".{ext.lstrip('.')}" for ext in config.SUPPORTED_EXTENSIONS)
-    documents_names = [f for f in documents_names if f.lower().endswith(supported_exts)]
-    documents_filepaths = [os.path.join(input_dir, f) for f in documents_names]
+    supported_exts = tuple(f".{ext.lstrip('.')}" for ext in config.SUPPORTED_INPUT_FILETYPES.values())
+    filepaths = [f for f in filepaths if f.lower().endswith(supported_exts)]
+    documents_filepaths = [os.path.join(input_dir, f) for f in filepaths]
     return documents_filepaths

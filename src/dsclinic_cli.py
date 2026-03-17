@@ -2,10 +2,11 @@ import os
 import sys
 import argparse
 import logging
-from dsclinic import process_documents
+from logger import setup_logger
 import utils
 import config
-from logger import setup_logger # type: ignore
+from dsclinic import process_documents
+
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -62,7 +63,8 @@ def main():
         process_documents(
             input_dir=input_dir,
             output_dir=output_dir,
-            debug_mode=args.debug_response
+            model_name=config.GEMINI_MODEL,
+            debug_response=args.debug_response,
         )
     except Exception as e:
         logger.critical(f"Greška tokom izvršavanja: {str(e)}", exc_info=True)

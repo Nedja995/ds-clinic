@@ -109,11 +109,15 @@ except json.JSONDecodeError as e:
 
 ##
 #
-SUPPORTED_EXTENSIONS: list[str] = [
-    ".jpg", ".jpeg", ".png", 
-    ".pdf"
-]
-
+SUPPORTED_INPUT_FILETYPES: dict[str, str] = {
+    "text/plain": ".txt", "text/xml": ".xml", "text/csv": ".csv", "text/rtf": ".rtf",
+    "image/jpeg": ".jpeg", "image/png": ".png", "image/bmp": ".bmp", "image/webp": ".webp",
+    "application/pdf": ".pdf",
+    "application/json": ".json", 
+    "text/html": ".html", 
+}
+# Ensure extensions have a dot prefix for endswith() to work correctly
+#supported_exts = tuple(f".{ext.lstrip('.')}" for ext in config.SUPPORTED_INPUT_FILETYPES.values())
 
 
 ##
@@ -138,24 +142,33 @@ GEMINI_MODEL: str = ini_config['GOOGLE']['GEMINI_MODEL'].replace('"', '').replac
 import tomllib
 from pathlib import Path
 
+toml_config_path = os.path.join(_base_dir_path, "pyproject.toml")
+
+toml_config = None
+
+
+
+
+try:
+    with open(toml_config_path, "rb") as f:
+        toml_config = tomllib.load(f)
+except FileNotFoundError:
+    raise FileNotFoundError(f"Missing toml config file at: '{toml_config_path}'")
+except Exception as e:
+    raise Exception(f"Error reading TOML: {e}")
+
+
 def get_version_from_toml(file_path="pyproject.toml"):
     """Reads the project version directly from the pyproject.toml file."""
-    try:
-        with open(os.path.join(_base_dir_path, file_path), "rb") as f:
-            data = tomllib.load(f)
-        version = data.get("project", {}).get("version")
-        if version:
-            return version
-        else:
-            # Handle cases where the version is dynamic or in a different section (e.g., tool.poetry)
-            return data.get("tool", {}).get("poetry", {}).get("version")
-    except FileNotFoundError:
-        return "unknown (pyproject.toml not found)"
-    except Exception as e:
-        return f"error reading TOML: {e}"
+    version = toml_config.get("project", {}).get("version")
+    if version:
+        return version
+    else:
+        # Handle cases where the version is dynamic or in a different section (e.g., tool.poetry)
+        return toml_config.get("tool", {}).get("poetry", {}).get("version")
 
 # Example usage:
 # print(f"App version from TOML file: {get_version_from_toml()}")
 APP_VERSION: str = get_version_from_toml()
 #
-LOG_LEVEL: str = ini_config["APP"]["LOG_LEVEL"]
+LOG_LEVEL: str = ini_config["APP"]["LOG_LEVEL"].replace('"', '').replace("'", "")

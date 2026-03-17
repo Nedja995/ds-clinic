@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.0.1"
+version = "2.0.4"
 description = "DSClinic AI - Alat za analizu medicinskih izveštaja (Laboratorija i NLS)"
 dependencies = [
     "google-genai",

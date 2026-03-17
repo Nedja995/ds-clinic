@@ -1,0 +1,67 @@
+{
+    "patient_name": "KRISTINA CAKIC",
+    "report_date": "21.02.2026",
+    "preporucena_terapija_i_savet": "Pacijentkinja Kristina Cakić pokazuje izuzetno kompleksnu i tešku kliničku sliku sa višestrukim patološkim stanjima koja zahvataju kardiovaskularni, neurološki, imunološki i endokrini sistem, uz značajno opterećenje toksinima i izražene nutritivne deficite. Glavni uzroci problema su visoka toksična opterećenost (teški metali, pesticidi, toksini iz hrane i okoline), hronične infekcije (Herpes Simplex Hepatitis), teški nutritivni deficiti (vitamini, aminokiseline) i disfunkcija regulacionih mehanizama organizma, što dovodi do sistemske neravnoteže i oštećenja organa. Detaljnije, prisutni su teški metali (D=1,106), insekticidi (D=1,140), prioni, ugljen-monoksid, alkohol, kofein, fluoridi, duvan, kao i širok spektar toksina iz hrane (mlečni proizvodi, svinjetina/govedina, gluten, šećer), okoline (azbest, hlor, radijacija) i farmaceutskih supstanci. Identifikovane su i infekcije (amebe, bakterije, virusi, rikecije, gljivice) i Herpes Simplex Hepatitis (D=0,861). Istovremeno, postoji značajan nedostatak esencijalnih aminokiselina (triptofan, gvanin, timin, asparaginska kiselina, cistein, citrulin, fenilalanin, prolin, glutamin, treonin, serin, GABA, citozin, tirozin, uracil, histidin, adenin, taurin, izoleucin) i vitamina (inozitol, A, biotin, niacin, E, CoQ10, D2, folna kiselina, C, B6, bioflavonoidi, B12, B2, B1). Ovi faktori su doveli do ozbiljnih poremećaja u biohemijskoj homeostazi, uključujući niske nivoe hemoglobina, gvožđa, eritrocita, leukocita, hormona (somatotropni, slobodni trijodtironin, kortikotropin, tireotropni), enzima i drugih vitalnih markera. Dijagnoza uključuje tešku kardiovaskularnu patologiju (ateroskleroza, aritmije, ishemija, miokardiodistrofija, angina pektoris, prolaps mitralne valvule), disfunkciju centralnog nervnog sistema (discirkulatorna encefalopatija, atrofija optičkog nerva, neuralgija), hroničnu virusnu infekciju (Herpes Simplex Hepatitis), sistemsku toksičnost i višestruke nutritivne deficite. Preporučuje se hitna i sveobuhvatna terapija koja uključuje detoksikaciju organizma od teških metala i drugih toksina, antivirusnu terapiju za Herpes Simplex Hepatitis, intenzivnu suplementaciju esencijalnim aminokiselinama i vitaminima, kao i podršku kardiovaskularnom i nervnom sistemu. Neophodna je promena ishrane, eliminacija alergena (gluten, mlečni proizvodi, šećer), izbegavanje toksina iz okoline i farmaceutskih supstanci, te primena terapija za jačanje imunološkog sistema i poboljšanje regulacionih mehanizama. Redovne kontrole su obavezne.",
+    "nalazi": [
+        {
+            "expertsko_misljenje": "Ekstremno visoka vrednost ukazuje na tešku disfunkciju nervnog sistema i intenzivan bol.",
+            "parametar_i_vrednost": "Neuralgia D=8,691"
+        },
+        {
+            "expertsko_misljenje": "Vrlo visoka vrednost ukazuje na ozbiljne srčane probleme, verovatno uzrokovane ishemijom miokarda.",
+            "parametar_i_vrednost": "Angina Pectoris D=2,249"
+        },
+        {
+            "expertsko_misljenje": "Visoka vrednost ukazuje na degenerativne promene srčanog mišića, što može dovesti do smanjene funkcije srca.",
+            "parametar_i_vrednost": "Myocardiodystrophia D=1,808"
+        },
+        {
+            "expertsko_misljenje": "Visoka vrednost ukazuje na oštećenje mozga usled poremećene cirkulacije, što može uticati na kognitivne funkcije i opšte neurološko stanje.",
+            "parametar_i_vrednost": "Dyscirculatory Encephalopathy D=1,738"
+        },
+        {
+            "expertsko_misljenje": "Visoka vrednost ukazuje na ozbiljno začepljenje arterija, što je glavni faktor rizika za kardiovaskularne bolesti.",
+            "parametar_i_vrednost": "Atheroscleroses D=1,311"
+        },
+        {
+            "expertsko_misljenje": "Visoka vrednost ukazuje na značajne poremećaje srčanog ritma, što zahteva hitnu evaluaciju i tretman.",
+            "parametar_i_vrednost": "Arrythmia of the Heart D=1,462"
+        },
+        {
+            "expertsko_misljenje": "Visoko opterećenje teškim metalima ukazuje na potrebu za detoksikacijom.",
+            "parametar_i_vrednost": "Heavy metals D=1,106"
+        },
+        {
+            "expertsko_misljenje": "Visoko opterećenje insekticidima ukazuje na izloženost i potrebu za detoksikacijom.",
+            "parametar_i_vrednost": "Insecticides D=1,140"
+        },
+        {
+            "expertsko_misljenje": "Značajna vrednost ukazuje na prisustvo i aktivnost virusa Herpes Simplex, što može uticati na funkciju jetre.",
+            "parametar_i_vrednost": "HERPES SIMPLEX HEPATITIS D=0,861"
+        },
+        {
+            "expertsko_misljenje": "Ozbiljan nedostatak esencijalne aminokiseline triptofan, ključne za sintezu serotonina i melatonina.",
+            "parametar_i_vrednost": "Tryptophan D=1,143"
+        },
+        {
+            "expertsko_misljenje": "Ozbiljan nedostatak inozitola, važnog za ćelijsku signalizaciju i nervnu funkciju.",
+            "parametar_i_vrednost": "Inositol D=1,106"
+        },
+        {
+            "expertsko_misljenje": "Značajan nedostatak vitamina C, ključnog antioksidansa i kofaktora u mnogim biohemijskim procesima.",
+            "parametar_i_vrednost": "Vitamin C, ascorbic acid, D=0,822"
+        },
+        {
+            "expertsko_misljenje": "Niska vrednost hemoglobina ukazuje na potencijalnu anemiju, što može dovesti do umora i smanjene oksigenacije tkiva.",
+            "parametar_i_vrednost": "HAEMOGLOBIN D=0,021"
+        },
+        {
+            "expertsko_misljenje": "Niska vrednost slobodnog trijodtironina ukazuje na potencijalnu disfunkciju štitne žlezde, što utiče na metabolizam.",
+            "parametar_i_vrednost": "FREE TRIIODOTHYRONINE D=0,035"
+        },
+        {
+            "expertsko_misljenje": "Povišena vrednost ukazuje na problem sa antioksidativnom zaštitom organizma ili visok oksidativni stres.",
+            "parametar_i_vrednost": "Antioxidants D=0,676"
+        }
+    ]
+}

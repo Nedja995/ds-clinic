@@ -2,9 +2,8 @@ import os
 import time
 from enum import StrEnum
 from typing import Iterator
-
 from google import genai
-from google.genai import types
+from google.genai import types as genai_types
 from pydantic import BaseModel, Field
 from models import MedicalReportModel
 from logger import setup_logger
@@ -39,7 +38,7 @@ class MedicalAnalyzerClient:
         logger.info("MedicalAnalyzerClient initialized successfully")
 
     def _initialise_client(self):
-        logger.debug("Initializing Google Genai Client...")
+        logger.debug(f"{' ' * 2}Initializing Google Genai Client...")
         try:
             self.client = genai.Client(
                 # METHOD 1 - API Key (Recommended for testing)
@@ -49,7 +48,7 @@ class MedicalAnalyzerClient:
                 # project=GOOGLE_PROJECT_ID,
                 # location=GOOGLE_PROJECT_LOCATION
             )
-            logger.debug("Google Genai Client created successfully")
+            logger.debug(f"{' ' * 4}Google Genai Client initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Google Genai Client: {str(e)}", exc_info=True)
             raise
@@ -77,67 +76,70 @@ class MedicalAnalyzerClient:
             raise
 
     def _initialize_ai_config(self):
-        logger.debug("Initializing AI configuration...")
+        logger.debug(f"{' ' * 2}Initializing AI configuration...")
         # TOOLS
         tools = [
-            types.Tool(google_search=types.GoogleSearch()),
-            # types.Tool(url_context=types.UrlContext()),
-            # types.Tool(enterprise_web_search=types.EnterpriseWebSearch())
+            genai_types.Tool(google_search=genai_types.GoogleSearch()),
+            # genai_types.Tool(url_context=genai_types.UrlContext()),
+            # genai_types.Tool(enterprise_web_search=genai_types.EnterpriseWebSearch())
         ]
-        logger.debug(f"Configured {len(tools)} tools for AI model")
+        logger.debug(f"{' ' * 4}Configured {len(tools)} tools for AI model")
 
         # 2. ADD TO CONFIGURATION
-        self.ai_config = types.GenerateContentConfig(
+        self.ai_config = genai_types.GenerateContentConfig(
             temperature=1.0,
             top_p=0.95,
             tools=tools,
             max_output_tokens=65535,  # <-- Enabled here!
             response_mime_type="application/json",
             response_schema=MedicalReportModel,
-            thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.HIGH),
+            thinking_config=genai_types.ThinkingConfig(thinking_level=genai_types.ThinkingLevel.HIGH),
             system_instruction=(
                 "You are an expert medical data analyst using equally both holistic and traditional medical data.",
                 "Always highlight severe abnormalities."
             ),
-            safety_settings=[types.SafetySetting(
+            safety_settings=[genai_types.SafetySetting(
                 category="HARM_CATEGORY_HATE_SPEECH",
                 threshold="OFF"
-            ), types.SafetySetting(
+            ), genai_types.SafetySetting(
                 category="HARM_CATEGORY_DANGEROUS_CONTENT",
                 threshold="OFF"
-            ), types.SafetySetting(
+            ), genai_types.SafetySetting(
                 category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
                 threshold="OFF"
-            ), types.SafetySetting(
+            ), genai_types.SafetySetting(
                 category="HARM_CATEGORY_HARASSMENT",
                 threshold="OFF"
             )
             ]
         )
-        logger.debug("AI configuration initialized successfully")
+        logger.debug(f"{' ' * 4}AI configuration initialized successfully")
 
-    def initial_anlysis_run_chat_stream(self, documents: list[types.Part], predefined_question: str) -> Iterator[str]:
-        logger.debug(f"Starting initial analysis with {len(documents)} document(s)")
-        logger.debug(f"Predefined question: {predefined_question}")
+    def initial_anlysis_run_chat_stream(self, documents: list[genai_types.Part], predefined_question: str) -> Iterator[str]:
+        logger.debug(f"Run initial analysis chat")
+        # logger.debug(f"{'' * 2}Processing {len(documents)} document(s)")
+        # logger.debug(f"{'' * 2}Question: {predefined_question}")
         
         message_contents = ["Here are the input medical/lab documents:"]
         message_contents.extend(documents)
         message_contents.append(f"Question/Task: {predefined_question}")
+        
+        logger.debug(f"{'' * 2}Arguments: {message_contents}")
 
         # 2. OVERRIDE CONFIG FOR THIS SPECIFIC MESSAGE TO FORCE JSON/PYDANTIC
-        structured_config = types.GenerateContentConfig(
+        config_response = genai_types.GenerateContentConfig(
             temperature=0.1, # Even lower temp for strict JSON compliance
             response_mime_type="application/json",
             response_schema=MedicalReportModel, # Pass the Pydantic model directly!
         )
         
-        logger.debug("Sending analysis request to Gemini API...")
+        logger.debug(f"{'' * 2}Sending analysis request to Gemini API...")
         try:
             response_stream = self.chat_session.send_message_stream(
                 message_contents,
-                config=structured_config
+                config=config_response
             )
-            logger.debug("Streaming response received from API")
+            logger.debug(f"{'' * 4}Streaming response received from API")
         except Exception as e:
             logger.error(f"Error during API call: {str(e)}", exc_info=True)
             raise
@@ -146,25 +148,26 @@ class MedicalAnalyzerClient:
         for chunk in response_stream:
             if chunk.text:
                 chunk_count += 1
-                logger.debug(f"Received chunk #{chunk_count}")
+                logger.debug(f"{'' * 4}Received chunk #{chunk_count}")
                 yield chunk.text
         
         logger.debug(f"Streaming completed: received {chunk_count} chunks")
                 
-    def initial_analysis_report_from_chat_stream(self, documents: list[types.Part], question: str) -> MedicalReportModel:
-        logger.info("Starting medical analysis with Google AI (Streaming JSON)...")
+    def initial_analysis_report_from_chat_stream(self, documents: list[genai_types.Part], question: str) -> MedicalReportModel:
+        logger.info("Run initial medical analysis from chat stream (Streaming JSON).")
         start_time = time.time()
         parsed_report: MedicalReportModel = None
         accumulated_json: str = ""
         
         # 1. Stream the Structured JSON chunks
-        logger.debug(f"Processing {len(documents)} documents with question: {question}...")
+        #logger.debug(f"Processing {len(documents)} documents with question: {question}...")
         for chunk in self.initial_anlysis_run_chat_stream(documents, question):
-            print(chunk, end="", flush=True) # Print without newlines and flush buffer immediately for the typing effect
+            #print(chunk, end="", flush=True) # Print without newlines and flush buffer immediately for the typing effect
+            #logger.debug(chunk)
             accumulated_json += chunk
         
         logger.debug(f"Accumulated response size: {len(accumulated_json)} characters")
-        logger.info("Formatting and validating structured data...")
+        logger.debug("Formatting and validating structured data...")
         
         # 2. Parse the accumulated JSON string into the Pydantic model
         try:
