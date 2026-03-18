@@ -11,7 +11,7 @@ Jedini izuzeci su:
 import tkinter as tk
 from tkinter import ttk, scrolledtext
 
-from logger import setup_logger
+from npy.core.logger import setup_logger
 from models import MedicalReportModel, MedicalCriticalFindingModel
 
 logger = setup_logger()
@@ -388,16 +388,16 @@ class DSClinicView:
         result = MedicalReportModel(
             patient_name=self.ent_ime.get(),
             report_date=self.ent_datum.get(),
-            preporucena_terapija_i_savet=self.txt_terapija.get("1.0", tk.END).strip(),
-            nalazi=[]
+            recommended_therapy_and_advice=self.txt_terapija.get("1.0", tk.END).strip(),
+            critical_findings=[]
         )
         for row in self.nalazi_rows:
             p = row["parametar"].get("1.0", tk.END).strip()
             m = row["misljenje"].get("1.0", tk.END).strip()
             if p or m:
-                result.nalazi.append(MedicalCriticalFindingModel(
+                result.critical_findings.append(MedicalCriticalFindingModel(
                     expertsko_misljenje=m,
-                    parametar_i_vrednost=p
+                    parametar_and_value=p
                 ))
         return result
 
@@ -407,11 +407,11 @@ class DSClinicView:
         self.ent_datum.delete(0, tk.END)
         self.ent_datum.insert(0, data.report_date)
         self.txt_terapija.delete("1.0", tk.END)
-        self.txt_terapija.insert("1.0", data.preporucena_terapija_i_savet)
-        for n in data.nalazi:
+        self.txt_terapija.insert("1.0", data.recommended_therapy_and_advice)
+        for n in data.critical_findings:
             self.add_finding_row(
                 misljenje=n.expertsko_misljenje,
-                parametar=n.parametar_i_vrednost
+                parametar=n.parametar_and_value
             )
 
     def update_status(self, header_text: str = "UNKNOWN", details_text: str = "/"):

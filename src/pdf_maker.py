@@ -9,8 +9,8 @@ from datetime import datetime
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
 from models import MedicalReportModel, MedicalCriticalFindingModel
-import utils
-from logger import setup_logger
+from npy.core import utils
+from npy.core.logger import setup_logger
 
 logger = setup_logger()
 
@@ -143,7 +143,7 @@ class HolisticReport(FPDF):
 
         for item in data:
             misljenje = f"{item.expertsko_misljenje}"
-            parametar = f"{item.parametar_i_vrednost}"
+            parametar = f"{item.parametar_and_value}"
             
             # Izračunavanje broja linija (-1mm tolerancije za besprekorno uklapanje)
             lines1 = get_lines(misljenje, col1_width - 2 * c_margin - 1)
@@ -213,8 +213,8 @@ def export_medical_report_pdf(report: MedicalReportModel, output_filename: str =
     generate_report_pdf(
         patient_name=report.patient_name,
         report_date=report.report_date,
-        terapija_i_saveti=report.preporucena_terapija_i_savet,
-        table_data=report.nalazi,
+        terapija_i_saveti=report.recommended_therapy_and_advice,
+        table_data=report.critical_findings,
         output_filename=output_filename
     )
 
@@ -226,8 +226,8 @@ def generate_report_pdf_bytes(
     pdf = HolisticReport()
     pdf.draw_header()
     pdf.draw_patient_info(data.patient_name, data.report_date)
-    pdf.draw_table(data.nalazi)
-    pdf.draw_footer_section(data.preporucena_terapija_i_savet)
+    pdf.draw_table(data.critical_findings)
+    pdf.draw_footer_section(data.recommended_therapy_and_advice)
 
     data = pdf.buffer
     logger.info(f"Report generated (bytes): {len(data)}")

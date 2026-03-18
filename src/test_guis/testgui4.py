@@ -1,7 +1,7 @@
 from pathlib import Path
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
-import utils
+from npy.core import utils
 
 PATH = utils.get_resource_dirpath()
 

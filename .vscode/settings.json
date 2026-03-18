@@ -10,7 +10,15 @@
         "source.organizeImports": "explicit"
     },
     "editor.defaultFormatter": "ms-python.autopep8",
-
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": { "when": "$(basename).py" },
+        "*.exe": true,
+        "*.spec": true,
+        "dist": true,
+        "*.venv": true,
+        "**/**/*.egg-info": true
+    },
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
     "python-envs.defaultEnvManager": "ms-python.python:venv",
     "[python]": {
@@ -28,14 +36,16 @@
         "${workspaceFolder}/src/**",
         "${workspaceFolder}/.venv/Lib/site-packages"
     ],
-
     "autopep8.interpreter": [ "${workspaceFolder}/.venv/Scripts/python.exe" ],
     "autopep8.args": [
             "--max-line-length",
             "500"
     ],
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
     "geminicodeassist.inlineSuggestions.nextEditPredictions": true,
     "geminicodeassist.inlineSuggestions.suggestionSpeed": "Fast",
     "geminicodeassist.outlines.automaticOutlineGeneration": false,
-    "geminicodeassist.project": "278038315476",
+    "geminicodeassist.project": "278038315476"
 }

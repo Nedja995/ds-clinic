@@ -14,7 +14,7 @@ import re, sys
 import re, sys
 from pathlib import Path
 from textwrap import shorten
-import utils
+from npy.core import utils
 
 # ─────────────────────────  CONFIG  ──────────────────────────
 CSV_PATH = utils.get_resource_filepath("sampledata_cars.csv")       

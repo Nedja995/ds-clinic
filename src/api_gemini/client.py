@@ -6,7 +6,7 @@ from google import genai
 from google.genai import types as genai_types
 from pydantic import BaseModel, Field
 from models import MedicalReportModel
-from logger import setup_logger
+from npy.core.logger import setup_logger
 
 logger = setup_logger()
 

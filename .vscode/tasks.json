@@ -2,6 +2,55 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Install requirements",
+            "type": "shell",
+            "command": "python -m pip install -r requirements.txt",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Release Executable (PyInstaller)",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "-m",
+                "PyInstaller",
+                "--name",
+                "GenAI_Report_Maker",
+                "--onedir",
+                "--console",
+                "--clean",
+                "--noconfirm",
+                "--paths",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/dsclinic_cli.py"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Remove pycache folders (Unix)",
+            "type": "shell",
+            "command": "find . -name '__pycache__' -type d -exec rm -rf {} +",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Remove pycache folders (Windows)",
+            "type": "shell",
+            "command": "Get-ChildItem -Path . -Recurse -Include '__pycache__' | Remove-Item -Recurse -Force",
+            "problemMatcher": []
+        },
+        {
             "type": "markdownlint",
             "problemMatcher": [
                 "$markdownlint"
@@ -17,39 +66,9 @@
             "presentation": {
                 "reveal": "silent"
             }
-        },
-        {
-            "label": "Install requirements",
-            "type": "shell",
-            "command": "python -m pip install -r requirements.txt",
-            "problemMatcher": []
-        },
-         {
-            "label": "Build Release Executable (PyInstaller)",
-            "type": "shell",
-            "command": "python",
-            "args":[
-                "-m", "PyInstaller",
-                "--name", "GenAI_Report_Maker",
-                "--onedir",
-                "--console",
-                "--clean",
-                "--noconfirm",
-                "--paths", "${workspaceFolder}/src",
-                "${workspaceFolder}/src/dsclinic_cli.py"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
         }
     ],
     "presentation": {
         "reveal": "always"
-    }
+    },
 }

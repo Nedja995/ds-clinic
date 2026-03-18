@@ -1,10 +1,10 @@
 import tkinter as tk
 from dsclinic_gui.report_controller import DSClinicController
 from dsclinic_gui.report_view import DSClinicView
-from logger import setup_logger
+from npy.core.logger import setup_logger
 import logging
 import config
-import utils
+from npy.core import utils
 from models import MedicalReportModel
 
 #

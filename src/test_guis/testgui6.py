@@ -9,9 +9,8 @@ Pokretanje: python patient_input_form.py
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import messagebox, scrolledtext
 import sys
-import os
 
 
 # ---------------------------------------------------------------------------

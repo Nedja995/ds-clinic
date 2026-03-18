@@ -7,15 +7,15 @@ import tkinter as tk
 from tkinter import filedialog
 import tkinter.messagebox
 #
-from logger import setup_logger
-import utils
+from npy.core.logger import setup_logger
+from npy.core import utils
 from models import MedicalReportModel
 from pdf_maker import export_medical_report_pdf
 from dsclinic import analyze_inputs_and_export_report
 import config
 #
 from dsclinic_gui.report_view import DSClinicView
-from dsclinic_gui.widgets.dialogs import CustomMessageBox
+from gui_widgets.dialogs import CustomMessageBox
 
 
 logger = setup_logger()
@@ -148,7 +148,7 @@ class DSClinicController:
             analyze_inputs_and_export_report(
                 input_dir=input_dir,
                 output_dir=output_dir,
-                model_name=config.GEMINI_MODEL,
+                model_name=config.AI_MODEL_NAME,
                 debug_response=False
             )
         except Exception as e:

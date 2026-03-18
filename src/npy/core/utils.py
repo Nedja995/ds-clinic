@@ -1,5 +1,3 @@
-##
-#
 import sys
 import os.path
 import logging
@@ -8,9 +6,9 @@ import logging
 logger = logging.getLogger()
 
 
-##### App base filesistem paths ##### 
+############################ App base filesistem paths #########################
+##
 #
-
 def get_base_dir_path() -> str:
     """
     Determines the base directory of the application, handling both script
@@ -23,7 +21,7 @@ def get_base_dir_path() -> str:
     Returns:
         str: The absolute path to the application's root directory.
     """
-     # from args
+    # from args
     app_entry_filepath = sys.argv[0]  # sys.executable #resource_path(".") #__file__
     if getattr(sys, 'frozen', False):
         # Running as a PyInstaller bundle or other frozen executable.
@@ -38,19 +36,20 @@ def get_base_dir_path() -> str:
         logger.debug(f"Running as console app. Base path: {base_path}")  
     else:
         # Running as a standard Python script.
-        # __file__ is '.../src/utils.py', so we go up one level to get the project root.
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # __file__ is '.../src/npy/core/utils.py', so we go up three level to get the project root.
+        base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         logger.debug(f"Running as script. Base path: {base_path}")
     return base_path
 
 def get_resource_dirpath(dir_name: str = "resources") -> str:
     """Constructs and validates the path to a resource directory."""
     base_dirpath = get_base_dir_path()
+    resource_dirpath = base_dirpath
     
     if dir_name == "resources":
         resource_dirpath = os.path.join(base_dirpath, dir_name)
-    else:
-        resource_dirpath = os.path.join(base_dirpath, "resources", dir_name)
+    elif dir_name and len(dir_name) > 0:
+        resource_dirpath = os.path.join(os.path.join(resource_dirpath, "resources"), dir_name)
 
     if not os.path.exists(resource_dirpath):
         raise FileNotFoundError(f"FATAL ERROR: Missing resource directory at '{resource_dirpath}'")
@@ -93,3 +92,6 @@ def open_file_from_filepath(filepath: str):
         os.startfile(filepath)
     elif os.name == 'posix':
         os.system(f'open "{filepath}"')
+
+
+

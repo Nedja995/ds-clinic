@@ -2,7 +2,7 @@ from google import genai
 from google.genai import types
 
 import config
-from logger import setup_logger
+from npy.core.logger import setup_logger
 
 logger = setup_logger()
 
@@ -10,7 +10,7 @@ def load_document_from_file(filepath: str) -> genai.types.Part:
     logger.info(f"Load Document from filepath: {filepath}.")
     doc: types.Part = None
 
-    matches = [(doc_type, ext) for doc_type, ext in config.SUPPORTED_INPUT_FILETYPES.items() if filepath.lower().endswith(ext)]
+    matches = [(doc_type, ext) for doc_type, ext in config.AI_SUPPORTED_INPUT_FILETYPES.items() if filepath.lower().endswith(ext)]
     
     if matches:
         doc_type, doc_extension = matches[0]

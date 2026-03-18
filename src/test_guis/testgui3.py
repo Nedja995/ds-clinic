@@ -6,8 +6,7 @@ from tkinter.filedialog import askdirectory
 from ttkbootstrap.dialogs import Messagebox
 from ttkbootstrap.constants import *
 from tkinter.scrolledtext import ScrolledText
-from pathlib import Path
-import utils
+from npy.core import utils
 
 
 PATH = utils.get_resource_dirpath()

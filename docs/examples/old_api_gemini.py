@@ -1,5 +1,6 @@
 import os
-from typing import List
+from typing import List 
+from enum import StrEnum
 import json
 from pydantic import BaseModel, Field
 #
@@ -14,8 +15,20 @@ from logger import setup_logger
 logger = setup_logger()
 
 
+
+## Tinking level
+ARG_GEMINI_THINKING_LEVEL_STR: str = "HIGH"
+
+## Models
+class GEMINI_MODELS(StrEnum):
+  """The model names, find more <link>"""
+  GEMINI_3_PRO_PREVIEW = "gemini-3-pro-preview"
+  GEMINI_3_FLASH_PREVIEW = "gemini-3-flash-preview"
+  GEMINI_PRO = "gemini-pro"
+
+
 # Gemini specific settings
-ARG_GEMINI_THINKING_LEVEL: types.ThinkingLevel = types.ThinkingLevel[config.ARG_GEMINI_THINKING_LEVEL_STR]
+ARG_GEMINI_THINKING_LEVEL: types.ThinkingLevel = types.ThinkingLevel[ARG_GEMINI_THINKING_LEVEL_STR]
 
 CONST_INPUT_SUPPORTED_EXTENSIONS: list = [".jpg", ".jpeg", ".png", ".pdf"]
 
@@ -70,7 +83,7 @@ def _load_document_from_file(filepath: str) -> genai.types.Part:
 
 ##
 #
-def analyze_docs(ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
+def analyze_docs(ai_task_description: str = config.AI_TASK_DESCRIPTION,
                  documents_filepaths: List[str] = []
     ) -> dict:
     '''
@@ -86,7 +99,7 @@ def analyze_docs(ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
         dict: A dictionary containing the analysis results.
     '''
 
-    model_name: str = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+    model_name: str = GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
     results: dict = {}
 
     # Initialize api client
@@ -110,17 +123,17 @@ def analyze_docs(ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
         # CHECK IS GEMINI MODEL EXPERIENCING HIG DEMAND
         if "high demand" in str(e):
             # Try again with different model
-            if model_name == config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW:
-                model_name = config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
+            if model_name == GEMINI_MODELS.GEMINI_3_PRO_PREVIEW:
+                model_name = GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW
                 results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
-            elif model_name == config.GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW:
-                # model_name = config.GEMINI_MODELS.GEMINI_3_PRO_IMAGE_PREVIEW
+            elif model_name == GEMINI_MODELS.GEMINI_3_FLASH_PREVIEW:
+                # model_name = GEMINI_MODELS.GEMINI_3_PRO_IMAGE_PREVIEW
                 # results = analyze_docs2(model_name=model_name, documents_filepaths=documents_filepaths)
                 results = {}
                 pass
             else:
                 results = {}
-                # model_name = config.GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
+                # model_name = GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
             # results = analyze_docs2(
             #     model_name=model_name, documents_filepaths=documents_filepaths)
     finally:
@@ -131,7 +144,7 @@ def analyze_docs(ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
 
 
 #
-def analyze_docs2(model_name: str = config.ARG_GEMINI_MODEL_NAME,
+def analyze_docs2(model_name: str = config.AI_MODEL_NAME,
                   ai_task_description: str = config.ARG_AI_TASK_DESCRIPTION,
                   documents_filepaths: List[str] = []) -> dict:
     thinking_level = ARG_GEMINI_THINKING_LEVEL

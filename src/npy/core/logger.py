@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 from typing import Any
-from utils import get_base_dir_path
+from npy.core.utils import get_base_dir_path
 
 
 class DirectoryFilter(logging.Filter):

@@ -1,9 +1,8 @@
 import os
 import sys
 import argparse
-import logging
-from logger import setup_logger
-import utils
+from npy.core.logger import setup_logger
+from npy.core import utils
 import config
 from dsclinic import analyze_inputs_and_export_report
 
@@ -39,12 +38,11 @@ def main():
     # 
     args = parse_arguments()
 
-    log_level = config.LOG_LEVEL #logging.DEBUG if args.verbose else logging.INFO
+    log_level = config.APP_LOG_LEVEL #logging.DEBUG if args.verbose else logging.INFO
     # Inicijalizacija loggera
     logger = setup_logger(level=log_level)
 
     # Podešavanje logovanja na osnovu argumenata
-
     logger.setLevel(log_level)
 
     # App start message
@@ -63,7 +61,7 @@ def main():
         analyze_inputs_and_export_report(
             input_dir=input_dir,
             output_dir=output_dir,
-            model_name=config.GEMINI_MODEL,
+            model_name=config.AI_MODEL_NAME,
             debug_response=args.debug_response,
         )
     except Exception as e:
