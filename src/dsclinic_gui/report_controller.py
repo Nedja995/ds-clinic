@@ -9,9 +9,9 @@ import tkinter.messagebox
 #
 from npy.core.logger import setup_logger
 from npy.core import utils
-from models import MedicalReportModel
+from models import MedicalReportModel, MedicalReport
 from pdf_maker import export_medical_report_pdf
-from dsclinic import analyze_inputs_and_export_report
+from dsclinic import get_initial_analysis_report
 import config
 #
 from dsclinic_gui.report_view import DSClinicView
@@ -22,12 +22,14 @@ logger = setup_logger()
 
 
 class DSClinicController:
-    def __init__(self, root: tk.Tk, model: MedicalReportModel, view: DSClinicView):
+    report: MedicalReport = None
+
+    def __init__(self, root: tk.Tk, model: MedicalReport, view: DSClinicView):
         self.root = root
-        #self.root.withdraw()
-        self.model: MedicalReportModel = model
+        # self.root.withdraw()
+        self.model: MedicalReport = model
         self.view: DSClinicView = view
-        
+
         # 1. Threading Control
         self.output_queue = queue.Queue()
         self.stop_event = threading.Event()  # The "Cancel" Signal
@@ -46,7 +48,7 @@ class DSClinicController:
         self.view.btn_dodaj_nalaz.config(command=self.view.add_finding_row)
 
     def _initialize_view(self):
-        data: MedicalReportModel = self.model
+        data: MedicalReport = self.model
         if data:
             self.view.set_display_data(data)
         else:
@@ -55,24 +57,24 @@ class DSClinicController:
     def _handle_analyze_click(self):
         if self.view.var_btn_analyze.get() == "Analyze":
             self.view.var_btn_analyze.set("Cancel")
-            #self.view.btn_analyze.config(text="Cancel")
-            process_config_str = f"Analiziraj dokumente: 'Presek glave.pdf', 'Lab.pdf'. Task: 'Analiziraj i ukazi na kriticne simptome.'. Model: 'gemini-3-pro'."
+            # self.view.btn_analyze.config(text="Cancel")
+            process_config_str = f"Analiziraj dokumente: 'Presek glave.pdf', 'Lab.pdf'. Task: 'Analiziraj i ukazi na kriticne simptome.'. Model: '{self.model.content.name}'."
             logger.info(process_config_str)
             self.view.update_status("Analysing", process_config_str)
             self.start_task()
-            #self.view.btn_full_report.config(state="normal")
+            # self.view.btn_full_report.config(state="normal")
         else:
             self.view.var_btn_analyze.set("Analyze")
-            #self.view.btn_analyze.config(text="POKRENI ANALIZU")
+            # self.view.btn_analyze.config(text="POKRENI ANALIZU")
             logger.info("Analiza je prekinuta.")
             self.view.update_status("IDLE", "Analiza je prekinuta")
             self.view.btn_full_report.config(state="disabled")
             self.cancel_task()
 
     def _handle_export_click(self):
-        data: MedicalReportModel = self.view.get_user_input()
+        data: MedicalReport = self.view.get_user_input()
         self.model = data
-        
+
         logger.info("Clicked: Export to PDF")
         logger.debug("Collected data:")
         logger.debug(data)
@@ -80,14 +82,14 @@ class DSClinicController:
         patient_name = data.patient_name.replace(".", " ").replace("/", "")
         timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
         output_filename = f"NALAZ_{patient_name}_{timestamp_str}.pdf"
-        
+
         output_dir = utils.get_output_data_dirpath()
         os.makedirs(output_dir, exist_ok=True)
 
-        #output_filepath = os.path.join(output_dir, output_filename)
+        # output_filepath = os.path.join(output_dir, output_filename)
         output_filepath = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")], initialdir=output_dir, initialfile=output_filename)
         logger.debug(f"User choosed output filepath: '{output_filepath}'.")
-        if not output_filepath: # User cancelled the save dialog
+        if not output_filepath:  # User cancelled the save dialog
             logger.info("Report export cancelled by user.")
             return
         self.view.update_status("Exporting report", f"Generating PDF at filepath: '{output_filepath}'...")
@@ -95,10 +97,10 @@ class DSClinicController:
         try:
             export_medical_report_pdf(data, output_filename=output_filepath)
             self.view.update_status("Izvestaj sacuvan", f"PDF izvestaj je uspesno sacuvan na putanji: '{output_filepath}'.")
-            #tkinter.messagebox.showinfo("Uspeh", "Medicinski izveštaj je uspešno generisan.")
-            msgBox = CustomMessageBox(self.root, 
-                                      "Izveštaj je uspešno generisan", 
-                                      "Da li želite da otvorite izveštaj?", 
+            # tkinter.messagebox.showinfo("Uspeh", "Medicinski izveštaj je uspešno generisan.")
+            msgBox = CustomMessageBox(self.root,
+                                      "Izveštaj je uspešno generisan",
+                                      "Da li želite da otvorite izveštaj?",
                                       button_texts=["Da", "Ne", "Otvori fasciklu"]
                                       )
             if msgBox.choice == "Da":
@@ -115,15 +117,15 @@ class DSClinicController:
             logger.exception(e)
             self.view.update_status("Export failed", "Generisanje PDF izveštaja nije uspelo. Proverite log za više detalja.")
             tkinter.messagebox.showerror("Greška", "Došlo je do greške prilikom generisanja PDF dokumenta.", detail=str(e))
-            
+
     def _handle_settings_click(self):
         logger.debug(f"Kliknuto na: Podešavanja")
         self.view.update_status("Settings Open", "ADJUSTING SETTINGS...")
 
     def start_task(self):
         """Initializes and starts the background worker."""
-        self.stop_event.clear() # Reset the cancel signal
-        
+        self.stop_event.clear()  # Reset the cancel signal
+
         self.view.var_btn_analyze.set("Cancel")
         self.view.update_status("Running", "Running heavy task...")
         self.view.progress_bar['value'] = 0
@@ -139,26 +141,24 @@ class DSClinicController:
 
     def _task_initial_analyzis(self):
         base_dir = utils.get_base_dir_path()
-        
+
         input_dir = utils.get_input_data_dirpath()
         output_dir = utils.get_output_data_dirpath()
 
+        report: MedicalReport = None
+
         try:
-            # Pozivamo glavnu logiku iz dsclinic.py
-            analyze_inputs_and_export_report(
-                input_dir=input_dir,
-                output_dir=output_dir,
-                model_name=config.AI_MODEL_NAME,
-                debug_response=False
-            )
+            report = get_initial_analysis_report(input_dir = input_dir,
+                                                 model_name = config.AI_MODEL_NAME, 
+                                                 debug_export_response = False,
+                                                 debug_response = True)
         except Exception as e:
             logger.critical(f"Greška tokom izvršavanja: {str(e)}", exc_info=True)
             self.output_queue.put({"status": "failed", "result": str(e)})
-            return # Exit the thread immediately
+            return  # Exit the thread immediately
 
         # Task completed fully
-        self.output_queue.put({"status": "complete", "result": "Anlyzing completed successfully!"})
-
+        self.output_queue.put({"status": "complete", "result": "Anlyzing completed successfully!", "data": report.model_dump()})
 
     def check_queue(self):
         """Check task state and update the UI."""
@@ -170,8 +170,11 @@ class DSClinicController:
                 self.view.progress_bar['value'] = 100
                 self.view.update_status("Analiza zavrsena", "Analiza je zavrsena.")
                 self.view.var_btn_analyze.set("Analyze")
+                self.report = MedicalReport(**msg["data"])
+                self.model = self.report
+                self.view.set_display_data(self.report)
             elif msg["status"] == "processing":
-                #self.view.progress_bar['value'] = int(msg["result"])
+                # self.view.progress_bar['value'] = int(msg["result"])
                 self.view.update_status("Analysing", f"Processing step {msg['result']}%")
             elif msg["status"] == "failed":
                 self.view.update_status("Failed", msg["result"])
@@ -191,10 +194,10 @@ class DSClinicController:
             # 2. THE CHECK: Does the UI want us to stop?
             if self.stop_event.is_set():
                 self.output_queue.put({"status": "cancelled"})
-                return # Exit the thread immediately
+                return  # Exit the thread immediately
 
-            time.sleep(0.05) # Simulate work
-            
+            time.sleep(0.05)  # Simulate work
+
             # Periodic Progress Update
             if i % 10 == 0:
                 self.output_queue.put({"status": "processing", "result": f"{str(i)}"})

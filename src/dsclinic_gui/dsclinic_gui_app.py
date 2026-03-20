@@ -5,7 +5,7 @@ from npy.core.logger import setup_logger
 import logging
 import config
 from npy.core import utils
-from models import MedicalReportModel
+from models import MedicalReportModel, MedicalReport
 
 #
 logger = setup_logger()
@@ -19,7 +19,7 @@ class DSClinicAppGUI(tk.Tk):
         super().__init__()
 
         # Model
-        self.model: MedicalReportModel = MedicalReportModel() if not initial_data else MedicalReportModel.model_validate(initial_data)
+        self.model: MedicalReport = MedicalReport() if not initial_data else MedicalReport.model_validate(initial_data)
 
         # Main View
         self.view = DSClinicView(self)
@@ -44,10 +44,13 @@ if __name__ == "__main__":
     
     # Initial / Test Data
     test_podaci = {
-        "patient_name": "Marko Marković",
-        "report_date": "24.05.2024.",
-        "preporucena_terapija_i_savet": "Smanjiti fizički napor.",
-        "nalazi": [{"parametar_i_vrednost": "Puls", "expertsko_misljenje": "75 bpm"}]
+        "report_id": "1",
+        "report_date": "03/19/2026",
+        "data": {
+            "patient_name": "Marko Marković",
+            "recommended_therapy_and_advice": "Smanjiti fizički napor.",
+            "critical_findings": [{"expertsko_misljenje": "Puls je povišen.", "parametar_and_value": "Puls: 75 bpm"}]
+        }
     }
 
     # Init App

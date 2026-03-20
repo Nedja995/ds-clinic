@@ -47,5 +47,8 @@
     "geminicodeassist.inlineSuggestions.nextEditPredictions": true,
     "geminicodeassist.inlineSuggestions.suggestionSpeed": "Fast",
     "geminicodeassist.outlines.automaticOutlineGeneration": false,
-    "geminicodeassist.project": "278038315476"
+    "geminicodeassist.project": "278038315476",
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    }
 }

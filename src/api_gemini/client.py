@@ -5,7 +5,7 @@ from typing import Iterator
 from google import genai
 from google.genai import types as genai_types
 from pydantic import BaseModel, Field
-from models import MedicalReportModel
+from models import MedicalReportModel, GeminiModelConfig, AIServiceConfig
 from npy.core.logger import setup_logger
 
 logger = setup_logger()
@@ -19,9 +19,7 @@ class Models(StrEnum):
     GEMINI_PRO = "gemini-pro"
 
 
-class GeminiConfig(BaseModel):
-    api_key: str = Field(default_factory=lambda: os.getenv("GOOGLE_API_KEY", ""))
-    model_name: str = "gemini-3-pro-preview" #Models = Field(default=Models.GEMINI_3_PRO_PREVIEW)
+
 
 
 class MedicalAnalyzerClient:
@@ -30,14 +28,14 @@ class MedicalAnalyzerClient:
     chat_session: genai_types.ChatSession = None
     ai_config: genai_types.GenerateContentConfig = None
 
-    def __init__(self, config: GeminiConfig = None):
+    def __init__(self, config: AIServiceConfig = None):
         logger.info("Initializing MedicalAnalyzerClient...")
-        self.config = config or GeminiConfig()
+        self.config = config or AIServiceConfig()
         if not self.config.api_key:
             logger.error("GOOGLE_API_KEY environment variable is missing")
             raise ValueError("GOOGLE_API_KEY environment variable is missing.")
         
-        logger.debug(f"Using model: {self.config.model_name}")
+        logger.debug(f"Using model: {self.config.model_settings.model_name}")
         
         self._initialise_client()
         self._initialize_ai_config()
@@ -72,10 +70,10 @@ class MedicalAnalyzerClient:
             logger.warning(f"Error while closing client: {str(e)}", exc_info=True)
 
     def initialize_chat_session(self):
-        logger.debug(f"Creating chat session with model: {self.config.model_name}")
+        logger.debug(f"Creating chat session with model: {self.config.model_settings.model_name}")
         try:
             self.chat_session = self.client.chats.create(
-                model=self.config.model_name,
+                model=self.config.model_settings.model_name,
                 config=self.ai_config
             )
             logger.debug("Chat session created successfully")
@@ -95,13 +93,13 @@ class MedicalAnalyzerClient:
 
         # 2. ADD TO CONFIGURATION
         self.ai_config = genai_types.GenerateContentConfig(
-            temperature=1.0,
-            top_p=0.95,
+            temperature=self.config.model_settings.temperature,
+            top_p=self.config.model_settings.top_p,
             tools=tools,
-            max_output_tokens=65535,  # <-- Enabled here!
+            max_output_tokens=self.config.model_settings.max_output_tokens,
             response_mime_type="application/json",
             response_schema=MedicalReportModel,
-            thinking_config=genai_types.ThinkingConfig(thinking_level=genai_types.ThinkingLevel.HIGH),
+            thinking_config=genai_types.ThinkingConfig(thinking_level=genai_types.ThinkingLevel().from_str(self.config.model_settings.thinking_level)),
             system_instruction=(
                 "You are an expert medical data analyst using equally both holistic and traditional medical data.",
                 "Always highlight severe abnormalities."

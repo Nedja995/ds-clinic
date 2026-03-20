@@ -1,66 +1,109 @@
 {
-    "_DEBUG_USE_RAW_JSON_RESPONSE": "False",
-    "_DEBUG_EXPORT_RAW_RESPONSE_JSON": "True",
+    "app": {
+        "log_level": "DEBUG",
+        "debug_export_response": true,
+        "debug_response": false
+    },
+    "ai_system_instructions": [
+        "You are an expert medical data analyst using equally both holistic and traditional medical data.",
+        "Always highlight severe abnormalities."
+    ],
+    "ai_initial_model_config": {
+        "name": "gemini-2.5-flash-lite",
+        "temerature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64.0
+    },
+    "ai_initial_task_key": "TASK_1",
+    "ai_task_descriptions": {
+        "TASK_1": {
+            "name": "Inicijalno pitanje",
+            "description": [
+                "Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about ",
+                "medical conditions, issues, causses of issues, treatments, and general health advice. Provide accurate and concise information. ",
+                "If you dont know the answer, state that you dont know. Always answer in Serbian.                                                "
+            ]
+        },
+        "TASK_2": {
+            "name": "Inicijalno pitanje 2",
+            "description": [
+                "rezime, uzrok problema sazeto, uzrok problema detaljno, strucno misljenje dijagnoza summarized i preporucena terapija i savet summarized."
+            ]
+        },
+        "TASK_3": {
+            "name": "Inicijalno staro pitanje",
+            "description": [
+                "Procitaj podatke iz svih priloženih dokumenata, nalaza, rezultata, izveštaja i ostalih podataka ",
+                "i fainlerovu skalu i slike organa ukazi na kritične nalaze, predloži moguće dijagnoze, gde su problemi, sta su uzroci problema i definiši problem (u polje 'problem_defined'). ",
+                "Predstavi podatke u json formatu, koristeci sledecu strukturu: ",
+                "   {                                                           ",
+                "        'ime_pacijenta',                                       ",
+                "        'trenutni_datum',                                      ",
+                "        'dijagnoza_bolesti',                                   ",
+                "        'dijagnoza_summarized',                                ",
+                "        'dijagnoza',                                           ",
+                "        'strucno_misljenje_dijagnoza_summarized',              ",
+                "        'preporucena_terapija_i_savet_summarized',             ",
+                "        'gde_je_problem',                                      ",
+                "        'rezime',                                              ",
+                "        'uzrok_problema',                                      ",
+                "        'uzrok_problema_detaljno',                             ",
+                "        'uzrok_problema_summarized',                           ",
+                "        'problem_defined',                                     ",
+                "        'nalazi': [                                            ",
+                "           {                                                   ",
+                "               'misljenje_i_dijagnoza',                        ",
+                "               'parametar',                                    ",
+                "               'vrednost',                                     ",
+                "               'status',                                       ",
+                "               'znacaj',                                       ",
+                "               'parametar_i_vrednost',                         ",
+                "               'dijagnoza',                                    ",
+                "               'gde_je_problem',                               ",
+                "               'rezime',                                       ",
+                "               'uzrok_problema',                               ",
+                "               'uzrok_problema_detaljno',                      ",
+                "               'uzrok_problema_summarized',                    ",
+                "           }                                                   ",
+                "        ]                                                      ",
+                "   }                                                           "
+            ]
+        }
+    },
+    "SUPPORTED_EXTENSIONS": {
+        "text/plain": ".txt",
+        "text/xml": ".xml",
+        "text/csv": ".csv",
+        "text/rtf": ".rtf",
+        "image/jpeg": ".jpeg",
+        "image/png": ".png",
+        "image/bmp": ".bmp",
+        "image/webp": ".webp",
+        "application/pdf": ".pdf",
+        "application/json": ".json",
+        "text/html": ".html"
+    },
+    "ai_supported_models": {
+        "gemini-pro-latest": "gemini-pro-latest",
+        "gemini-flash-latest": "gemini-flash-latest",
+        "gemini-flash-lite-latest": "gemini-flash-lite-latest",
+        "gemini-2.5-flash-lite-latest": "gemini-2.5-flash-lite-latest",
+        "gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
+        "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-preview": "gemini-3-pro-preview",
+        "gemini-3-flash-preview": "gemini-3-flash-preview",
+        "gemini-pro": "gemini-pro",
+        "gemini-2.5-pro": "gemini-2.5-pro",
+        "gemini-2.5-flash": "gemini-2.5-flash",
+        "gemini-2.5-flash-lite": "gemini-2.5-flash-lite",
+        "gemini-2.0-flash": "gemini-2.0-flash",
+        "gemini-2.0-flash-lite": "gemini-2.0-flash-lite",
+        "deep-research-pro-preview-12-2025": "deep-research-pro-preview-12-2025"
+    },
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "rezime+uzrok_problema+uzrok_problema_detaljno+strucno_misljenje_dijagnoza_summarized+preporucena_terapija_i_savet_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza+uzrok_problema",
         "PARAMETAR_APARATA": "parametar_i_vrednost",
         "NALAZI": "nalazi"
-    },
-    "PITANJE": [
-        "Procitaj podatke iz svih priloženih dokumenata, nalaza, rezultata, izveštaja i ostalih podataka ",
-        "i fainlerovu skalu i slike organa ukazi na kritične nalaze, predloži moguće dijagnoze, gde su problemi, sta su uzroci problema i definiši problem (u polje 'problem_defined'). ",
-        "Predstavi podatke u json formatu, koristeci sledecu strukturu: ",
-        "   {                                                           ",
-        "        'ime_pacijenta',                                       ",
-        "        'trenutni_datum',                                      ",
-        "        'dijagnoza_bolesti',                                   ",
-        "        'dijagnoza_summarized',                                ",
-        "        'dijagnoza',                                           ",
-        "        'strucno_misljenje_dijagnoza_summarized',              ",
-        "        'preporucena_terapija_i_savet_summarized',             ",
-        "        'gde_je_problem',                                      ",
-        "        'rezime',                                              ",
-        "        'uzrok_problema',                                      ",
-        "        'uzrok_problema_detaljno',                             ",
-        "        'uzrok_problema_summarized',                           ",
-        "        'problem_defined',                                     ",
-        "        'nalazi': [                                            ",
-        "           {                                                   ",
-        "               'misljenje_i_dijagnoza',                        ",
-        "               'parametar',                                    ",
-        "               'vrednost',                                     ",
-        "               'status',                                       ",
-        "               'znacaj',                                       ",
-        "               'parametar_i_vrednost',                         ",
-        "               'dijagnoza',                                    ",
-        "               'gde_je_problem',                               ",
-        "               'rezime',                                       ",
-        "               'uzrok_problema',                               ",
-        "               'uzrok_problema_detaljno',                      ",
-        "               'uzrok_problema_summarized',                    ",
-        "           }                                                   ",
-        "        ]                                                      ",
-        "   }                                                           "
-    ],
-    "SUPPORTED_EXTENSIONS": [
-        "pdf",
-        "txt",
-        "csv",
-        "json",
-        "xml",
-        "jpg",
-        "jpeg",
-        "png",
-        "gif",
-        "bmp",
-        "tif",
-        "tiff",
-        "svg",
-        "html",
-        "doc",
-        "docx",
-        "xls",
-        "xlsx"
-    ]
+    }
 }

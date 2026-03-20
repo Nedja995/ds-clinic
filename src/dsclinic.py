@@ -6,7 +6,7 @@ import config
 from npy.core.utils import open_file_from_filepath, get_output_data_dirpath
 from npy.core.fileutils import find_input_documents, make_output_filepath, read_debug_sample_response_json, write_response_json
 import pdf_maker
-from models import MedicalReportModel
+from models import MedicalReportModel, GeminiModelConfig, AIServiceConfig, MedicalReport
 from api_gemini import client as api_gemini_client
 from api_gemini import utils as api_gemini_utils
 
@@ -19,7 +19,8 @@ logger = setup_logger()
 def get_initial_analysis_report(input_dir: str,
                                 model_name: str = config.AI_MODEL_NAME,
                                 debug_export_response: bool = True,
-                                ):
+                                debug_response: bool = False,
+                                ) -> MedicalReportModel:
     """Glavna funkcija"""
     if not os.path.exists(input_dir): os.makedirs(input_dir, exist_ok=True)
     
@@ -35,14 +36,17 @@ def get_initial_analysis_report(input_dir: str,
         if part: input_documents_parts.append(part)
 
     # AI Client
-    client_config = api_gemini_client.GeminiConfig(api_key=config.GOOGLE_API_KEY, model_name=model_name)
+    client_config = AIServiceConfig(api_key=config.GOOGLE_API_KEY, model_settings=GeminiModelConfig(model_name=model_name))
     gemini_client = api_gemini_client.MedicalAnalyzerClient(config=client_config)
 
     report: MedicalReportModel = gemini_client.initial_analysis_report_from_chat_stream(
-        input_documents_parts,
-        question=config.AI_TASK_DESCRIPTION
+        documents=input_documents_parts,
+        question="".join(config.AI_TASK_DESCRIPTION)
     )
 
+    if not debug_response and debug_export_response and report:
+        response_json = report.model_dump() if report else response_json
+        write_response_json(report.patient_name, response_json, os.path.join(get_output_data_dirpath(), "DEBUG"))
     return report
 
 def analyze_inputs_and_export_report(input_dir: str,
@@ -57,7 +61,7 @@ def analyze_inputs_and_export_report(input_dir: str,
     response_json = {}
 
     if not debug_response:
-        report = get_initial_analysis_report(input_dir, model_name, debug_export_response)
+        report = get_initial_analysis_report(input_dir, model_name, debug_export_response, debug_response)
 
         write_report_pdf(report, output_dir)
 
@@ -68,7 +72,7 @@ def analyze_inputs_and_export_report(input_dir: str,
         # DEBUG: Čita iz lokalnog fajla
         response_json = read_debug_sample_response_json()
 
-    if debug_export_response and response_json:
+    if not debug_response and debug_export_response and response_json:
         # DEBUG: STORE JSON RESPONSE
         write_response_json(report.patient_name, response_json, os.path.join(output_dir, "DEBUG"))
 

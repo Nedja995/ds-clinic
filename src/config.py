@@ -44,6 +44,8 @@ ini_config.read(ini_config_path)
 
 #############################  LOAD TOML CONFIG  ###############################
 ##
+## get string example: ini_config['APP']['TASK_AI_DESCRIPTION'].replace('"', '').replace("'", "")
+##
 import tomllib
 toml_config = None
 
@@ -52,7 +54,11 @@ try:
     with open(toml_config_path, "rb") as f:
         toml_config = tomllib.load(f)
 except FileNotFoundError:
-    raise FileNotFoundError(f"Missing toml config file at: '{toml_config_path}'")
+    logger.warning(f"Missing toml config file at: '{toml_config_path}'")
+    #raise FileNotFoundError(f"Missing toml config file at: '{toml_config_path}'")
+    pass
+except tomllib.TOMLDecodeError as e:
+    raise tomllib.TOMLDecodeError(f"Error decoding TOML file: {e}")
 except Exception as e:
     raise Exception(f"Error reading TOML: {e}")
 
@@ -62,26 +68,48 @@ def get_version_from_toml(file_path="pyproject.toml"):
     else: return toml_config.get("tool", {}).get("poetry", {}).get("version")
 
 
-
 ################################  PROPERTIES  ##################################
 ##
-#
 
 #### APP BASE
-APP_VERSION: str = get_version_from_toml()
+APP_VERSION: str = ini_config["APP"]["VERSION"].replace('"', '').replace("'", "")
+APP_NAME: str = ini_config["APP"]["NAME"].replace('"', '').replace("'", "")
 # Debug
-APP_LOG_LEVEL: str = ini_config["APP"]["LOG_LEVEL"].replace('"', '').replace("'", "")
+APP_LOG_LEVEL: str = json_config.get("LOG_LEVEL", "INFO")
+APP_DEBUG_EXPORT_RESPONSE: bool = json_config.get("debug_export_response", True)
+APP_DEBUG_RESPONSE: bool = json_config.get("debug_response", False)
 
 #### SERVICES
 ## Google
 GOOGLE_API_KEY: str = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '').replace("'", "")
 
 #### AI
-AI_TASK_DESCRIPTION: str = ini_config['APP']['TASK_AI_DESCRIPTION'].replace('"', '').replace("'", "")
-# import word_utils
-# AI_TASK_DESCRIPTION = word_utils.normalize_whitespace("".join(json_config.get("PITANJE", "")))
-AI_MODEL_NAME: str = ini_config['GOOGLE']['GEMINI_MODEL'].replace('"', '').replace("'", "")
 
+# Initial Task Key
+AI_TASK_KEY: str = json_config.get("ai_initial_task_key", "")
+# Task Descriptions
+AI_TASK_DESCRIPTIONS: dict[str, dict[str, list[str]]] = json_config.get("ai_task_descriptions", {})
+# Initial Task Description
+AI_TASK_DESCRIPTION: dict[str, str] = AI_TASK_DESCRIPTIONS.get(AI_TASK_KEY, {})
+AI_TASK_DESCRIPTION: list[str] = AI_TASK_DESCRIPTION.get("description", "")
+
+# Supported Models
+AI_SUPPORTED_MODELS: dict[str, dict[str, str]] = json_config.get("ai_supported_models", {})
+
+# Model Parameters
+AI_MODEL_CONFIG: dict = json_config.get("ai_initial_model_config", None)
+if not AI_MODEL_CONFIG:
+    raise Exception(f"'ai_model_config' is not defined in config.json or is empty.")
+
+# Model name
+AI_MODEL_NAME: str = AI_MODEL_CONFIG.get("name", None)
+if not AI_MODEL_NAME or len(AI_MODEL_NAME) == 0:
+    raise Exception(f"'ai_initial_model_config.name' not defined. Please check onfig.json")
+
+# System instructions
+AI_SYSTEM_INSTRUCTIONS: list[str] = json_config.get("ai_system_instructions", [])
+
+# Supported
 AI_SUPPORTED_INPUT_FILETYPES: dict[str, str] = {
     "text/plain": ".txt", "text/xml": ".xml", "text/csv": ".csv", "text/rtf": ".rtf",
     "image/jpeg": ".jpeg", "image/png": ".png", "image/bmp": ".bmp", "image/webp": ".webp",

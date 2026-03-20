@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 
 from npy.core.logger import setup_logger
-from models import MedicalReportModel, MedicalCriticalFindingModel
+from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
 
 logger = setup_logger()
 
@@ -384,8 +384,8 @@ class DSClinicView:
     # MVC public interface
     # ─────────────────────────────────────────────────────────────────────────
 
-    def get_user_input(self) -> MedicalReportModel:
-        result = MedicalReportModel(
+    def get_user_input(self) -> MedicalReport:
+        med_data = MedicalReportModel(
             patient_name=self.ent_ime.get(),
             report_date=self.ent_datum.get(),
             recommended_therapy_and_advice=self.txt_terapija.get("1.0", tk.END).strip(),
@@ -395,20 +395,21 @@ class DSClinicView:
             p = row["parametar"].get("1.0", tk.END).strip()
             m = row["misljenje"].get("1.0", tk.END).strip()
             if p or m:
-                result.critical_findings.append(MedicalCriticalFindingModel(
+                med_data.critical_findings.append(MedicalCriticalFindingModel(
                     expertsko_misljenje=m,
                     parametar_and_value=p
                 ))
-        return result
+        report = MedicalReport(content=med_data)
+        return report
 
-    def set_display_data(self, data: MedicalReportModel):
+    def set_display_data(self, data: MedicalReport):
         self.ent_ime.delete(0, tk.END)
-        self.ent_ime.insert(0, data.patient_name)
+        self.ent_ime.insert(0, data.content.patient_name)
         self.ent_datum.delete(0, tk.END)
         self.ent_datum.insert(0, data.report_date)
         self.txt_terapija.delete("1.0", tk.END)
-        self.txt_terapija.insert("1.0", data.recommended_therapy_and_advice)
-        for n in data.critical_findings:
+        self.txt_terapija.insert("1.0", data.content.recommended_therapy_and_advice)
+        for n in data.content.critical_findings:
             self.add_finding_row(
                 misljenje=n.expertsko_misljenje,
                 parametar=n.parametar_and_value
