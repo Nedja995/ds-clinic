@@ -10,9 +10,13 @@ Jedini izuzeci su:
 
 import tkinter as tk
 from tkinter import ttk, scrolledtext
+from typing import TYPE_CHECKING
 
 from npy.core.logger import setup_logger
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
+
+if TYPE_CHECKING:
+    from dsclinic_gui.report_view_models import DSClinicViewModel
 
 logger = setup_logger()
 
@@ -54,8 +58,9 @@ FSB  = (F_UI, 9,  "bold")
 # ─────────────────────────────────────────────────────────────────────────────
 
 class DSClinicView:
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, viewModel: DSClinicViewModel):
         self.root = root
+        self.vm = viewModel
         self.root.title("DS Clinic Analiza")
         self.root.minsize(640, 520)
 
@@ -63,11 +68,17 @@ class DSClinicView:
         sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
         root.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
 
-        self.nalazi_rows: list[dict] = []
+        self.finding_widgets: list[dict] = [] # Tracks widgets for rows
         self._row_parity = 0
 
         self._build_styles()
         self._setup_ui()
+        
+        # Event Binding (MVVM)
+        self.root.bind("<<VM_DataChanged>>", lambda e: self.refresh_view_from_vm())
+        
+        # Initial Population
+        self.refresh_view_from_vm()
 
     # ─────────────────────────────────────────────────────────────────────────
     # ttk.Style  (single source of truth for all colors / fonts)
@@ -180,9 +191,13 @@ class DSClinicView:
         self.top_frame = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(0, 6))
         self.top_frame.pack(side="top", fill="x")
 
-        self.var_btn_analyze = tk.StringVar(value="Analyze")
-        self.btn_analyze     = self._tb_btn(self.top_frame, textvariable=self.var_btn_analyze)
-        self.btn_submit      = self._tb_btn(self.top_frame, text="Export")
+        # Bind directly to VM commands and properties
+        self.btn_analyze = self._tb_btn(self.top_frame, textvariable=self.vm.btn_analyze_text)
+        self.btn_analyze.config(command=self.vm.toggle_analysis)
+        
+        self.btn_submit = self._tb_btn(self.top_frame, text="Export")
+        self.btn_submit.config(command=self._handle_export_click)
+        
         self.btn_full_report = self._tb_btn(self.top_frame, text="Details", state="disabled")
         self.btn_settings    = self._tb_btn(self.top_frame, text="Settings", side="right")
 
@@ -205,7 +220,7 @@ class DSClinicView:
         pb_host.pack(fill="x", side="top")
         pb_host.pack_propagate(False)
 
-        self.progress_bar = ttk.Progressbar(pb_host, mode="determinate")
+        self.progress_bar = ttk.Progressbar(pb_host, mode="determinate", variable=self.vm.progress_value)
         self.progress_bar.pack(fill="x", expand=True)
 
         ttk.Separator(self.footer_frame, orient="horizontal").pack(fill="x", side="top")
@@ -213,11 +228,10 @@ class DSClinicView:
         status_row = ttk.Frame(self.footer_frame, style="Footer.TFrame", padding=(8, 3))
         status_row.pack(fill="x")
 
-        self.lbl_footer_status = ttk.Label(status_row, text="STATUS:", style="StatusKey.TLabel")
+        self.lbl_footer_status = ttk.Label(status_row, textvariable=self.vm.status_title, style="StatusKey.TLabel")
         self.lbl_footer_status.pack(side="left")
 
-        self.var_status = tk.StringVar(value="Idle")
-        self.lbl_status_details = ttk.Label(status_row, textvariable=self.var_status, style="StatusVal.TLabel", anchor="w")
+        self.lbl_status_details = ttk.Label(status_row, textvariable=self.vm.status_detail, style="StatusVal.TLabel", anchor="w")
         self.lbl_status_details.pack(side="left", fill="x", expand=True, padx=(5, 0))
 
     # ── Scrollable canvas ─────────────────────────────────────────────────────
@@ -271,11 +285,11 @@ class DSClinicView:
         pr.pack(fill="x")
 
         ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_ime = ttk.Entry(pr, width=36, font=FI)
+        self.ent_ime = ttk.Entry(pr, width=36, font=FI, textvariable=self.vm.patient_name)
         self.ent_ime.pack(side="left", padx=(6, 28), ipady=2, pady=4)
 
         ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_datum = ttk.Entry(pr, width=14, font=FI)
+        self.ent_datum = ttk.Entry(pr, width=14, font=FI, textvariable=self.vm.report_date)
         self.ent_datum.pack(side="left", padx=(6, 0), ipady=2, pady=4)
 
         # Card: Terapija
@@ -301,7 +315,7 @@ class DSClinicView:
         self.btn_dodaj_nalaz = ttk.Button(
             nalazi_card, text="＋   Dodaj novi nalaz",
             style="Accent.TButton",
-            command=lambda: self.add_finding_row()
+            command=lambda: [self.sync_view_to_vm(), self.vm.add_finding()]
         )
         self.btn_dodaj_nalaz.pack(fill="x", padx=2, pady=(4, 4))
 
@@ -343,8 +357,10 @@ class DSClinicView:
     # Nalazi rows
     # ─────────────────────────────────────────────────────────────────────────
 
-    def add_finding_row(self, misljenje: str = "", parametar: str = ""):
+    def _render_finding_row(self, index: int, finding: MedicalCriticalFindingModel):
+        """Renders a single row based on VM data."""
         self._row_parity += 1
+        
         row_style = "RowA.TFrame" if self._row_parity % 2 else "RowB.TFrame"
         row_bg    = ROW_A         if self._row_parity % 2 else ROW_B
 
@@ -353,67 +369,58 @@ class DSClinicView:
         row_frame.pack_propagate(False)
 
         ent_m = self._scrolled_text(row_frame, height=1, bg=row_bg)
-        ent_m.insert("1.0", misljenje)
+        ent_m.insert("1.0", finding.expertsko_misljenje)
         ent_m.place(relx=0.0, rely=0.06, relwidth=0.595, relheight=0.88)
 
         ent_p = self._scrolled_text(row_frame, height=1, bg=row_bg)
-        ent_p.insert("1.0", parametar)
+        ent_p.insert("1.0", finding.parametar_and_value)
         ent_p.place(relx=0.610, rely=0.06, relwidth=0.295, relheight=0.88)
 
         btn_ukloni = ttk.Button(
             row_frame, text="✕", style="Danger.TButton",
-            command=lambda rf=row_frame: self.remove_finding_row(rf)
+            command=lambda i=index: [self.sync_view_to_vm(), self.vm.remove_finding(i)]
         )
         btn_ukloni.place(relx=0.918, rely=0.15, relwidth=0.074, relheight=0.70)
 
-        self.nalazi_rows.append({
+        self.finding_widgets.append({
             "frame":      row_frame,
             "parametar":  ent_p,
             "misljenje":  ent_m,
-            "btn_ukloni": btn_ukloni,
         })
 
-    def remove_finding_row(self, frame: ttk.Frame):
-        for i, row in enumerate(self.nalazi_rows):
-            if row["frame"] == frame:
-                row["frame"].destroy()
-                self.nalazi_rows.pop(i)
-                break
-
     # ─────────────────────────────────────────────────────────────────────────
-    # MVC public interface
+    # MVVM Bindings
     # ─────────────────────────────────────────────────────────────────────────
 
-    def get_user_input(self) -> MedicalReport:
-        med_data = MedicalReportModel(
-            patient_name=self.ent_ime.get(),
-            report_date=self.ent_datum.get(),
-            recommended_therapy_and_advice=self.txt_terapija.get("1.0", tk.END).strip(),
-            critical_findings=[]
-        )
-        for row in self.nalazi_rows:
-            p = row["parametar"].get("1.0", tk.END).strip()
-            m = row["misljenje"].get("1.0", tk.END).strip()
-            if p or m:
-                med_data.critical_findings.append(MedicalCriticalFindingModel(
-                    expertsko_misljenje=m,
-                    parametar_and_value=p
-                ))
-        report = MedicalReport(content=med_data)
-        return report
+    def _handle_export_click(self):
+        # 1. Sync Text widgets -> VM
+        self.sync_view_to_vm()
+        # 2. Call VM Export
+        self.vm.save_report()
 
-    def set_display_data(self, data: MedicalReport):
-        self.ent_ime.delete(0, tk.END)
-        self.ent_ime.insert(0, data.content.patient_name)
-        self.ent_datum.delete(0, tk.END)
-        self.ent_datum.insert(0, data.report_date)
+    def sync_view_to_vm(self):
+        """Extracts data from complex widgets (ScrolledText) and updates the VM."""
+        # Therapy Text
+        self.vm.therapy_text_content = self.txt_terapija.get("1.0", tk.END).strip()
+        
+        # Findings List
+        for i, widgets in enumerate(self.finding_widgets):
+            if i < len(self.vm.findings):
+                self.vm.findings[i].expertsko_misljenje = widgets["misljenje"].get("1.0", tk.END).strip()
+                self.vm.findings[i].parametar_and_value = widgets["parametar"].get("1.0", tk.END).strip()
+
+    def refresh_view_from_vm(self):
+        """Updates complex widgets based on current VM state."""
+        # Therapy Text
         self.txt_terapija.delete("1.0", tk.END)
-        self.txt_terapija.insert("1.0", data.content.recommended_therapy_and_advice)
-        for n in data.content.critical_findings:
-            self.add_finding_row(
-                misljenje=n.expertsko_misljenje,
-                parametar=n.parametar_and_value
-            )
-
-    def update_status(self, header_text: str = "UNKNOWN", details_text: str = "/"):
-        self.var_status.set(f"{header_text} | {details_text}")
+        self.txt_terapija.insert("1.0", self.vm.therapy_text_content)
+        
+        # Findings Rows (Rebuild completely)
+        # Cleanup old
+        for w in self.finding_widgets:
+            w["frame"].destroy()
+        self.finding_widgets.clear()
+        
+        # Rebuild
+        for i, finding in enumerate(self.vm.findings):
+            self._render_finding_row(i, finding)

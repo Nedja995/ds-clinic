@@ -1,11 +1,12 @@
 import tkinter as tk
 from dsclinic_gui.report_controller import DSClinicController
 from dsclinic_gui.report_view import DSClinicView
+from dsclinic_gui.report_view_models import DSClinicViewModel
 from npy.core.logger import setup_logger
 import logging
 import config
 from npy.core import utils
-from models import MedicalReportModel, MedicalReport
+from models import MedicalReport
 
 #
 logger = setup_logger()
@@ -21,11 +22,14 @@ class DSClinicAppGUI(tk.Tk):
         # Model
         self.model: MedicalReport = MedicalReport() if not initial_data else MedicalReport.model_validate(initial_data)
 
+        # ViewModel
+        self.view_model = DSClinicViewModel(self, self.model)
+
         # Main View
-        self.view = DSClinicView(self)
+        self.view = DSClinicView(self, self.view_model)
         
         # Main Controller
-        self.controller = DSClinicController(self, self.model, self.view)
+        self.controller = DSClinicController(self, self.model, self.view, self.view_model)
 
 
 ##########################################################################################
@@ -46,7 +50,7 @@ if __name__ == "__main__":
     test_podaci = {
         "report_id": "1",
         "report_date": "03/19/2026",
-        "data": {
+        "content": {
             "patient_name": "Marko Marković",
             "recommended_therapy_and_advice": "Smanjiti fizički napor.",
             "critical_findings": [{"expertsko_misljenje": "Puls je povišen.", "parametar_and_value": "Puls: 75 bpm"}]

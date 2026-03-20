@@ -91,6 +91,9 @@ class MedicalAnalyzerClient:
         ]
         logger.debug(f"{' ' * 4}Configured {len(tools)} tools for AI model")
 
+        # Tkining config self.config.model_settings.thinking_level
+        thinking_config = genai_types.ThinkingConfig(thinking_level='HIGH')
+
         # 2. ADD TO CONFIGURATION
         self.ai_config = genai_types.GenerateContentConfig(
             temperature=self.config.model_settings.temperature,
@@ -99,7 +102,7 @@ class MedicalAnalyzerClient:
             max_output_tokens=self.config.model_settings.max_output_tokens,
             response_mime_type="application/json",
             response_schema=MedicalReportModel,
-            thinking_config=genai_types.ThinkingConfig(thinking_level=genai_types.ThinkingLevel().from_str(self.config.model_settings.thinking_level)),
+            thinking_config=thinking_config,
             system_instruction=(
                 "You are an expert medical data analyst using equally both holistic and traditional medical data.",
                 "Always highlight severe abnormalities."
