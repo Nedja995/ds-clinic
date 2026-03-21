@@ -92,7 +92,7 @@ class MedicalAnalyzerClient:
         logger.debug(f"{' ' * 4}Configured {len(tools)} tools for AI model")
 
         # Tkining config self.config.model_settings.thinking_level
-        thinking_config = genai_types.ThinkingConfig(thinking_level='HIGH')
+        thinking_config = genai_types.ThinkingConfig(thinking_level=self.config.model_settings.thinking_level)
 
         # 2. ADD TO CONFIGURATION
         self.ai_config = genai_types.GenerateContentConfig(

@@ -20,13 +20,8 @@ class GeminiModelConfig(BaseModel):
         "Always highlight severe abnormalities."))
 
 class MedicalCriticalFindingModel(BaseModel):
-    expertsko_misljenje: str = Field(
-        default="",
-        description="Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable."
-    )
-    parametar_and_value: str = Field(
-        default="",
-        description="The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004')."
+    expertsko_misljenje: str = Field(default="",description="Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable.")
+    parametar_and_value: str = Field(default="",description="The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004')."
     )
 
 class MedicalReportModel(BaseModel):
@@ -34,14 +29,8 @@ class MedicalReportModel(BaseModel):
         default="",
         description="Full name of the patient extracted from the documents."
     )
-    recommended_therapy_and_advice: str = Field(
-        default="",
-        description="Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps."
-    )
-    critical_findings: list[MedicalCriticalFindingModel] = Field(
-        default=[],
-        description="List of all critical or notable medical findings with expert opinions and raw parameter values."
-    )
+    recommended_therapy_and_advice: str = Field(default="",description="Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.")
+    critical_findings: list[MedicalCriticalFindingModel] = Field(default=[],description="List of all critical or notable medical findings with expert opinions and raw parameter values.")
 
 class MedicalReport(BaseModel):
     report_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -56,3 +45,6 @@ class ChatSessionModel(BaseModel):
     session_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
     model_settings: GeminiModelConfig = Field(default=GeminiModelConfig)
     report: MedicalReport = Field(default=MedicalReport)
+    chat_history: list[ChatMessage] = Field(default=[])
+
+

@@ -57,6 +57,53 @@ FSB  = (F_UI, 9,  "bold")
 
 # ─────────────────────────────────────────────────────────────────────────────
 
+class ChatSessionView(ttk.Frame):
+    def __init__(self, parent, view: 'DSClinicView', vm: 'DSClinicViewModel', **kwargs):
+        super().__init__(parent, **kwargs)
+        self.view = view
+        self.vm = vm
+        self.configure(style="Panel.TFrame", padding=10)
+        self._build_ui()
+
+    def _build_ui(self):
+        self.columnconfigure(0, weight=1)
+        # Proportions: 30%, 40%, 15% -> ~6, 8, 3
+        self.rowconfigure(1, weight=6)
+        self.rowconfigure(3, weight=8)
+        self.rowconfigure(4, weight=3)
+
+        # --- Initial Question ---
+        ttk.Label(self, text="Inicijalno pitanje:", style="FormLabel.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 2))
+        self.txt_initial_question = self.view._scrolled_text(self, height=1)
+        self.txt_initial_question.grid(row=1, column=0, sticky="nsew", pady=(0, 10))
+
+        # --- Response ---
+        ttk.Label(self, text="Odgovor:", style="FormLabel.TLabel").grid(row=2, column=0, sticky="w", pady=(0, 2))
+        self.txt_response = self.view._scrolled_text(self, height=1)
+        self.txt_response.grid(row=3, column=0, sticky="nsew", pady=(0, 10))
+
+        # --- Follow-up Question ---
+        follow_up_frame = ttk.Frame(self, style="Panel.TFrame")
+        follow_up_frame.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
+        follow_up_frame.columnconfigure(1, weight=1)
+        follow_up_frame.rowconfigure(0, weight=1)
+
+        ttk.Label(
+            follow_up_frame, text="Pitanje:", style="FormLabel.TLabel"
+        ).grid(row=0, column=0, sticky="w", padx=(0, 6))
+
+        self.txt_follow_up = self.view._scrolled_text(follow_up_frame, height=1)
+        self.txt_follow_up.grid(row=0, column=1, sticky="nsew")
+
+        ask_button = ttk.Button(
+            follow_up_frame, text="Ask", style="Accent.TButton",
+            # command=... # TODO: Add command
+        )
+        ask_button.grid(row=0, column=2, sticky="e", padx=(6, 0))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 class DSClinicView:
     def __init__(self, root: tk.Tk, viewModel: DSClinicViewModel):
         self.root = root
@@ -64,7 +111,7 @@ class DSClinicView:
         self.root.title("DS Clinic Analiza")
         self.root.minsize(640, 520)
 
-        w, h = 980, 820
+        w, h = 1480, 820
         sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
         root.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
 
@@ -180,28 +227,39 @@ class DSClinicView:
     # ─────────────────────────────────────────────────────────────────────────
 
     def _setup_ui(self):
-        self._build_toolbar()
-        self._build_footer()   # pack bottom first so canvas fills the gap
-        self._build_canvas()
+        self.paned_window = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
+        self.paned_window.pack(fill=tk.BOTH, expand=True)
+
+        # --- Left Pane (Report View) ---
+        left_pane = ttk.Frame(self.paned_window, style="TFrame")
+        self.paned_window.add(left_pane, weight=3)
+
+        self._build_toolbar(left_pane)
+        self._build_footer(left_pane)   # pack bottom first so canvas fills the gap
+        self._build_canvas(left_pane)
         self._build_form()
+
+        # --- Right Pane (Chat View) ---
+        right_pane = ChatSessionView(self.paned_window, self, self.vm)
+        self.paned_window.add(right_pane, weight=2)
 
     # ── Toolbar ───────────────────────────────────────────────────────────────
 
-    def _build_toolbar(self):
-        self.top_frame = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(0, 6))
+    def _build_toolbar(self, parent: tk.Widget):
+        self.top_frame = ttk.Frame(parent, style="Toolbar.TFrame", padding=(0, 6))
         self.top_frame.pack(side="top", fill="x")
 
         # Bind directly to VM commands and properties
         self.btn_analyze = self._tb_btn(self.top_frame, textvariable=self.vm.btn_analyze_text)
         self.btn_analyze.config(command=self.vm.toggle_analysis)
-        
+
         self.btn_submit = self._tb_btn(self.top_frame, text="Export")
         self.btn_submit.config(command=self._handle_export_click)
-        
+
         self.btn_full_report = self._tb_btn(self.top_frame, text="Details", state="disabled")
         self.btn_settings    = self._tb_btn(self.top_frame, text="Settings", side="right")
 
-        ttk.Frame(self.root, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
+        ttk.Frame(parent, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
     def _tb_btn(self, parent, text="", textvariable=None,state="normal", side="left") -> ttk.Button:
         kw: dict = dict(style="Toolbar.TButton", state=state)
@@ -211,8 +269,8 @@ class DSClinicView:
 
     # ── Footer ────────────────────────────────────────────────────────────────
 
-    def _build_footer(self):
-        self.footer_frame = ttk.Frame(self.root, style="Footer.TFrame")
+    def _build_footer(self, parent: tk.Widget):
+        self.footer_frame = ttk.Frame(parent, style="Footer.TFrame")
         self.footer_frame.pack(side="bottom", fill="x")
 
         # Fixed-height host keeps progressbar slimmer than its natural size
@@ -236,8 +294,8 @@ class DSClinicView:
 
     # ── Scrollable canvas ─────────────────────────────────────────────────────
 
-    def _build_canvas(self):
-        wrap = ttk.Frame(self.root)
+    def _build_canvas(self, parent: tk.Widget):
+        wrap = ttk.Frame(parent)
         wrap.pack(fill="both", expand=True)
 
         # tk.Canvas: no ttk equivalent, kept intentionally

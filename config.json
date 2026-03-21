@@ -9,7 +9,7 @@
         "Always highlight severe abnormalities."
     ],
     "ai_initial_model_config": {
-        "name": "gemini-2.5-flash-lite",
+        "name": "gemini-flash-latest",
         "temerature": 1.0,
         "top_p": 0.95,
         "top_k": 64.0
