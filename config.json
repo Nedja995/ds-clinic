@@ -100,6 +100,21 @@
         "gemini-2.0-flash-lite": "gemini-2.0-flash-lite",
         "deep-research-pro-preview-12-2025": "deep-research-pro-preview-12-2025"
     },
+    "claude_initial_model_config": {
+        "name": "claude-3-5-sonnet-20241022",
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "max_output_tokens": 8096,
+        "thinking_budget_tokens": 0
+    },
+    "claude_supported_models": {
+        "claude-opus-4-5":           "claude-opus-4-5",
+        "claude-sonnet-4-5":         "claude-sonnet-4-5",
+        "claude-haiku-4-5":          "claude-haiku-4-5-20251001",
+        "claude-3-5-sonnet-20241022":"claude-3-5-sonnet-20241022",
+        "claude-3-5-haiku-20241022": "claude-3-5-haiku-20241022",
+        "claude-3-opus-20240229":    "claude-3-opus-20240229"
+    },
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "rezime+uzrok_problema+uzrok_problema_detaljno+strucno_misljenje_dijagnoza_summarized+preporucena_terapija_i_savet_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza+uzrok_problema",

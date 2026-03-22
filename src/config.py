@@ -83,6 +83,9 @@ APP_DEBUG_RESPONSE: bool = json_config.get("debug_response", False)
 ## Google
 GOOGLE_API_KEY: str = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '').replace("'", "")
 
+## Anthropic
+ANTHROPIC_API_KEY: str = ini_config.get('ANTHROPIC', {}).get('ANTHROPIC_API_KEY', '').replace('"', '').replace("'", "")
+
 #### AI
 
 # Initial Task Key
@@ -119,3 +122,9 @@ AI_SUPPORTED_INPUT_FILETYPES: dict[str, str] = {
 }
 # Ensure extensions have a dot prefix for endswith() to work correctly
 #supported_exts = tuple(f".{ext.lstrip('.')}" for ext in config.SUPPORTED_INPUT_FILETYPES.values())
+
+#### CLAUDE AI CONFIG
+# Model config block for Claude (optional — app may not always use Claude)
+CLAUDE_MODEL_CONFIG: dict = json_config.get("claude_initial_model_config", {})
+CLAUDE_MODEL_NAME: str = CLAUDE_MODEL_CONFIG.get("name", "claude-3-5-sonnet-20241022")
+CLAUDE_SUPPORTED_MODELS: dict[str, str] = json_config.get("claude_supported_models", {})
