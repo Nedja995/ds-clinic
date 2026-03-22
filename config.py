@@ -1,11 +1,35 @@
 ##
 # Configuration file for DSClinic project
 #
+import json
+import os
 from enum import StrEnum
+
+# ---------------------------------------------------------------------------
+# Load runtime config from config.json (co-located with this file)
+# ---------------------------------------------------------------------------
+_CONFIG_JSON_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+
+def _load_config_json() -> dict:
+    try:
+        with open(_CONFIG_JSON_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"config.json not found at: {_CONFIG_JSON_PATH}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"config.json is malformed: {e}")
+
+_CFG: dict = _load_config_json()
 
 
 ##### APP #####
 APP_VERSION = "v1.0"
+
+# ---------------------------------------------------------------------------
+# Runtime flags sourced from config.json
+# ---------------------------------------------------------------------------
+_DEBUG_USE_RAW_JSON_RESPONSE: bool = _CFG.get("_DEBUG_USE_RAW_JSON_RESPONSE", "False").lower() == "true"
+_DEBUG_EXPORT_RAW_RESPONSE_JSON: bool = _CFG.get("_DEBUG_EXPORT_RAW_RESPONSE_JSON", "False").lower() == "true"
 
 ######### PROGRAM RUN SETTINGS #########
 
@@ -96,7 +120,9 @@ ARG_GEMINI_MODEL_MAX_OUTPUT_TOKENS: int = 65535
 
 
 ## GOOGLE SERVICE
-GOOGLE_API_KEY: str = "AIzaSyB6hNlueZ8ush24AEzfozI7XmONGwSuyIA"
+GOOGLE_API_KEY: str = _CFG.get("GOOGLE_API_KEY", "")
+if not GOOGLE_API_KEY:
+    raise EnvironmentError("GOOGLE_API_KEY is missing from config.json")
 # Project
 GOOGLE_PROJECT_ID: str = "projects/278038315476" #"gen-lang-client-0650384180"
 GOOGLE_PROJECT_LOCATION: str = "us-central1"
