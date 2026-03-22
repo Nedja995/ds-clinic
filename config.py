@@ -23,7 +23,7 @@ _CFG: dict = _load_config_json()
 
 
 ##### APP #####
-APP_VERSION = "v1.0"
+APP_VERSION = "v1.0.2"
 
 # ---------------------------------------------------------------------------
 # Runtime flags sourced from config.json
@@ -43,7 +43,8 @@ class GEMINI_MODELS(StrEnum):
   """The model names, find more <link>"""
   GEMINI_3_PRO_PREVIEW = "gemini-3-pro-preview"
   GEMINI_3_FLASH_PREVIEW = "gemini-3-flash-preview"
-  GEMINI_3_PRO_IMAGE_PREVIEW = "gemini-3-pro-image-preview"
+  GEMINI_2_5_PRO = "gemini-2.5-pro"
+  GEMINI_2_5_FLASH = "gemini-2.5-flash"
 
 ARG_GEMINI_MODEL_NAME: str = GEMINI_MODELS.GEMINI_3_PRO_PREVIEW
 
