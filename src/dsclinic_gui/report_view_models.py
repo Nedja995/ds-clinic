@@ -27,7 +27,12 @@ class DSClinicViewModel:
     def __init__(self, 
                  schedule_poll_fn: callable[[int, callable], Any], 
                  model: Optional[MedicalReport] = None) -> None:
+        """
+        ViewModel for the DSClinic App. Holds observable state and business logic. 
+        """
+        
         self.schedule_poll_fn = schedule_poll_fn
+        
         self._model: MedicalReport = model or MedicalReport()
 
         # --- Observable UI State ---
@@ -62,6 +67,7 @@ class DSClinicViewModel:
         self.var_report_date.set(self._model.report_date)
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
         self.findings = self._model.content.critical_findings
+        #self.app.event_generate("<<VM_DataChanged>>")
         
     def _update_model_from_viewmodel(self):
         logger.debug("Updating Model from ViewModel...")
@@ -106,7 +112,7 @@ class DSClinicViewModel:
         self._cancel_event.clear()
 
         self._worker_thread = threading.Thread(
-            target=run_hardwork, #self._run_task_initial_analyzis,
+            target=self._run_task_initial_analyzis,
             args=( self._output_queue, self._cancel_event),
             daemon=True,
             name="api-hardwork-thread")
@@ -124,33 +130,37 @@ class DSClinicViewModel:
         self._reset_task_state()
         self._cancel_event.set()
 
-    # def _run_task_initial_analyzis(self):
-    #     input_dir = utils.get_input_data_dirpath()
-    #     try:
-    #         report: MedicalReport = get_initial_analysis_report(
-    #             input_dir=input_dir,
-    #             model_name=config.AI_MODEL_NAME)
-    #         self._output_queue.put({"status": "complete", "result": report.model_dump(mode='json')})
-    #     except Exception as e:
-    #         logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
-    #         self._output_queue.put({"status": "failed", "result": str(e)})
-    
-    def _run_task_initial_analyzis(self):
+    def _run_task_initial_analyzis(self, output_queue: queue.Queue[ProgressEvent], cancel_event: threading.Event):
+        input_dir = utils.get_input_data_dirpath()
         try:
-            blocking_cpu_task(10)
-            self._output_queue.put(ProgressEvent(
-                status=TaskStatus.FINISHED,
-                message="Task completed successfully",
-                result="Hello, I am done after 10 seconds!"
-            ))
-            # self._output_queue.put({"status": "complete", "result": self._model.model_dump(mode='json')})
+            report: MedicalReport = get_initial_analysis_report(
+                input_dir=input_dir,
+                model_name=config.AI_MODEL_NAME)
+            output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, message="Analysis complete", result=report))
         except Exception as e:
             logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
-            self._output_queue.put(ProgressEvent(
+            output_queue.put(ProgressEvent(
                 status=TaskStatus.FAILED,
                 message="Task failed",
                 result=str(e)
             ))
+    
+    # def _run_task_initial_analyzis2(self):
+    #     try:
+    #         blocking_cpu_task(10)
+    #         self._output_queue.put(ProgressEvent(
+    #             status=TaskStatus.FINISHED,
+    #             message="Task completed successfully",
+    #             result="Hello, I am done after 10 seconds!"
+    #         ))
+    #         # self._output_queue.put({"status": "complete", "result": self._model.model_dump(mode='json')})
+    #     except Exception as e:
+    #         logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
+    #         self._output_queue.put(ProgressEvent(
+    #             status=TaskStatus.FAILED,
+    #             message="Task failed",
+    #             result=str(e)
+    #         ))
 
     def _poll_result_queue(self) -> None:
         """Drain the queue and update observable state.  Scheduled via `after`."""
@@ -190,22 +200,24 @@ class DSClinicViewModel:
                 return True
  
             case TaskStatus.FINISHED:
-                self.var_is_analyzing.set(False)
+                
                 self.var_btn_analyze_text.set("Analyze")
-                self.var_status_title.set("Finished")
-                self.var_progress_value.set(100)
-                self.var_status_detail.set("Analysis completed successfully.")                
+          
 
                 # Update Model and Notify View (by updating observables)
                 if progress_event.result and isinstance(progress_event.result, MedicalReport):
                     logger.info("Analysis completed with a MedicalReport result. Updating model and viewmodel...")
                     self._model = progress_event.result
+                    self._update_viewmodel_from_model()
                     self.var_progress_value.set(100)
                     self.var_status_detail.set("Analysis completed successfully.")
-                    self._update_viewmodel_from_model()
                 else:
                     logger.error(f"Unexpected result type in ProgressEvent: {type(progress_event.result)}. Expected MedicalReport.")
                     
+                self.var_is_analyzing.set(False)
+                self.var_status_title.set("Finished")
+                self.var_progress_value.set(100)
+                self.var_status_detail.set("Analysis completed successfully.")      
                     #self._update_viewmodel_from_model()
                 
                 #

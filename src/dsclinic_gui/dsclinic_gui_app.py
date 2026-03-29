@@ -9,6 +9,11 @@ from dsclinic_gui.report_view import MedicalReportView
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
 from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
+from dsclinic import get_initial_analysis_report
+from pdf_maker import export_medical_report_pdf
+from models import TaskStatus, ProgressEvent
+import threading
+import queue
 from typing import Any
 #
 logger = setup_logger()
@@ -19,8 +24,6 @@ MIN_HEIGHT = 700
 INIT_WIDTH = 620
 INIT_HEIGHT = 700
 #
-
-
 
 #######################################################################################
 ## MAIN GUI APP

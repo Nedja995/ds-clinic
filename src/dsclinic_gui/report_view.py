@@ -41,6 +41,8 @@ class MedicalReportView(ttk.Frame):
         # Event Binding (MVVM)
         self.master.bind("<<VM_DataChanged>>", lambda e: self.update_view_from_viewmodel())
         
+        self.view_model.var_status_title.trace_add("write", lambda *args: self.update_view_from_viewmodel())
+        self.view_model.var_is_analyzing.trace_add("write", lambda *args: self.update_view_from_viewmodel())
         # Initial Population
         self.update_view_from_viewmodel()
         
