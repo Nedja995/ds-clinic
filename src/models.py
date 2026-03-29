@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import TypeVar, Generic, Callable
+from collections import UserList
 from pydantic import BaseModel, Field
 import uuid
 from datetime import datetime
@@ -70,6 +72,48 @@ class WorkerStatus(str, Enum):
     FAILED   = "failed"
 
 
+
+T = TypeVar('T')
+
+# --- 1. OBSERVABLE LIST (Reusable Utility) ---
+class ObservableList(UserList, Generic[T]):
+    """An observable list that notifies subscribers on mutation."""
+    def __init__(self, initlist=None):
+        super().__init__(initlist)
+        self._callbacks: list[Callable[[list[T]], None]] = []
+
+    def bind(self, callback: Callable[[list[T]], None]) -> None:
+        self._callbacks.append(callback)
+
+    def _notify(self) -> None:
+        for callback in self._callbacks:
+            callback(self.data)
+
+    # Intercept mutating methods to trigger notifications
+    def append(self, item: T) -> None:
+        super().append(item)
+        self._notify()
+
+    def remove(self, item: T) -> None:
+        super().remove(item)
+        self._notify()
+
+    def extend(self, other) -> None:
+        super().extend(other)
+        self._notify()
+
+    def clear(self) -> None:
+        super().clear()
+        self._notify()
+
+    def __setitem__(self, i, item) -> None:
+        super().__setitem__(i, item)
+        self._notify()
+
+    def __delitem__(self, i) -> None:
+        super().__delitem__(i)
+        self._notify()
+        
 # ---------------------------------------------------------------------------
 # Claude (Anthropic) model config — mirrors GeminiModelConfig
 # Note: Claude has no top_k or thinking_level params.

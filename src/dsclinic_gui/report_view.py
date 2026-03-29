@@ -20,64 +20,51 @@ from dsclinic_gui.chat_session_view import ChatSessionView
 
 logger = setup_logger()
 
-_WINDOW_TITLE = "Holisticki centar"
-MIN_WIDTH = 620
-MIN_HEIGHT = 700
-INIT_WIDTH = 620
-INIT_HEIGHT = 700
-
 
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-class DSClinicView:
-    def __init__(self, root: tk.Tk, viewModel: DSClinicViewModel, report: MedicalReport = MedicalReport()):
-        self.root = root
-        self.vm = viewModel
+class MedicalReportView(ttk.Frame):
+    """
+    View for displaying and editing medical reports.
+    """
+    def __init__(self, parent: ttk.Misc, view_model: DSClinicViewModel, **kwargs: any) -> None:
+        super().__init__(parent, **kwargs)
+        self.view_model = view_model
 
-        self.finding_widgets: list[dict] = [] # Tracks widgets for rows
+        self.critical_finding_widgets: list[dict] = [] # Tracks widgets for rows
         self._row_parity = 0
 
-        build_styles()
         self._setup_ui()
-        self._configure_app()
         
         # Event Binding (MVVM)
-        self.root.bind("<<VM_DataChanged>>", lambda e: self.refresh_view_from_vm())
+        self.master.bind("<<VM_DataChanged>>", lambda e: self.refresh_view_from_vm())
         
         # Initial Population
         self.refresh_view_from_vm()
-
-    def _configure_app(self):
-        self.root.title(_WINDOW_TITLE)
-        self.root.minsize(MIN_WIDTH, MIN_HEIGHT)
-        self.root.geometry(f"{INIT_WIDTH}x{INIT_HEIGHT}")
-        self.root.resizable(width=True, height=True)
-        # self.root.update_idletasks() # Ensure geometry is applied before further calculations
-        # self.root.grid_columnconfigure(0, weight=1)
-        # self.root.grid_rowconfigure(0, weight=1)
-
+        
+        
     # ─────────────────────────────────────────────────────────────────────────
     # Layout
     # ─────────────────────────────────────────────────────────────────────────
 
     def _setup_ui(self):
-        self.paned_window = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
-        self.paned_window.pack(fill=tk.BOTH, expand=True)
+        # self.paned_window = ttk.PanedWindow(self.parent, orient=tk.HORIZONTAL)
+        # self.paned_window.pack(fill=tk.BOTH, expand=True)
 
-        # --- Left Pane (Report View) ---
-        left_pane = ttk.Frame(self.paned_window, style="TFrame")
-        self.paned_window.add(left_pane, weight=3)
+        # # --- Left Pane (Report View) ---
+        # left_pane = ttk.Frame(self.paned_window, style="TFrame")
+        # self.paned_window.add(left_pane, weight=3)
 
-        self._build_toolbar(left_pane)
-        self._build_footer(left_pane)   # pack bottom first so canvas fills the gap
-        self._build_canvas(left_pane)
+        self._build_toolbar(self)
+        self._build_footer(self)   # pack bottom first so canvas fills the gap
+        self._build_canvas(self)
         self._build_form()
 
-        # # --- Right Pane (Chat View) ---
-        right_pane = ChatSessionView(self.paned_window, self, self.vm)
-        self.paned_window.add(right_pane, weight=2)
+        # # # --- Right Pane (Chat View) ---
+        # right_pane = ChatSessionView(self.paned_window, self, self.view_model)
+        # self.paned_window.add(right_pane, weight=2)
 
     # ── Toolbar ───────────────────────────────────────────────────────────────
 
@@ -86,8 +73,8 @@ class DSClinicView:
         self.top_frame.pack(side="top", fill="x")
 
         # Bind directly to VM commands and properties
-        self.btn_analyze = self._tb_btn(self.top_frame, textvariable=self.vm.btn_analyze_text)
-        self.btn_analyze.config(command=self.vm.toggle_analysis)
+        self.btn_analyze = self._tb_btn(self.top_frame, textvariable=self.view_model.btn_analyze_text)
+        self.btn_analyze.config(command=self.view_model.toggle_analysis)
 
         self.btn_submit = self._tb_btn(self.top_frame, text="Export")
         self.btn_submit.config(command=self._handle_export_click)
@@ -114,7 +101,7 @@ class DSClinicView:
         pb_host.pack(fill="x", side="top")
         pb_host.pack_propagate(False)
 
-        self.progress_bar = ttk.Progressbar(pb_host, mode="determinate", variable=self.vm.progress_value)
+        self.progress_bar = ttk.Progressbar(pb_host, mode="determinate", variable=self.view_model.progress_value)
         self.progress_bar.pack(fill="x", expand=True)
 
         ttk.Separator(self.footer_frame, orient="horizontal").pack(fill="x", side="top")
@@ -122,10 +109,10 @@ class DSClinicView:
         status_row = ttk.Frame(self.footer_frame, style="Footer.TFrame", padding=(8, 3))
         status_row.pack(fill="x")
 
-        self.lbl_footer_status = ttk.Label(status_row, textvariable=self.vm.status_title, style="StatusKey.TLabel")
+        self.lbl_footer_status = ttk.Label(status_row, textvariable=self.view_model.status_title, style="StatusKey.TLabel")
         self.lbl_footer_status.pack(side="left")
 
-        self.lbl_status_details = ttk.Label(status_row, textvariable=self.vm.status_detail, style="StatusVal.TLabel", anchor="w")
+        self.lbl_status_details = ttk.Label(status_row, textvariable=self.view_model.status_detail, style="StatusVal.TLabel", anchor="w")
         self.lbl_status_details.pack(side="left", fill="x", expand=True, padx=(5, 0))
 
     # ── Scrollable canvas ─────────────────────────────────────────────────────
@@ -179,11 +166,11 @@ class DSClinicView:
         pr.pack(fill="x")
 
         ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_ime = ttk.Entry(pr, width=36, font=FI, textvariable=self.vm.patient_name)
+        self.ent_ime = ttk.Entry(pr, width=36, font=FI, textvariable=self.view_model.patient_name)
         self.ent_ime.pack(side="left", padx=(6, 28), ipady=2, pady=4)
 
         ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_datum = ttk.Entry(pr, width=14, font=FI, textvariable=self.vm.report_date)
+        self.ent_datum = ttk.Entry(pr, width=14, font=FI, textvariable=self.view_model.report_date)
         self.ent_datum.pack(side="left", padx=(6, 0), ipady=2, pady=4)
 
         # Card: Terapija
@@ -209,7 +196,7 @@ class DSClinicView:
         self.btn_dodaj_nalaz = ttk.Button(
             nalazi_card, text="＋   Dodaj novi nalaz",
             style="Accent.TButton",
-            command=lambda: [self.sync_view_to_vm(), self.vm.add_finding()]
+            command=lambda: [self.refresh_view_from_vm(), self.view_model.add_finding()]
         )
         self.btn_dodaj_nalaz.pack(fill="x", padx=2, pady=(4, 4))
 
@@ -272,11 +259,11 @@ class DSClinicView:
 
         btn_ukloni = ttk.Button(
             row_frame, text="✕", style="Danger.TButton",
-            command=lambda i=index: [self.sync_view_to_vm(), self.vm.remove_finding(i)]
+            command=lambda i=index: [self.sync_view_to_vm(), self.view_model.remove_finding(i)]
         )
         btn_ukloni.place(relx=0.918, rely=0.15, relwidth=0.074, relheight=0.70)
 
-        self.finding_widgets.append({
+        self.critical_finding_widgets.append({
             "frame":      row_frame,
             "parametar":  ent_p,
             "misljenje":  ent_m,
@@ -290,31 +277,31 @@ class DSClinicView:
         # 1. Sync Text widgets -> VM
         self.sync_view_to_vm()
         # 2. Call VM Export
-        self.vm.save_report()
+        self.view_model.save_report()
 
     def sync_view_to_vm(self):
         """Extracts data from complex widgets (ScrolledText) and updates the VM."""
         # Therapy Text
-        self.vm.therapy_text_content = self.txt_terapija.get("1.0", tk.END).strip()
+        self.view_model.therapy_text_content = self.txt_terapija.get("1.0", tk.END).strip()
         
         # Findings List
-        for i, widgets in enumerate(self.finding_widgets):
-            if i < len(self.vm.findings):
-                self.vm.findings[i].expertsko_misljenje = widgets["misljenje"].get("1.0", tk.END).strip()
-                self.vm.findings[i].parametar_and_value = widgets["parametar"].get("1.0", tk.END).strip()
+        for i, widgets in enumerate(self.critical_finding_widgets):
+            if i < len(self.view_model.findings):
+                self.view_model.findings[i].expertsko_misljenje = widgets["misljenje"].get("1.0", tk.END).strip()
+                self.view_model.findings[i].parametar_and_value = widgets["parametar"].get("1.0", tk.END).strip()
 
     def refresh_view_from_vm(self):
         """Updates complex widgets based on current VM state."""
         # Therapy Text
         self.txt_terapija.delete("1.0", tk.END)
-        self.txt_terapija.insert("1.0", self.vm.therapy_text_content)
+        self.txt_terapija.insert("1.0", self.view_model.therapy_text_content)
         
         # Findings Rows (Rebuild completely)
         # Cleanup old
-        for w in self.finding_widgets:
+        for w in self.critical_finding_widgets:
             w["frame"].destroy()
-        self.finding_widgets.clear()
+        self.critical_finding_widgets.clear()
         
         # Rebuild
-        for i, finding in enumerate(self.vm.findings):
+        for i, finding in enumerate(self.view_model.findings):
             self._render_finding_row(i, finding)

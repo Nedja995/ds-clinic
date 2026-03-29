@@ -5,11 +5,18 @@ import config
 from npy.core import utils
 from models import MedicalReport
 from dsclinic_gui.report_view_models import DSClinicViewModel
-from dsclinic_gui.report_view import DSClinicView
+from dsclinic_gui.report_view import MedicalReportView
+from dsclinic_gui.main_container import MainContainerView
+from dsclinic_gui.styles import build_styles
 
 #
 logger = setup_logger()
 
+_WINDOW_TITLE = "Holisticki centar"
+MIN_WIDTH = 620
+MIN_HEIGHT = 700
+INIT_WIDTH = 620
+INIT_HEIGHT = 700
 
 #######################################################################################
 ## MAIN GUI APP
@@ -17,13 +24,34 @@ logger = setup_logger()
 class DSClinicAppGUI(tk.Tk):
     def __init__(self, initial_data: MedicalReport | dict):
         super().__init__()
+        
+        #
+        self._configure_app()
+        
+        #
+        build_styles()
+        
         # Data
         self.medical_report: MedicalReport = initial_data if not initial_data else MedicalReport.model_validate(initial_data)
+        
         # View Model
-        self.view_model = DSClinicViewModel(self, self.medical_report)
+        self.view_model = DSClinicViewModel(self.medical_report)
+        
+        # Main Container View
+        self.main_container = MainContainerView(self, self.view_model)
+        self.main_container.pack(fill=tk.BOTH, expand=True)
+        
         # View
-        self.report_view = DSClinicView(self, self.view_model, self.medical_report)
-
+        #self.report_view = MedicalReportView(self, self.view_model, self.medical_report)
+        
+    def _configure_app(self):
+        self.title(_WINDOW_TITLE)
+        self.minsize(MIN_WIDTH, MIN_HEIGHT)
+        self.geometry(f"{INIT_WIDTH}x{INIT_HEIGHT}")
+        self.resizable(width=True, height=True)
+        # self.root.update_idletasks() # Ensure geometry is applied before further calculations
+        # self.root.grid_columnconfigure(0, weight=1)
+        # self.root.grid_rowconfigure(0, weight=1)
 
 ##########################################################################################
 ## SCRIPT FILE ENTRY POINT

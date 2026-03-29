@@ -4,6 +4,7 @@ import time
 import tkinter as tk
 import os
 import datetime
+from typing import Optional, Any
 from tkinter import filedialog, messagebox
 
 from npy.core.logger import setup_logger
@@ -25,16 +26,18 @@ logger.info(f"QUEUE_POLL_INTERVAL_MS: {QUEUE_POLL_INTERVAL_MS}")
 
 
 class DSClinicViewModel:
-    def __init__(self, app: tk.Tk, model: MedicalReport):
-        self.app = app
-        self.model = model
+    def __init__(self, model: Optional[MedicalReport] = None) -> None:
+        self._model: MedicalReport = model or MedicalReport()
 
         # --- Observable UI State ---
-        self.patient_name = tk.StringVar(value=model.content.patient_name)
-        self.report_date = tk.StringVar(value=model.report_date)
-        self.therapy_text_content = model.content.recommended_therapy_and_advice  # Handled manually for Text widgets
+        self.patient_name = tk.StringVar(value=self._model.content.patient_name)
+        self.report_date = tk.StringVar(value=self._model.report_date)
+        self.therapy_text_content = self._model.content.recommended_therapy_and_advice  # Handled manually for Text widgets
 
-        self.findings: list[MedicalCriticalFindingModel] = model.content.critical_findings
+        self.findings: list[MedicalCriticalFindingModel] = self._model.content.critical_findings
+
+        self.initial_question = tk.StringVar(value="")
+        self.response = tk.StringVar(value="")
 
         # Status & Progress
         self.status_title = tk.StringVar(value="IDLE")
@@ -50,6 +53,75 @@ class DSClinicViewModel:
 
         # Start polling for async tasks
         self._check_queue_loop()
+
+
+    def _update_viewmodel_from_model(self):
+        self.patient_name.set(self._model.content.patient_name)
+        self.report_date.set(self._model.report_date)
+        self.therapy_text_content = self._model.content.recommended_therapy_and_advice
+        self.findings = self._model.content.critical_findings
+        
+    def _update_model_from_viewmodel(self):
+        # Sync Observables to Model
+        self._model.content.patient_name = self.patient_name.get()
+        self._model.report_date = self.report_date.get()
+        self._model.content.recommended_therapy_and_advice = self.therapy_text_content
+        self._model.content.critical_findings = self.findings
+
+
+    # --- Logic: Data Management ---
+
+    def add_finding(self):
+        """Adds a blank finding to the list."""
+        self.findings.append(MedicalCriticalFindingModel())
+        self._update_viewmodel_from_model()
+        #self.app.event_generate("<<VM_DataChanged>>")
+        
+    def remove_finding(self, index: int):
+        if 0 <= index < len(self.findings):
+            self.findings.pop(index)
+            self._update_viewmodel_from_model()
+            #self.app.event_generate("<<VM_DataChanged>>")
+
+    def save_report(self):
+        """Handles PDF Export logic."""
+        # Note: The View must have already synced its ScrolledText data to VM before calling this.
+        ls = self._model.content.critical_findings
+        # 1. Sync Observables to Model
+        self._update_model_from_viewmodel()
+
+        # 2. Export
+        patient_slug = self.patient_name.get().replace(".", " ").replace("/", "")
+        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+        default_name = f"NALAZ_{patient_slug}_{timestamp_str}.pdf"
+        output_dir = utils.get_output_data_dirpath()
+
+        output_filepath = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialdir=output_dir,
+            initialfile=default_name
+        )
+
+        if not output_filepath:
+            return
+
+        self.status_title.set("Exporting")
+        self.status_detail.set(f"Generating PDF at {output_filepath}...")
+
+        try:
+            export_medical_report_pdf(self._model, output_filename=output_filepath)
+            self.status_title.set("Saved")
+            self.status_detail.set("PDF Saved Successfully")
+
+            if messagebox.askyesno("Success", "Report generated. Open file?"):
+                fileutils.open_file_from_filepath(output_filepath)
+
+        except Exception as e:
+            logger.error(e)
+            self.status_title.set("Error")
+            self.status_detail.set("Failed to generate PDF")
+            messagebox.showerror("Error", str(e))
 
     # --- Logic: Analysis ---
 
@@ -90,7 +162,7 @@ class DSClinicViewModel:
     def _run_task_initial_analyzis(self):
         try:
             blocking_cpu_task(5)
-            self._output_queue.put({"status": "complete", "result": self.model.model_dump(mode='json')})
+            self._output_queue.put({"status": "complete", "result": self._model.model_dump(mode='json')})
         except Exception as e:
             logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
             self._output_queue.put({"status": "failed", "result": str(e)})
@@ -117,8 +189,8 @@ class DSClinicViewModel:
 
                 # Update Model and Notify View (by updating observables)
                 new_report = MedicalReport(**msg["result"])
-                self.model = new_report
-                self._update_vm_from_model()
+                self._model = new_report
+                self._update_viewmodel_from_model()
             elif msg["status"] == "processing":
                 self.status_title.set("Processing...")
 
@@ -136,7 +208,8 @@ class DSClinicViewModel:
         except queue.Empty:
             pass
         finally:
-            self.app.after(QUEUE_POLL_INTERVAL_MS, self._check_queue_loop)
+            pass
+            #self.app.after(QUEUE_POLL_INTERVAL_MS, self._check_queue_loop)
 
     def _update_view(self,
                      event_status: str = None,
@@ -160,68 +233,5 @@ class DSClinicViewModel:
         if btn_analyze_text:
             self.btn_analyze_text.set(btn_analyze_text)
         if event_status == "complete" and result and isinstance(result, MedicalReportModel):
-            self.model.content = result
-            self._update_vm_from_model()
-
-    def _update_vm_from_model(self):
-        self.patient_name.set(self.model.content.patient_name)
-        self.report_date.set(self.model.report_date)
-        self.therapy_text_content = self.model.content.recommended_therapy_and_advice
-        self.findings = self.model.content.critical_findings
-
-    # --- Logic: Data Management ---
-
-    def add_finding(self):
-        """Adds a blank finding to the list."""
-        self.findings.append(MedicalCriticalFindingModel())
-        self._update_vm_from_model()
-        self.app.event_generate("<<VM_DataChanged>>")
-        
-    def remove_finding(self, index: int):
-        if 0 <= index < len(self.findings):
-            self.findings.pop(index)
-            self._update_vm_from_model()
-            self.app.event_generate("<<VM_DataChanged>>")
-
-    def save_report(self):
-        """Handles PDF Export logic."""
-        # Note: The View must have already synced its ScrolledText data to VM before calling this.
-
-        # 1. Sync Observables to Model
-        self.model.content.patient_name = self.patient_name.get()
-        self.model.report_date = self.report_date.get()
-        self.model.content.recommended_therapy_and_advice = self.therapy_text_content
-        self.model.content.critical_findings = self.findings
-
-        # 2. Export
-        patient_slug = self.patient_name.get().replace(".", " ").replace("/", "")
-        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-        default_name = f"NALAZ_{patient_slug}_{timestamp_str}.pdf"
-        output_dir = utils.get_output_data_dirpath()
-
-        output_filepath = filedialog.asksaveasfilename(
-            defaultextension=".pdf",
-            filetypes=[("PDF files", "*.pdf")],
-            initialdir=output_dir,
-            initialfile=default_name
-        )
-
-        if not output_filepath:
-            return
-
-        self.status_title.set("Exporting")
-        self.status_detail.set(f"Generating PDF at {output_filepath}...")
-
-        try:
-            export_medical_report_pdf(self.model, output_filename=output_filepath)
-            self.status_title.set("Saved")
-            self.status_detail.set("PDF Saved Successfully")
-
-            if messagebox.askyesno("Success", "Report generated. Open file?"):
-                fileutils.open_file_from_filepath(output_filepath)
-
-        except Exception as e:
-            logger.error(e)
-            self.status_title.set("Error")
-            self.status_detail.set("Failed to generate PDF")
-            messagebox.showerror("Error", str(e))
+            self._model.content = result
+            self._update_viewmodel_from_model()
