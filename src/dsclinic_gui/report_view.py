@@ -16,6 +16,7 @@ from npy.core.logger import setup_logger
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
 
 from dsclinic_gui.report_view_models import DSClinicViewModel
+from dsclinic_gui.chat_session_view import ChatSessionView
 
 logger = setup_logger()
 
@@ -202,8 +203,8 @@ class DSClinicView:
         self._build_form()
 
         # # --- Right Pane (Chat View) ---
-        # right_pane = ChatSessionView(self.paned_window, self, self.vm)
-        # self.paned_window.add(right_pane, weight=2)
+        right_pane = ChatSessionView(self.paned_window, self, self.vm)
+        self.paned_window.add(right_pane, weight=2)
 
     # ── Toolbar ───────────────────────────────────────────────────────────────
 

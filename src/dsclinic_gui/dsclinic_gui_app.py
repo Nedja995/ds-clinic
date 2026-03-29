@@ -22,7 +22,7 @@ class DSClinicAppGUI(tk.Tk):
         # View Model
         self.view_model = DSClinicViewModel(self, self.medical_report)
         # View
-        self.report_view = DSClinicView(self, self.view_model, self)
+        self.report_view = DSClinicView(self, self.view_model, self.medical_report)
 
 
 ##########################################################################################

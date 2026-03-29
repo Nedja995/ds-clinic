@@ -1,11 +1,10 @@
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from dsclinic_gui.report_view import DSClinicView
 from dsclinic_gui.report_view_models import DSClinicViewModel
 
 class ChatSessionView(ttk.Frame):
-    def __init__(self, parent, view: DSClinicView, vm: DSClinicViewModel, **kwargs):
+    def __init__(self, parent, view: tk.Misc, vm: DSClinicViewModel, **kwargs):
         super().__init__(parent, **kwargs)
         self.view = view
         self.vm = vm
@@ -21,12 +20,12 @@ class ChatSessionView(ttk.Frame):
 
         # --- Initial Question ---
         ttk.Label(self, text="Inicijalno pitanje:", style="FormLabel.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 2))
-        self.txt_initial_question = self.view._scrolled_text(self, height=1)
+        self.txt_initial_question = ttk.Entry(self) #self.view._scrolled_text(self, height=1)
         self.txt_initial_question.grid(row=1, column=0, sticky="nsew", pady=(0, 10))
 
         # --- Response ---
         ttk.Label(self, text="Odgovor:", style="FormLabel.TLabel").grid(row=2, column=0, sticky="w", pady=(0, 2))
-        self.txt_response = self.view._scrolled_text(self, height=1)
+        self.txt_response =  ttk.Entry(self) #self.view._scrolled_text(self, height=1)
         self.txt_response.grid(row=3, column=0, sticky="nsew", pady=(0, 10))
 
         # --- Follow-up Question ---
@@ -39,7 +38,7 @@ class ChatSessionView(ttk.Frame):
             follow_up_frame, text="Pitanje:", style="FormLabel.TLabel"
         ).grid(row=0, column=0, sticky="w", padx=(0, 6))
 
-        self.txt_follow_up = self.view._scrolled_text(follow_up_frame, height=1)
+        self.txt_follow_up =  ttk.Entry(follow_up_frame) #self.view._scrolled_text(follow_up_frame, height=1)
         self.txt_follow_up.grid(row=0, column=1, sticky="nsew")
 
         ask_button = ttk.Button(
@@ -47,3 +46,4 @@ class ChatSessionView(ttk.Frame):
             # command=... # TODO: Add command
         )
         ask_button.grid(row=0, column=2, sticky="e", padx=(6, 0))
+        
