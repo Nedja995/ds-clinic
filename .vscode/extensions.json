@@ -5,6 +5,7 @@
         "ms-python.vscode-python-envs",
         "tomoki1207.pdf",
         "nickdemayo.vscode-json-editor",
-        "yzhang.markdown-all-in-one"
+        "yzhang.markdown-all-in-one",
+        "mikestead.dotenv"
     ]
 }

@@ -1,12 +1,11 @@
 import tkinter as tk
-from dsclinic_gui.report_controller import DSClinicController
-from dsclinic_gui.report_view import DSClinicView
-from dsclinic_gui.report_view_models import DSClinicViewModel
 from npy.core.logger import setup_logger
 import logging
 import config
 from npy.core import utils
 from models import MedicalReport
+from dsclinic_gui.report_view_models import DSClinicViewModel
+from dsclinic_gui.report_view import DSClinicView
 
 #
 logger = setup_logger()
@@ -16,20 +15,14 @@ logger = setup_logger()
 ## MAIN GUI APP
 #
 class DSClinicAppGUI(tk.Tk):
-    def __init__(self, initial_data: dict | None = None):
+    def __init__(self, initial_data: MedicalReport | dict):
         super().__init__()
-
-        # Model
-        self.model: MedicalReport = MedicalReport() if not initial_data else MedicalReport.model_validate(initial_data)
-
-        # ViewModel
-        self.view_model = DSClinicViewModel(self, self.model)
-
-        # Main View
-        self.view = DSClinicView(self, self.view_model)
-        
-        # Main Controller
-        self.controller = DSClinicController(self, self.model, self.view, self.view_model)
+        # Data
+        self.medical_report: MedicalReport = initial_data if not initial_data else MedicalReport.model_validate(initial_data)
+        # View Model
+        self.view_model = DSClinicViewModel(self, self.medical_report)
+        # View
+        self.report_view = DSClinicView(self, self.view_model, self)
 
 
 ##########################################################################################

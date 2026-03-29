@@ -15,11 +15,15 @@ from typing import TYPE_CHECKING
 from npy.core.logger import setup_logger
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
 
-if TYPE_CHECKING:
-    from dsclinic_gui.report_view_models import DSClinicViewModel
+from dsclinic_gui.report_view_models import DSClinicViewModel
 
 logger = setup_logger()
 
+_WINDOW_TITLE = "Holisticki centar"
+MIN_WIDTH = 620
+MIN_HEIGHT = 700
+INIT_WIDTH = 620
+INIT_HEIGHT = 700
 
 # ── Palette ───────────────────────────────────────────────────────────────────
 BG        = "#F0F4F8"
@@ -57,69 +61,17 @@ FSB  = (F_UI, 9,  "bold")
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-class ChatSessionView(ttk.Frame):
-    def __init__(self, parent, view: 'DSClinicView', vm: 'DSClinicViewModel', **kwargs):
-        super().__init__(parent, **kwargs)
-        self.view = view
-        self.vm = vm
-        self.configure(style="Panel.TFrame", padding=10)
-        self._build_ui()
-
-    def _build_ui(self):
-        self.columnconfigure(0, weight=1)
-        # Proportions: 30%, 40%, 15% -> ~6, 8, 3
-        self.rowconfigure(1, weight=6)
-        self.rowconfigure(3, weight=8)
-        self.rowconfigure(4, weight=3)
-
-        # --- Initial Question ---
-        ttk.Label(self, text="Inicijalno pitanje:", style="FormLabel.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 2))
-        self.txt_initial_question = self.view._scrolled_text(self, height=1)
-        self.txt_initial_question.grid(row=1, column=0, sticky="nsew", pady=(0, 10))
-
-        # --- Response ---
-        ttk.Label(self, text="Odgovor:", style="FormLabel.TLabel").grid(row=2, column=0, sticky="w", pady=(0, 2))
-        self.txt_response = self.view._scrolled_text(self, height=1)
-        self.txt_response.grid(row=3, column=0, sticky="nsew", pady=(0, 10))
-
-        # --- Follow-up Question ---
-        follow_up_frame = ttk.Frame(self, style="Panel.TFrame")
-        follow_up_frame.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
-        follow_up_frame.columnconfigure(1, weight=1)
-        follow_up_frame.rowconfigure(0, weight=1)
-
-        ttk.Label(
-            follow_up_frame, text="Pitanje:", style="FormLabel.TLabel"
-        ).grid(row=0, column=0, sticky="w", padx=(0, 6))
-
-        self.txt_follow_up = self.view._scrolled_text(follow_up_frame, height=1)
-        self.txt_follow_up.grid(row=0, column=1, sticky="nsew")
-
-        ask_button = ttk.Button(
-            follow_up_frame, text="Ask", style="Accent.TButton",
-            # command=... # TODO: Add command
-        )
-        ask_button.grid(row=0, column=2, sticky="e", padx=(6, 0))
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-
 class DSClinicView:
-    def __init__(self, root: tk.Tk, viewModel: DSClinicViewModel):
+    def __init__(self, root: tk.Tk, viewModel: DSClinicViewModel, report: MedicalReport = MedicalReport()):
         self.root = root
         self.vm = viewModel
-        self.root.title("DS Clinic Analiza")
-        self.root.minsize(640, 520)
-
-        w, h = 1480, 820
-        sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
-        root.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
 
         self.finding_widgets: list[dict] = [] # Tracks widgets for rows
         self._row_parity = 0
 
         self._build_styles()
         self._setup_ui()
+        self._configure_app()
         
         # Event Binding (MVVM)
         self.root.bind("<<VM_DataChanged>>", lambda e: self.refresh_view_from_vm())
@@ -127,6 +79,16 @@ class DSClinicView:
         # Initial Population
         self.refresh_view_from_vm()
 
+    def _configure_app(self):
+        self.root.title(_WINDOW_TITLE)
+        self.root.minsize(MIN_WIDTH, MIN_HEIGHT)
+        self.root.geometry(f"{INIT_WIDTH}x{INIT_HEIGHT}")
+        self.root.resizable(width=True, height=True)
+        # self.root.update_idletasks() # Ensure geometry is applied before further calculations
+        # self.root.grid_columnconfigure(0, weight=1)
+        # self.root.grid_rowconfigure(0, weight=1)
+        
+        
     # ─────────────────────────────────────────────────────────────────────────
     # ttk.Style  (single source of truth for all colors / fonts)
     # ─────────────────────────────────────────────────────────────────────────
@@ -239,9 +201,9 @@ class DSClinicView:
         self._build_canvas(left_pane)
         self._build_form()
 
-        # --- Right Pane (Chat View) ---
-        right_pane = ChatSessionView(self.paned_window, self, self.vm)
-        self.paned_window.add(right_pane, weight=2)
+        # # --- Right Pane (Chat View) ---
+        # right_pane = ChatSessionView(self.paned_window, self, self.vm)
+        # self.paned_window.add(right_pane, weight=2)
 
     # ── Toolbar ───────────────────────────────────────────────────────────────
 

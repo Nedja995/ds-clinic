@@ -75,16 +75,17 @@ def get_version_from_toml(file_path="pyproject.toml"):
 APP_VERSION: str = ini_config["APP"]["VERSION"].replace('"', '').replace("'", "")
 APP_NAME: str = ini_config["APP"]["NAME"].replace('"', '').replace("'", "")
 # Debug
-APP_LOG_LEVEL: str = json_config.get("LOG_LEVEL", "INFO")
-APP_DEBUG_EXPORT_RESPONSE: bool = json_config.get("debug_export_response", True)
-APP_DEBUG_RESPONSE: bool = json_config.get("debug_response", False)
+APP_LOG_LEVEL: str = json_config.get("app", {}).get("log_level", "INFO")
+APP_DEBUG_EXPORT_RESPONSE: bool = json_config.get("app", {}).get("debug_export_response", True)
+APP_DEBUG_RESPONSE: bool = json_config.get("app", {}).get("debug_response", False)
 
 #### SERVICES
 ## Google
 GOOGLE_API_KEY: str = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '').replace("'", "")
 
 ## Anthropic
-ANTHROPIC_API_KEY: str = ini_config.get('ANTHROPIC', {}).get('ANTHROPIC_API_KEY', '').replace('"', '').replace("'", "")
+ANTHROPIC_API_KEY: str = ini_config['ANTHROPIC']['ANTHROPIC_API_KEY'].replace('"', '').replace("'", "")
+
 
 #### AI
 

@@ -44,7 +44,6 @@ class HolisticReport(FPDF):
         logger.info("Initializing PDF generator...")
         super().__init__(orientation="p", unit="mm", format="A4", *args, **kwargs)
         
-
         logger.info("  - Configuring Unicode Fonts...")
         # 2. Configure Unicode Fonts
         self.add_font(FONT_NORMAL, "", os.path.join(FONTS_DIR, CONST_FONTS["Normal"]["filename"]))
@@ -225,7 +224,7 @@ def generate_report_pdf_bytes(
     # Initialize PDF
     pdf = HolisticReport()
     pdf.draw_header()
-    pdf.draw_patient_info(report.patient_name, report.report_date)
+    pdf.draw_patient_info(report.content.patient_name, report.report_date)
     pdf.draw_table(report.content.critical_findings)
     pdf.draw_footer_section(report.content.recommended_therapy_and_advice)
 

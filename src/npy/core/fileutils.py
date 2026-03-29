@@ -9,6 +9,13 @@ import config
 
 logger = setup_logger()
 
+
+def open_file_from_filepath(filepath: str):
+    if os.name == 'nt':
+        os.startfile(filepath)
+    elif os.name == 'posix':
+        os.system(f'open "{filepath}"')
+
 def read_debug_sample_response_json(name: str = "sample_response", input_filepath: str | None = None) -> dict | None:
     if not input_filepath:
         input_filepath = get_resource_filepath(f"{name}.json")

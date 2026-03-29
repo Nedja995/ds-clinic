@@ -87,11 +87,6 @@ def get_output_data_dirpath(dir_name: str = "IZVESTAJI") -> str:
     return dirpath
 
 
-def open_file_from_filepath(filepath: str):
-    if os.name == 'nt':
-        os.startfile(filepath)
-    elif os.name == 'posix':
-        os.system(f'open "{filepath}"')
 
 
 
