@@ -1,3 +1,4 @@
+from operator import index
 import threading
 import queue
 import time
@@ -21,30 +22,26 @@ logger = setup_logger()
 QUEUE_POLL_INTERVAL_MS: int = 1000
 logger.info(f"QUEUE_POLL_INTERVAL_MS: {QUEUE_POLL_INTERVAL_MS}")
 
-##
-#
-
-
 class DSClinicViewModel:
     def __init__(self, model: Optional[MedicalReport] = None) -> None:
         self._model: MedicalReport = model or MedicalReport()
 
         # --- Observable UI State ---
-        self.patient_name = tk.StringVar(value=self._model.content.patient_name)
-        self.report_date = tk.StringVar(value=self._model.report_date)
+        self.var_patient_name = tk.StringVar(value=self._model.content.patient_name)
+        self.var_report_date = tk.StringVar(value=self._model.report_date) 
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice  # Handled manually for Text widgets
-
+        
         self.findings: list[MedicalCriticalFindingModel] = self._model.content.critical_findings
 
-        self.initial_question = tk.StringVar(value="")
-        self.response = tk.StringVar(value="")
+        self.var_initial_question = tk.StringVar(value="")
+        self.var_response = tk.StringVar(value="")
 
         # Status & Progress
-        self.status_title = tk.StringVar(value="IDLE")
-        self.status_detail = tk.StringVar(value="Ready")
-        self.progress_value = tk.DoubleVar(value=0.0)
-        self.is_analyzing = tk.BooleanVar(value=False)
-        self.btn_analyze_text = tk.StringVar(value="Analyze")
+        self.var_status_title = tk.StringVar(value="IDLE")
+        self.var_status_detail = tk.StringVar(value="Ready")
+        self.var_progress_value = tk.DoubleVar(value=0.0)
+        self.var_is_analyzing = tk.BooleanVar(value=False)
+        self.var_btn_analyze_text = tk.StringVar(value="Analyze")
 
         # Threading
         self._output_queue: queue.Queue = queue.Queue()
@@ -52,19 +49,21 @@ class DSClinicViewModel:
         self._worker_thread: threading.Thread | None = None
 
         # Start polling for async tasks
-        self._check_queue_loop()
+        #self._check_queue_loop()
 
 
     def _update_viewmodel_from_model(self):
-        self.patient_name.set(self._model.content.patient_name)
-        self.report_date.set(self._model.report_date)
+        logger.debug("Updating ViewModel from Model...")
+        self.var_patient_name.set(self._model.content.patient_name)
+        self.var_report_date.set(self._model.report_date)
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
         self.findings = self._model.content.critical_findings
         
     def _update_model_from_viewmodel(self):
+        logger.debug("Updating Model from ViewModel...")
         # Sync Observables to Model
-        self._model.content.patient_name = self.patient_name.get()
-        self._model.report_date = self.report_date.get()
+        self._model.content.patient_name = self.var_patient_name.get()
+        self._model.report_date = self.var_report_date.get()
         self._model.content.recommended_therapy_and_advice = self.therapy_text_content
         self._model.content.critical_findings = self.findings
 
@@ -73,70 +72,33 @@ class DSClinicViewModel:
 
     def add_finding(self):
         """Adds a blank finding to the list."""
+        logger.debug("Adding new finding...")
         self.findings.append(MedicalCriticalFindingModel())
-        self._update_viewmodel_from_model()
+        #self._update_viewmodel_from_model()
         #self.app.event_generate("<<VM_DataChanged>>")
         
     def remove_finding(self, index: int):
+        """Removes a finding at the specified index."""
+        logger.debug(f"Removing finding at index {index}...")
         if 0 <= index < len(self.findings):
             self.findings.pop(index)
-            self._update_viewmodel_from_model()
+            #self._update_viewmodel_from_model()
             #self.app.event_generate("<<VM_DataChanged>>")
-
-    def save_report(self):
-        """Handles PDF Export logic."""
-        # Note: The View must have already synced its ScrolledText data to VM before calling this.
-        ls = self._model.content.critical_findings
-        # 1. Sync Observables to Model
-        self._update_model_from_viewmodel()
-
-        # 2. Export
-        patient_slug = self.patient_name.get().replace(".", " ").replace("/", "")
-        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-        default_name = f"NALAZ_{patient_slug}_{timestamp_str}.pdf"
-        output_dir = utils.get_output_data_dirpath()
-
-        output_filepath = filedialog.asksaveasfilename(
-            defaultextension=".pdf",
-            filetypes=[("PDF files", "*.pdf")],
-            initialdir=output_dir,
-            initialfile=default_name
-        )
-
-        if not output_filepath:
-            return
-
-        self.status_title.set("Exporting")
-        self.status_detail.set(f"Generating PDF at {output_filepath}...")
-
-        try:
-            export_medical_report_pdf(self._model, output_filename=output_filepath)
-            self.status_title.set("Saved")
-            self.status_detail.set("PDF Saved Successfully")
-
-            if messagebox.askyesno("Success", "Report generated. Open file?"):
-                fileutils.open_file_from_filepath(output_filepath)
-
-        except Exception as e:
-            logger.error(e)
-            self.status_title.set("Error")
-            self.status_detail.set("Failed to generate PDF")
-            messagebox.showerror("Error", str(e))
 
     # --- Logic: Analysis ---
 
     def toggle_analysis(self):
-        if not self.is_analyzing.get():
+        if not self.var_is_analyzing.get():
             self._start_analysis()
         else:
             self._cancel_analysis()
 
     def _start_analysis(self):
-        self.is_analyzing.set(True)
-        self.btn_analyze_text.set("Cancel")
-        self.status_title.set("Running")
-        self.status_detail.set("Running heavy task...")
-        self.progress_value.set(0)
+        self.var_is_analyzing.set(True)
+        self.var_btn_analyze_text.set("Cancel")
+        self.var_status_title.set("Running")
+        self.var_status_detail.set("Running heavy task...")
+        self.var_progress_value.set(0)
         self._cancel_event.clear()
 
         self._worker_thread = threading.Thread(target=self._run_task_initial_analyzis,
@@ -144,8 +106,8 @@ class DSClinicViewModel:
         self._worker_thread.start()
 
     def _cancel_analysis(self):
-        self.status_title.set("Cancelling")
-        self.status_detail.set("Cancelling analysis...")
+        self.var_status_title.set("Cancelling")
+        self.var_status_detail.set("Cancelling analysis...")
         self._cancel_event.set()
 
     # def _run_task_initial_analyzis(self):
@@ -169,6 +131,8 @@ class DSClinicViewModel:
             
 
     def _check_queue_loop(self):
+        pass
+        return
         try:
             msg = self._output_queue.get_nowait()
             progress = 0
@@ -178,33 +142,33 @@ class DSClinicViewModel:
             #     result=msg["result"])
             logger.debug(f"Received message from worker thread: {msg}")
             if msg["status"] == "cancelled":
-                self.status_title.set("Cancelled")
-                self.status_detail.set("Analysis was Cancelled.")
+                self.var_status_title.set("Cancelled")
+                self.var_status_detail.set("Analysis was Cancelled.")
             elif msg["status"] == "complete":
-                self.is_analyzing.set(False)
-                self.btn_analyze_text.set("Analyze")
-                self.progress_value.set(100)
-                self.status_title.set("Finished")
-                self.status_detail.set("Analysis completed successfully.")
+                self.var_is_analyzing.set(False)
+                self.var_btn_analyze_text.set("Analyze")
+                self.var_progress_value.set(100)
+                self.var_status_title.set("Finished")
+                self.var_status_detail.set("Analysis completed successfully.")
 
                 # Update Model and Notify View (by updating observables)
                 new_report = MedicalReport(**msg["result"])
                 self._model = new_report
                 self._update_viewmodel_from_model()
             elif msg["status"] == "processing":
-                self.status_title.set("Processing...")
+                self.var_status_title.set("Processing...")
 
-                self.status_detail.set(f"status: {msg['status']}, result: {msg['result']}")
+                self.var_status_detail.set(f"status: {msg['status']}, result: {msg['result']}")
             elif msg["status"] == "failed":
-                self.is_analyzing.set(False)
-                self.btn_analyze_text.set("Analyze")
-                self.status_title.set("Failed")
-                self.status_detail.set(msg["result"])
+                self.var_is_analyzing.set(False)
+                self.var_btn_analyze_text.set("Analyze")
+                self.var_status_title.set("Failed")
+                self.var_status_detail.set(msg["result"])
             else:
-                self.status_title.set("Finished")
-                self.status_detail.set(f"status: {msg['status']}, result: {msg['result']}")
-                self.progress_value.set(100)
-                self.btn_analyze_text.set("Analyze")
+                self.var_status_title.set("Finished")
+                self.var_status_detail.set(f"status: {msg['status']}, result: {msg['result']}")
+                self.var_progress_value.set(100)
+                self.var_btn_analyze_text.set("Analyze")
         except queue.Empty:
             pass
         finally:
@@ -223,15 +187,55 @@ class DSClinicViewModel:
         progress: int = [result if isinstance(result, int) else None]
 
         if event_status:
-            self.status_title.set(event_status)
+            self.var_status_title.set(event_status)
         if status_detail:
-            self.status_detail.set(status_detail)
+            self.var_status_detail.set(status_detail)
         if is_analyzing:
-            self.is_analyzing.set(is_analyzing)
+            self.var_is_analyzing.set(is_analyzing)
         if progress:
-            self.progress_value.set(progress)
+            self.var_progress_value.set(progress)
         if btn_analyze_text:
-            self.btn_analyze_text.set(btn_analyze_text)
+            self.var_btn_analyze_text.set(btn_analyze_text)
         if event_status == "complete" and result and isinstance(result, MedicalReportModel):
             self._model.content = result
             self._update_viewmodel_from_model()
+            
+    def save_report(self):
+        """Handles PDF Export logic."""
+        # Note: The View must have already synced its ScrolledText data to VM before calling this.
+        ls = self._model.content.critical_findings
+        # 1. Sync Observables to Model
+        self._update_model_from_viewmodel()
+
+        # 2. Export
+        patient_slug = self.var_patient_name.get().replace(".", " ").replace("/", "")
+        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+        default_name = f"NALAZ_{patient_slug}_{timestamp_str}.pdf"
+        output_dir = utils.get_output_data_dirpath()
+
+        output_filepath = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialdir=output_dir,
+            initialfile=default_name
+        )
+
+        if not output_filepath:
+            return
+
+        self.var_status_title.set("Exporting")
+        self.var_status_detail.set(f"Generating PDF at {output_filepath}...")
+
+        try:
+            export_medical_report_pdf(self._model, output_filename=output_filepath)
+            self.var_status_title.set("Saved")
+            self.var_status_detail.set("PDF Saved Successfully")
+
+            if messagebox.askyesno("Success", "Report generated. Open file?"):
+                fileutils.open_file_from_filepath(output_filepath)
+
+        except Exception as e:
+            logger.error(e)
+            self.var_status_title.set("Error")
+            self.var_status_detail.set("Failed to generate PDF")
+            messagebox.showerror("Error", str(e))

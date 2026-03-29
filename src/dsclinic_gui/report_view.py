@@ -39,10 +39,10 @@ class MedicalReportView(ttk.Frame):
         self._setup_ui()
         
         # Event Binding (MVVM)
-        self.master.bind("<<VM_DataChanged>>", lambda e: self.refresh_view_from_vm())
+        self.master.bind("<<VM_DataChanged>>", lambda e: self.update_view_from_viewmodel())
         
         # Initial Population
-        self.refresh_view_from_vm()
+        self.update_view_from_viewmodel()
         
         
     # ─────────────────────────────────────────────────────────────────────────
@@ -50,21 +50,11 @@ class MedicalReportView(ttk.Frame):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _setup_ui(self):
-        # self.paned_window = ttk.PanedWindow(self.parent, orient=tk.HORIZONTAL)
-        # self.paned_window.pack(fill=tk.BOTH, expand=True)
-
-        # # --- Left Pane (Report View) ---
-        # left_pane = ttk.Frame(self.paned_window, style="TFrame")
-        # self.paned_window.add(left_pane, weight=3)
-
+        logger.debug("Setting up UI...")
         self._build_toolbar(self)
         self._build_footer(self)   # pack bottom first so canvas fills the gap
         self._build_canvas(self)
         self._build_form()
-
-        # # # --- Right Pane (Chat View) ---
-        # right_pane = ChatSessionView(self.paned_window, self, self.view_model)
-        # self.paned_window.add(right_pane, weight=2)
 
     # ── Toolbar ───────────────────────────────────────────────────────────────
 
@@ -73,18 +63,18 @@ class MedicalReportView(ttk.Frame):
         self.top_frame.pack(side="top", fill="x")
 
         # Bind directly to VM commands and properties
-        self.btn_analyze = self._tb_btn(self.top_frame, textvariable=self.view_model.btn_analyze_text)
+        self.btn_analyze = self._tooolbar_button(self.top_frame, textvariable=self.view_model.var_btn_analyze_text)
         self.btn_analyze.config(command=self.view_model.toggle_analysis)
 
-        self.btn_submit = self._tb_btn(self.top_frame, text="Export")
+        self.btn_submit = self._tooolbar_button(self.top_frame, text="Export")
         self.btn_submit.config(command=self._handle_export_click)
 
-        self.btn_full_report = self._tb_btn(self.top_frame, text="Details", state="disabled")
-        self.btn_settings    = self._tb_btn(self.top_frame, text="Settings", side="right")
+        self.btn_full_report = self._tooolbar_button(self.top_frame, text="Details", state="disabled")
+        self.btn_settings    = self._tooolbar_button(self.top_frame, text="Settings", side="right")
 
         ttk.Frame(parent, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
-    def _tb_btn(self, parent, text="", textvariable=None,state="normal", side="left") -> ttk.Button:
+    def _tooolbar_button(self, parent, text="", textvariable=None,state="normal", side="left") -> ttk.Button:
         kw: dict = dict(style="Toolbar.TButton", state=state)
         btn = (ttk.Button(parent, textvariable=textvariable, **kw) if textvariable else ttk.Button(parent, text=text, **kw))
         btn.pack(side=side, padx=(6, 0) if side == "left" else (0, 6))
@@ -101,7 +91,7 @@ class MedicalReportView(ttk.Frame):
         pb_host.pack(fill="x", side="top")
         pb_host.pack_propagate(False)
 
-        self.progress_bar = ttk.Progressbar(pb_host, mode="determinate", variable=self.view_model.progress_value)
+        self.progress_bar = ttk.Progressbar(pb_host, mode="determinate", variable=self.view_model.var_progress_value)
         self.progress_bar.pack(fill="x", expand=True)
 
         ttk.Separator(self.footer_frame, orient="horizontal").pack(fill="x", side="top")
@@ -109,10 +99,10 @@ class MedicalReportView(ttk.Frame):
         status_row = ttk.Frame(self.footer_frame, style="Footer.TFrame", padding=(8, 3))
         status_row.pack(fill="x")
 
-        self.lbl_footer_status = ttk.Label(status_row, textvariable=self.view_model.status_title, style="StatusKey.TLabel")
+        self.lbl_footer_status = ttk.Label(status_row, textvariable=self.view_model.var_status_title, style="StatusKey.TLabel")
         self.lbl_footer_status.pack(side="left")
 
-        self.lbl_status_details = ttk.Label(status_row, textvariable=self.view_model.status_detail, style="StatusVal.TLabel", anchor="w")
+        self.lbl_status_details = ttk.Label(status_row, textvariable=self.view_model.var_status_detail, style="StatusVal.TLabel", anchor="w")
         self.lbl_status_details.pack(side="left", fill="x", expand=True, padx=(5, 0))
 
     # ── Scrollable canvas ─────────────────────────────────────────────────────
@@ -166,11 +156,11 @@ class MedicalReportView(ttk.Frame):
         pr.pack(fill="x")
 
         ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_ime = ttk.Entry(pr, width=36, font=FI, textvariable=self.view_model.patient_name)
+        self.ent_ime = ttk.Entry(pr, width=36, font=FI, textvariable=self.view_model.var_patient_name)
         self.ent_ime.pack(side="left", padx=(6, 28), ipady=2, pady=4)
 
         ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_datum = ttk.Entry(pr, width=14, font=FI, textvariable=self.view_model.report_date)
+        self.ent_datum = ttk.Entry(pr, width=14, font=FI, textvariable=self.view_model.var_report_date)
         self.ent_datum.pack(side="left", padx=(6, 0), ipady=2, pady=4)
 
         # Card: Terapija
@@ -196,7 +186,7 @@ class MedicalReportView(ttk.Frame):
         self.btn_dodaj_nalaz = ttk.Button(
             nalazi_card, text="＋   Dodaj novi nalaz",
             style="Accent.TButton",
-            command=lambda: [self.refresh_view_from_vm(), self.view_model.add_finding()]
+            command=lambda: [self.update_viewmodel_from_view(), self.view_model.add_finding(), self.update_view_from_viewmodel()]
         )
         self.btn_dodaj_nalaz.pack(fill="x", padx=2, pady=(4, 4))
 
@@ -240,6 +230,7 @@ class MedicalReportView(ttk.Frame):
 
     def _render_finding_row(self, index: int, finding: MedicalCriticalFindingModel):
         """Renders a single row based on VM data."""
+        logger.debug(f"Rendering finding row {index}: {finding.parametar_and_value}")
         self._row_parity += 1
         
         row_style = "RowA.TFrame" if self._row_parity % 2 else "RowB.TFrame"
@@ -259,7 +250,7 @@ class MedicalReportView(ttk.Frame):
 
         btn_ukloni = ttk.Button(
             row_frame, text="✕", style="Danger.TButton",
-            command=lambda i=index: [self.sync_view_to_vm(), self.view_model.remove_finding(i)]
+            command=lambda i=index: [self.update_viewmodel_from_view(), self.view_model.remove_finding(i), self.update_view_from_viewmodel()]
         )
         btn_ukloni.place(relx=0.918, rely=0.15, relwidth=0.074, relheight=0.70)
 
@@ -275,12 +266,13 @@ class MedicalReportView(ttk.Frame):
 
     def _handle_export_click(self):
         # 1. Sync Text widgets -> VM
-        self.sync_view_to_vm()
+        self.update_viewmodel_from_view()
         # 2. Call VM Export
         self.view_model.save_report()
 
-    def sync_view_to_vm(self):
+    def update_viewmodel_from_view(self):
         """Extracts data from complex widgets (ScrolledText) and updates the VM."""
+        logger.debug("Updating ViewModel from View...")
         # Therapy Text
         self.view_model.therapy_text_content = self.txt_terapija.get("1.0", tk.END).strip()
         
@@ -290,8 +282,10 @@ class MedicalReportView(ttk.Frame):
                 self.view_model.findings[i].expertsko_misljenje = widgets["misljenje"].get("1.0", tk.END).strip()
                 self.view_model.findings[i].parametar_and_value = widgets["parametar"].get("1.0", tk.END).strip()
 
-    def refresh_view_from_vm(self):
+    def update_view_from_viewmodel(self):
         """Updates complex widgets based on current VM state."""
+        
+        logger.debug("Updating View from ViewModel...")
         # Therapy Text
         self.txt_terapija.delete("1.0", tk.END)
         self.txt_terapija.insert("1.0", self.view_model.therapy_text_content)

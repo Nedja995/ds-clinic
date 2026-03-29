@@ -32,10 +32,10 @@ class DSClinicAppGUI(tk.Tk):
         build_styles()
         
         # Data
-        self.medical_report: MedicalReport = initial_data if not initial_data else MedicalReport.model_validate(initial_data)
+        medical_report: MedicalReport = initial_data if not initial_data else MedicalReport.model_validate(initial_data)
         
         # View Model
-        self.view_model = DSClinicViewModel(self.medical_report)
+        self.view_model = DSClinicViewModel(medical_report)
         
         # Main Container View
         self.main_container = MainContainerView(self, self.view_model)
