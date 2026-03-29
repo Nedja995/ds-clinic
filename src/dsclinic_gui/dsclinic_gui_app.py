@@ -8,7 +8,8 @@ from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.report_view import MedicalReportView
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
-
+from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
+from typing import Any
 #
 logger = setup_logger()
 
@@ -17,6 +18,9 @@ MIN_WIDTH = 620
 MIN_HEIGHT = 700
 INIT_WIDTH = 620
 INIT_HEIGHT = 700
+#
+
+
 
 #######################################################################################
 ## MAIN GUI APP
@@ -35,7 +39,8 @@ class DSClinicAppGUI(tk.Tk):
         medical_report: MedicalReport = initial_data if not initial_data else MedicalReport.model_validate(initial_data)
         
         # View Model
-        self.view_model = DSClinicViewModel(medical_report)
+        self.view_model = DSClinicViewModel(schedule_poll_fn=self.after, 
+                                            model=medical_report)
         
         # Main Container View
         self.main_container = MainContainerView(self, self.view_model)
@@ -43,6 +48,8 @@ class DSClinicAppGUI(tk.Tk):
         
         # View
         #self.report_view = MedicalReportView(self, self.view_model, self.medical_report)
+        # 3. Setup App-Level Dispatcher
+        self._setup_dispatcher()
         
     def _configure_app(self):
         self.title(_WINDOW_TITLE)
@@ -52,6 +59,33 @@ class DSClinicAppGUI(tk.Tk):
         # self.root.update_idletasks() # Ensure geometry is applied before further calculations
         # self.root.grid_columnconfigure(0, weight=1)
         # self.root.grid_rowconfigure(0, weight=1)
+    
+    
+    def _setup_dispatcher(self) -> None:
+        """
+        The App monitors all ViewModels. When a ViewModel is processing, 
+        the App orchestrates the Tkinter event loop to flush the queue.
+        """
+        self.view_model.var_is_analyzing.trace_add("write", self._on_processing_state_changed)
+
+    def _on_processing_state_changed(self, *args: Any) -> None:
+        """Triggered when the ViewModel signals it has started/stopped a thread."""
+        if self.view_model.var_is_analyzing.get():
+            self._poll_viewmodels()
+
+    def _poll_viewmodels(self) -> None:
+        """
+        The framework-specific polling loop.
+        Safely flushes cross-thread queues on the main UI thread.
+        """
+        # Ask ViewModel to handle its queue
+        self.view_model._poll_result_queue()
+        
+        # If it's still running, schedule the next tick
+        if self.view_model.var_is_analyzing.get():
+            self.after(QUEUE_POLL_INTERVAL_MS, self._poll_viewmodels)
+        
+
 
 ##########################################################################################
 ## SCRIPT FILE ENTRY POINT

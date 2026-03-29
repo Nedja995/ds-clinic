@@ -11,19 +11,23 @@ from tkinter import filedialog, messagebox
 from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
 import config
-from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, WorkerStatus
+from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
 from dsclinic import get_initial_analysis_report
 from pdf_maker import export_medical_report_pdf
+from models import TaskStatus, ProgressEvent
 from examples import blocking_cpu_task
+from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
+from hard_worker import run_hardwork
+
 #
 logger = setup_logger()
 
-#
-QUEUE_POLL_INTERVAL_MS: int = 1000
-logger.info(f"QUEUE_POLL_INTERVAL_MS: {QUEUE_POLL_INTERVAL_MS}")
 
 class DSClinicViewModel:
-    def __init__(self, model: Optional[MedicalReport] = None) -> None:
+    def __init__(self, 
+                 schedule_poll_fn: callable[[int, callable], Any], 
+                 model: Optional[MedicalReport] = None) -> None:
+        self.schedule_poll_fn = schedule_poll_fn
         self._model: MedicalReport = model or MedicalReport()
 
         # --- Observable UI State ---
@@ -44,7 +48,7 @@ class DSClinicViewModel:
         self.var_btn_analyze_text = tk.StringVar(value="Analyze")
 
         # Threading
-        self._output_queue: queue.Queue = queue.Queue()
+        self._output_queue: queue.Queue[ProgressEvent] = queue.Queue()
         self._cancel_event: threading.Event = threading.Event()
         self._worker_thread: threading.Thread | None = None
 
@@ -101,13 +105,23 @@ class DSClinicViewModel:
         self.var_progress_value.set(0)
         self._cancel_event.clear()
 
-        self._worker_thread = threading.Thread(target=self._run_task_initial_analyzis,
-                                               daemon=True)
+        self._worker_thread = threading.Thread(
+            target=run_hardwork, #self._run_task_initial_analyzis,
+            args=( self._output_queue, self._cancel_event),
+            daemon=True,
+            name="api-hardwork-thread")
+        
         self._worker_thread.start()
 
-    def _cancel_analysis(self):
+    def _reset_task_state(self) -> None:
+        self._cancel_event.clear()
+        self._output_queue = queue.Queue()
+        self.var_is_analyzing.set(False)
         self.var_status_title.set("Cancelling")
         self.var_status_detail.set("Cancelling analysis...")
+        
+    def _cancel_analysis(self):
+        self._reset_task_state()
         self._cancel_event.set()
 
     # def _run_task_initial_analyzis(self):
@@ -123,12 +137,98 @@ class DSClinicViewModel:
     
     def _run_task_initial_analyzis(self):
         try:
-            blocking_cpu_task(5)
-            self._output_queue.put({"status": "complete", "result": self._model.model_dump(mode='json')})
+            blocking_cpu_task(10)
+            self._output_queue.put(ProgressEvent(
+                status=TaskStatus.FINISHED,
+                message="Task completed successfully",
+                result="Hello, I am done after 10 seconds!"
+            ))
+            # self._output_queue.put({"status": "complete", "result": self._model.model_dump(mode='json')})
         except Exception as e:
             logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
-            self._output_queue.put({"status": "failed", "result": str(e)})
+            self._output_queue.put(ProgressEvent(
+                status=TaskStatus.FAILED,
+                message="Task failed",
+                result=str(e)
+            ))
+
+    def _poll_result_queue(self) -> None:
+        """Drain the queue and update observable state.  Scheduled via `after`."""
+        task_still_running = True
+ 
+        try:
+            while True:
+                progress_event: ProgressEvent = self._output_queue.get_nowait()
+                task_still_running = self._apply_progress_event(progress_event)
+        except queue.Empty:
+            pass
+ 
+        if task_still_running:
+            self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
+ 
+    def _apply_progress_event(self, progress_event: ProgressEvent) -> bool:
+        """Apply one ProgressEvent to observable vars.
+ 
+        Returns:
+            True  → task is still running; keep polling.
+            False → task has ended; stop polling.
+        """
+        logger.debug(f"Applying ProgressEvent: {progress_event}")
+        match progress_event.status:
+            case TaskStatus.RUNNING:
+                self.var_status_title.set("Starting analysis...")
+                self.var_status_detail.set(f"Task: {progress_event.message}")
+                self.var_progress_value.set(0)  # Example: progress based on elapsed time
+                #
+                return True
             
+            case TaskStatus.PROGRESS:
+                self.var_status_title.set("Analyzing...")
+                self.var_status_detail.set(f"progress: {progress_event.message}, elapsed_seconds: {progress_event.elapsed_seconds}")
+                self.var_progress_value.set((progress_event.elapsed_seconds / 10) * 100)  # Example: progress based on elapsed time
+                #
+                return True
+ 
+            case TaskStatus.FINISHED:
+                self.var_is_analyzing.set(False)
+                self.var_btn_analyze_text.set("Analyze")
+                self.var_status_title.set("Finished")
+                self.var_progress_value.set(100)
+                self.var_status_detail.set("Analysis completed successfully.")                
+
+                # Update Model and Notify View (by updating observables)
+                if progress_event.result and isinstance(progress_event.result, MedicalReport):
+                    logger.info("Analysis completed with a MedicalReport result. Updating model and viewmodel...")
+                    self._model = progress_event.result
+                    self.var_progress_value.set(100)
+                    self.var_status_detail.set("Analysis completed successfully.")
+                    self._update_viewmodel_from_model()
+                else:
+                    logger.error(f"Unexpected result type in ProgressEvent: {type(progress_event.result)}. Expected MedicalReport.")
+                    
+                    #self._update_viewmodel_from_model()
+                
+                #
+                return False
+ 
+            case TaskStatus.CANCELED:
+                self.var_is_analyzing.set(False)
+                self.var_status_title.set("Cancelled")
+                self.var_status_detail.set(f"✖ " + progress_event.message)            
+                #
+                return False
+ 
+            case TaskStatus.FAILED:
+                self.var_is_analyzing.set(False)
+                self.var_btn_analyze_text.set("Analyze")
+                self.var_status_title.set("Failed")
+                self.var_status_detail.set("✖ " + progress_event.message)
+                #            
+                return False
+ 
+            case _:
+                return True
+
 
     def _check_queue_loop(self):
         pass

@@ -12,7 +12,7 @@ class ChatSessionView(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.view_model = view_model
         self.configure(style="Panel.TFrame", padding=10)
-        #self._build_ui()
+        self._build_ui()
 
     def _build_ui(self):
         self.columnconfigure(0, weight=1)

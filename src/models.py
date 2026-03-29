@@ -64,13 +64,22 @@ class AIServiceConfig(BaseModel):
 
 
 
-class WorkerStatus(str, Enum):
+
+# ── Domain models ─────────────────────────────────────────────────────────────
+
+class TaskStatus(str, Enum):
     RUNNING  = "running"
     PROGRESS = "progress"
     FINISHED = "finished"
-    CANCELED = "cancelled"
+    CANCELED = "canceled"
     FAILED   = "failed"
 
+
+class ProgressEvent(BaseModel):
+    status: TaskStatus
+    elapsed_seconds: int = Field(default=0, ge=0)
+    message: str = ""
+    result: MedicalReport | str | None = None
 
 
 T = TypeVar('T')
