@@ -1,1 +1,12 @@
+WINDOW_TITLE: str = "Holisticki centar"
+MIN_WIDTH: int = 800
+MIN_HEIGHT: int = 700
+INIT_WIDTH: int = 1000 # Increased width for chat view
+INIT_HEIGHT: int = 900
+
+CHAT_BUBBLE_MAX_WIDTH_RATIO: float = 0.7 # 70% of the chat view width
+CHAT_BUBBLE_WRAP_LENGTH: int = 300
+CHAT_BUBBLE_SPACING: int = 10
+CHAT_BUBBLE_BORDER_RADIUS: int = 15
+
 QUEUE_POLL_INTERVAL_MS: int = 1000

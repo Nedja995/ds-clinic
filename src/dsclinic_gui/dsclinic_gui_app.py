@@ -8,7 +8,7 @@ from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.report_view import MedicalReportView
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
-from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
+from dsclinic_gui.constants import WINDOW_TITLE, MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
 from dsclinic import get_initial_analysis_report
 from pdf_maker import export_medical_report_pdf
 from models import TaskStatus, ProgressEvent
@@ -18,11 +18,7 @@ from typing import Any
 #
 logger = setup_logger()
 
-_WINDOW_TITLE = "Holisticki centar"
-MIN_WIDTH = 620
-MIN_HEIGHT = 700
-INIT_WIDTH = 620
-INIT_HEIGHT = 700
+
 #
 
 #######################################################################################
@@ -31,16 +27,10 @@ INIT_HEIGHT = 700
 class DSClinicAppGUI(tk.Tk):
     def __init__(self, initial_data: MedicalReport | dict):
         super().__init__()
-        
-        #
         self._configure_app()
-        
-        #
         build_styles()
-        
         # Data
         medical_report: MedicalReport = initial_data if not initial_data else MedicalReport.model_validate(initial_data)
-        
         # View Model
         self.view_model = DSClinicViewModel(schedule_poll_fn=self.after, 
                                             model=medical_report)
@@ -51,11 +41,12 @@ class DSClinicAppGUI(tk.Tk):
         
         # View
         #self.report_view = MedicalReportView(self, self.view_model, self.medical_report)
+        
         # 3. Setup App-Level Dispatcher
         self._setup_dispatcher()
         
     def _configure_app(self):
-        self.title(_WINDOW_TITLE)
+        self.title(WINDOW_TITLE)
         self.minsize(MIN_WIDTH, MIN_HEIGHT)
         self.geometry(f"{INIT_WIDTH}x{INIT_HEIGHT}")
         self.resizable(width=True, height=True)
