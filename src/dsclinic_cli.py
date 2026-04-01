@@ -4,7 +4,7 @@ import argparse
 from npy.core.logger import setup_logger
 from npy.core import utils
 import config
-from dsclinic import MedicalReport, MedicalReportModel, get_initial_analysis_report, write_report_pdf
+from dsclinic import MedicalReport, MedicalReportModel, DSClinic, write_report_pdf
 # from api_claude import client as api_claude_client
 # from api_claude import utils as api_claude_utils
 # from models import ClaudeAIServiceConfig, ClaudeModelConfig
@@ -73,7 +73,8 @@ def main():
     #
     if not debug_response:
         ## Run gemini analyzis
-        report = get_initial_analysis_report(input_dir, args.model_name)
+        dsclinic = DSClinic(model_name=args.model_name)
+        report = dsclinic.get_initial_analysis_report()
     
         if debug_export_response and response_json:
             # DEBUG: STORE JSON RESPONSE

@@ -114,13 +114,7 @@ if not AI_MODEL_NAME or len(AI_MODEL_NAME) == 0:
 AI_SYSTEM_INSTRUCTIONS: list[str] = json_config.get("ai_system_instructions", [])
 
 # Supported
-AI_SUPPORTED_INPUT_FILETYPES: dict[str, str] = {
-    "text/plain": ".txt", "text/xml": ".xml", "text/csv": ".csv", "text/rtf": ".rtf",
-    "image/jpeg": ".jpeg", "image/png": ".png", "image/bmp": ".bmp", "image/webp": ".webp",
-    "application/pdf": ".pdf",
-    "application/json": ".json", 
-    "text/html": ".html", 
-}
+AI_SUPPORTED_INPUT_FILETYPES: dict[str, str] = json_config.get("ai_supported_input_filetypes", {})
 # Ensure extensions have a dot prefix for endswith() to work correctly
 #supported_exts = tuple(f".{ext.lstrip('.')}" for ext in config.SUPPORTED_INPUT_FILETYPES.values())
 

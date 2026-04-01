@@ -9,6 +9,8 @@ class ChatSessionView(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.view_model = view_model
         self._build_ui()
+        
+        self.view_model.var_response.trace_add("write", lambda *args: self.add_message(self.view_model.var_response.get(), is_user=False))
 
     def _build_ui(self) -> None:
         # Header (Matching report_view card strip style)
@@ -24,7 +26,7 @@ class ChatSessionView(ttk.Frame):
         self.ent_message = ttk.Entry(input_pane, textvariable=self.view_model.var_initial_question)
         self.ent_message.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=2)
 
-        btn_send = ttk.Button(input_pane, text="Pošalji", style="Accent.TButton")
+        btn_send = ttk.Button(input_pane, text="Pošalji", style="Accent.TButton", command=lambda: [self.add_message(self.view_model.var_initial_question.get()), self.view_model.followup_question_submit(), self.view_model.var_initial_question.set("")])
         btn_send.pack(side="right")
 
         # Message History (Canvas with vertical scrollbar)
@@ -64,15 +66,15 @@ class ChatSessionView(ttk.Frame):
 
     def add_message(self, text: str, is_user: bool = True) -> None:
         """Renders a chat bubble aligned to the correct side."""
-        side = "right" if is_user else "left"
+        anchor = "e" if is_user else "w"
         style_frame = "ChatUser.TFrame" if is_user else "ChatBot.TFrame"
         style_label = "ChatUser.TLabel" if is_user else "ChatBot.TLabel"
         
         bubble_wrap = ttk.Frame(self.history_frame, padding=(12, 6))
-        bubble_wrap.pack(fill="x", anchor=side)
+        bubble_wrap.pack(side="top", fill="x")
         
         bubble = ttk.Frame(bubble_wrap, style=style_frame, padding=8)
-        bubble.pack(side=side)
+        bubble.pack(anchor=anchor)
         
         lbl = ttk.Label(bubble, text=text, style=style_label, wraplength=300)
         lbl.pack()

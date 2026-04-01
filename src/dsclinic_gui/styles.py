@@ -59,6 +59,8 @@ def build_styles():
     s.configure("RowA.TFrame",     background=ROW_A)
     s.configure("RowB.TFrame",     background=ROW_B)
     s.configure("Rows.TFrame",     background=BG)
+    
+    # Chat message styles
     s.configure("ChatUser.TFrame", background=ACCENT_LT)
     s.configure("ChatBot.TFrame",  background=WHITE)
     s.configure("ChatUser.TLabel", background=ACCENT_LT, foreground=TEXT, font=FI)

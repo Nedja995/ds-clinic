@@ -18,14 +18,14 @@ def load_document_from_file(filepath: str) -> dict | None:
     logger.info(f"[api_claude] Load Document from filepath: {filepath}.")
     content_block: dict | None = None
 
-    matches = [(doc_type, ext) for doc_type, ext in config.AI_SUPPORTED_INPUT_FILETYPES.items()
+    matches = [(ext, doc_type) for ext, doc_type in config.AI_SUPPORTED_INPUT_FILETYPES.items()
                if filepath.lower().endswith(ext)]
 
     if not matches:
         logger.warning(f"[api_claude] Load Document failed: Format not supported. Skip filepath: {filepath}.")
         return None
 
-    doc_type, _doc_extension = matches[0]
+    _doc_extension, doc_type = matches[0]
 
     try:
         with open(filepath, "rb") as f:

@@ -1,0 +1,59 @@
+{
+  "ime_pacijenta": "PEJAŠINOVIĆ OLIVERA",
+  "trenutni_datum": "31.03.2026",
+  "dijagnoza_bolesti": "N60.2 (Fibroadenoza dojke / Fibrocistična displazija), Z01.6 (Radiološki pregled)",
+  "dijagnoza_summarized": "Fibrocistična displazija dojki sa nalazom ovalne senke u levoj dojci (BI-RADS 3) i izrazito gustim žlezdanim tkivom u obe dojke (ACR tip d).",
+  "dijagnoza": "BI-RADS DD 2 (desna dojka benigno), BI-RADS LD 3 (leva dojka verovatno benigno). ACR d (ekstremno gusto tkivo).",
+  "strucno_misljenje_dijagnoza_summarized": "Mamografski pregled je znatno ograničen zbog izrazito gustog žlezdanog tkiva (ACR d), koje smanjuje senzitivnost metode i može maskirati promene. U gornjem spoljašnjem kvadrantu leve dojke uočava se nejasna ovalna senka 11x6mm u sumaciji sa okolnim tkivom. Nema suspektnih mikrokalcifikacija.",
+  "preporucena_terapija_i_savet_summarized": "KRITIČNO: Obavezno i hitno postupiti u skladu sa ultrazvučnim (UZ) nalazom zbog radiološke nesenzitivnosti mamografije za ovaj tip dojke. Neophodna je konsultacija sa onkohirurgom!",
+  "gde_je_problem": "Leva dojka (Gornji spoljašnji kvadrant, 3cm od mamile) i generalna strukturna gustina tkiva (ACR d) u obe dojke.",
+  "rezime": "Radiološki nalaz ukazuje na ekstremno guste dojke što smanjuje pouzdanost mamografije. U levoj dojci je detektovana ovalna masa velicine 11x6mm (BI-RADS 3 - verovatno benigno, ali zahteva praćenje). Zbog rizika od skrivenih lezija usled gustine tkiva, neophodan je ultrazvuk i pregled onkohirurga.",
+  "uzrok_problema": "Prirodna ili fibrocistična strukturna karakteristika tkiva (izrazito nodularna građa) i lokalizovana promena u levoj dojci.",
+  "uzrok_problema_detaljno": "Velika količina žlezdanog i vezivnog tkiva (fibroadenoza) sprečava prolazak rendgenskih zraka i stvara efekat 'sumacije' (preklapanja slika tkiva), što direktno ometa otkrivanje i jasnu evaluaciju čvorova ili tumora. Ovalna senka može predstavljati benigni fibroadenom ili složenu cistu, ali se definitivna priroda ne može utvrditi samo mamografijom.",
+  "uzrok_problema_summarized": "Gusto žlezdano tkivo koje sakriva jasnu sliku i prisustvo nedefinisane mase u levoj dojci.",
+  "problem_defined": "Dijagnostički izazov izazvan izuzetno gustim tkivom dojke (ACR d) koje mamografiju čini neosetljivom (nesenzitivnom). Unutar takvog tkiva otkrivena je suspektna ovalna lezija u levoj dojci (BI-RADS 3), što stvara kritičnu potrebu za dopunskim vizuelnim metodama (ultrazvuk) i procenom hirurga specijaliste kako bi se isključio svaki rizik od maligniteta.",
+  "nalazi":[
+    {
+      "misljenje_i_dijagnoza": "Dojke su nesenzitivne za mamografski pregled zbog gustine tkiva.",
+      "parametar": "Gustina tkiva dojke (ACR skala)",
+      "vrednost": "Tip d (izrazito nodularna građa)",
+      "status": "Kritično ograničenje",
+      "znacaj": "Smanjuje osetljivost mamografije; visok rizik od lažno negativnih rezultata (promene se ne vide od gustog tkiva).",
+      "parametar_i_vrednost": "ACR skala: Tip d",
+      "dijagnoza": "Radiološki gusta dojka",
+      "gde_je_problem": "Parenhim obe dojke",
+      "rezime": "Struktura tkiva ne dozvoljava jasnu radiografsku sliku.",
+      "uzrok_problema": "Visok procenat fibro-glandularnog (žlezdanog) tkiva.",
+      "uzrok_problema_detaljno": "U holističkom i tradicionalnom smislu, fibrocistične dojke često reaguju na hormonske oscilacije, stres i ishranu, stvarajući gustu, nodularnu strukturu koja je radiološki neprozirna.",
+      "uzrok_problema_summarized": "Prirodna gustina i fibrocistične promene."
+    },
+    {
+      "misljenje_i_dijagnoza": "Nejasno uočena ovalna promena koja zahteva dodatnu dijagnostiku.",
+      "parametar": "Ovalna senka (lezija)",
+      "vrednost": "11 x 6 mm",
+      "status": "Upozorenje / Zahteva praćenje",
+      "znacaj": "Moguća benigna tvorevina (cista, fibroadenom), ali zbog sumacije tkiva potrebna je potvrda.",
+      "parametar_i_vrednost": "Veličina lezije: 11x6 mm",
+      "dijagnoza": "N60.2 - Fibroadenoza (BI-RADS 3)",
+      "gde_je_problem": "Gornji spoljašnji kvadrant leve dojke (GSK LD), 3cm od mamile",
+      "rezime": "Lokalizovani čvor u levoj dojci.",
+      "uzrok_problema": "Lokalizovana proliferacija ćelija ili zadržavanje tečnosti.",
+      "uzrok_problema_detaljno": "Razvoj specifičnog fokusa zadebljanog tkiva (fibroadenom) usled hormonskog disbalansa ili strukturnih poremećaja drenaže unutar mlekovaoda (cista).",
+      "uzrok_problema_summarized": "Fokalna promena u tkivu."
+    },
+    {
+      "misljenje_i_dijagnoza": "Desna dojka bez suspektnih promena, leva dojka sa verovatno benignim nalazom. Uput onkohirurgu.",
+      "parametar": "Klasifikacija rizika (BI-RADS skala)",
+      "vrednost": "Desna dojka (DD): 2, Leva dojka (LD): 3",
+      "status": "Zahteva stručnu evaluaciju",
+      "znacaj": "BI-RADS 3 podrazumeva nalaz koji je verovatno benigni (rizik od maligniteta ≤ 2%), ali se preporučuje praćenje u kraćem intervalu ili ultrazvuk.",
+      "parametar_i_vrednost": "BI-RADS: DD 2, LD 3",
+      "dijagnoza": "Verovatno benigna lezija leve dojke",
+      "gde_je_problem": "Leva dojka (skor 3)",
+      "rezime": "Zvanični protokol nalaže dodatnu obradu zbog ocene LD 3 i ograničenja pregleda (ACR d).",
+      "uzrok_problema": "Sinergija nalaza ovalne senke i gustog tkiva.",
+      "uzrok_problema_detaljno": "Standardizovana BI-RADS skala ukazuje da nalaz nije potpuno uredan, a preklapanje gustog tkiva otežava doktoru da sa 100% sigurnosti potvrdi benignost samo na osnovu mamografije.",
+      "uzrok_problema_summarized": "Definisan protokolarni rizik zbog nejasne slike."
+    }
+  ]
+}

@@ -5,15 +5,10 @@ import config
 from npy.core import utils
 from models import MedicalReport
 from dsclinic_gui.report_view_models import DSClinicViewModel
-from dsclinic_gui.report_view import MedicalReportView
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
 from dsclinic_gui.constants import WINDOW_TITLE, MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
-from dsclinic import get_initial_analysis_report
-from pdf_maker import export_medical_report_pdf
-from models import TaskStatus, ProgressEvent
-import threading
-import queue
+
 from typing import Any
 #
 logger = setup_logger()

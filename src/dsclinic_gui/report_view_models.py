@@ -12,12 +12,14 @@ from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
 import config
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
-from dsclinic import get_initial_analysis_report
+# from dsclinic import get_initial_analysis_report, ask_followup_question
+from dsclinic import DSClinic
 from pdf_maker import export_medical_report_pdf
 from models import TaskStatus, ProgressEvent
-from examples import blocking_cpu_task
+#
 from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
-from hard_worker import run_hardwork
+# from hard_worker import run_hardwork
+# from examples import blocking_cpu_task
 
 #
 logger = setup_logger()
@@ -56,13 +58,13 @@ class DSClinicViewModel:
         self._output_queue: queue.Queue[ProgressEvent] = queue.Queue()
         self._cancel_event: threading.Event = threading.Event()
         self._worker_thread: threading.Thread | None = None
-
-        # Start polling for async tasks
-        #self._check_queue_loop()
+        
+        self.dsclinicapp = DSClinic(model_name=config.AI_MODEL_NAME)
 
 
     def _update_viewmodel_from_model(self):
         logger.debug("Updating ViewModel from Model...")
+        # Sync Model to Observables
         self.var_patient_name.set(self._model.content.patient_name)
         self.var_report_date.set(self._model.report_date)
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
@@ -92,8 +94,6 @@ class DSClinicViewModel:
         logger.debug(f"Removing finding at index {index}...")
         if 0 <= index < len(self.findings):
             self.findings.pop(index)
-            #self._update_viewmodel_from_model()
-            #self.app.event_generate("<<VM_DataChanged>>")
 
     # --- Logic: Analysis ---
 
@@ -131,11 +131,8 @@ class DSClinicViewModel:
         self._cancel_event.set()
 
     def _run_task_initial_analyzis(self, output_queue: queue.Queue[ProgressEvent], cancel_event: threading.Event):
-        input_dir = utils.get_input_data_dirpath()
         try:
-            report: MedicalReport = get_initial_analysis_report(
-                input_dir=input_dir,
-                model_name=config.AI_MODEL_NAME)
+            report: MedicalReport = self.dsclinicapp.get_initial_analysis_report()
             output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, message="Analysis complete", result=report))
         except Exception as e:
             logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
@@ -144,23 +141,14 @@ class DSClinicViewModel:
                 message="Task failed",
                 result=str(e)
             ))
-    
-    # def _run_task_initial_analyzis2(self):
-    #     try:
-    #         blocking_cpu_task(10)
-    #         self._output_queue.put(ProgressEvent(
-    #             status=TaskStatus.FINISHED,
-    #             message="Task completed successfully",
-    #             result="Hello, I am done after 10 seconds!"
-    #         ))
-    #         # self._output_queue.put({"status": "complete", "result": self._model.model_dump(mode='json')})
-    #     except Exception as e:
-    #         logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
-    #         self._output_queue.put(ProgressEvent(
-    #             status=TaskStatus.FAILED,
-    #             message="Task failed",
-    #             result=str(e)
-    #         ))
+
+    def followup_question_submit(self):
+        question = self.var_initial_question.get()
+        logger.debug(f"Follow-up question submitted: {question}")
+        self.var_initial_question.set("")
+        answer = self.dsclinicapp.ask_followup_question(question)
+        self.var_response.set(answer)
+
 
     def _poll_result_queue(self) -> None:
         """Drain the queue and update observable state.  Scheduled via `after`."""
@@ -199,26 +187,25 @@ class DSClinicViewModel:
                 #
                 return True
  
-            case TaskStatus.FINISHED:
-                
-                self.var_btn_analyze_text.set("Analyze")
-          
-
+            case TaskStatus.FINISHED:            
                 # Update Model and Notify View (by updating observables)
                 if progress_event.result and isinstance(progress_event.result, MedicalReport):
                     logger.info("Analysis completed with a MedicalReport result. Updating model and viewmodel...")
                     self._model = progress_event.result
                     self._update_viewmodel_from_model()
+                    
                     self.var_progress_value.set(100)
                     self.var_status_detail.set("Analysis completed successfully.")
                 else:
                     logger.error(f"Unexpected result type in ProgressEvent: {type(progress_event.result)}. Expected MedicalReport.")
                     
+                # Update model variables
                 self.var_is_analyzing.set(False)
+                self.var_btn_analyze_text.set("Analyze")
                 self.var_status_title.set("Finished")
                 self.var_progress_value.set(100)
                 self.var_status_detail.set("Analysis completed successfully.")      
-                    #self._update_viewmodel_from_model()
+                #self._update_viewmodel_from_model()
                 
                 #
                 return False
@@ -240,77 +227,6 @@ class DSClinicViewModel:
  
             case _:
                 return True
-
-
-    def _check_queue_loop(self):
-        pass
-        return
-        try:
-            msg = self._output_queue.get_nowait()
-            progress = 0
-
-            # self._update_view(event_status=msg["status"],
-            #     status_detail=msg["result"],
-            #     result=msg["result"])
-            logger.debug(f"Received message from worker thread: {msg}")
-            if msg["status"] == "cancelled":
-                self.var_status_title.set("Cancelled")
-                self.var_status_detail.set("Analysis was Cancelled.")
-            elif msg["status"] == "complete":
-                self.var_is_analyzing.set(False)
-                self.var_btn_analyze_text.set("Analyze")
-                self.var_progress_value.set(100)
-                self.var_status_title.set("Finished")
-                self.var_status_detail.set("Analysis completed successfully.")
-
-                # Update Model and Notify View (by updating observables)
-                new_report = MedicalReport(**msg["result"])
-                self._model = new_report
-                self._update_viewmodel_from_model()
-            elif msg["status"] == "processing":
-                self.var_status_title.set("Processing...")
-
-                self.var_status_detail.set(f"status: {msg['status']}, result: {msg['result']}")
-            elif msg["status"] == "failed":
-                self.var_is_analyzing.set(False)
-                self.var_btn_analyze_text.set("Analyze")
-                self.var_status_title.set("Failed")
-                self.var_status_detail.set(msg["result"])
-            else:
-                self.var_status_title.set("Finished")
-                self.var_status_detail.set(f"status: {msg['status']}, result: {msg['result']}")
-                self.var_progress_value.set(100)
-                self.var_btn_analyze_text.set("Analyze")
-        except queue.Empty:
-            pass
-        finally:
-            pass
-            #self.app.after(QUEUE_POLL_INTERVAL_MS, self._check_queue_loop)
-
-    def _update_view(self,
-                     event_status: str = None,
-                     status_detail: str = None,
-                     result: str | int | MedicalReport = None):
-        #
-        is_analyzing = [True if event_status == "cancelled" or event_status == "processing" or event_status == "failed" or event_status == "complete" else False]
-        #
-        btn_analyze_text = ["Analyze" if not is_analyzing else "Cancel"]
-        #
-        progress: int = [result if isinstance(result, int) else None]
-
-        if event_status:
-            self.var_status_title.set(event_status)
-        if status_detail:
-            self.var_status_detail.set(status_detail)
-        if is_analyzing:
-            self.var_is_analyzing.set(is_analyzing)
-        if progress:
-            self.var_progress_value.set(progress)
-        if btn_analyze_text:
-            self.var_btn_analyze_text.set(btn_analyze_text)
-        if event_status == "complete" and result and isinstance(result, MedicalReportModel):
-            self._model.content = result
-            self._update_viewmodel_from_model()
             
     def save_report(self):
         """Handles PDF Export logic."""

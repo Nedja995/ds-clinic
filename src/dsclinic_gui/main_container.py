@@ -18,8 +18,8 @@ class MainContainerView(ttk.PanedWindow):
         super().__init__(parent, orient=tk.HORIZONTAL, **kwargs)
 
         # Instantiate sub-views
-        self.left_view = MedicalReportView(self, view_model, padding=15)
-        self.right_view = ChatSessionView(self, view_model, padding=15)
+        self.left_view = MedicalReportView(self, view_model, padding=4)
+        self.right_view = ChatSessionView(self, view_model, padding=4)
 
         # Add views to PanedWindow
         # weight=1 allows both sides to expand equally when resizing window

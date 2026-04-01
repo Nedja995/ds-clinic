@@ -195,17 +195,52 @@ class MedicalAnalyzerClient:
         
         logger.debug(f"Streaming completed: received {chunk_count} chunks")
 
-    def ask_followup_stream(self, follow_up_question: str) -> Iterator[str]:
-        logger.debug(f"Sending follow-up question: {follow_up_question[:100]}...")
+
+    def ask_followup_question(self, question: str) -> str:
+        logger.info("Run ask follow-up question from chat stream.")
+
+        accumulated_response: str = ""
+        
+        # 1. Stream the Structured JSON chunks
+        logger.debug(f"Processing question: {question}...")
+        for chunk in self._run_ask_followup_stream(question):
+            #print(chunk, end="", flush=True) # Print without newlines and flush buffer immediately for the typing effect
+            #logger.debug(chunk)
+            accumulated_response += chunk
+        
+        return accumulated_response
+    
+
+    def _run_ask_followup_stream(self, question: str) -> Iterator[str]:
+        logger.debug(f"Run followup chat with question: {question}")
+
+        # 2. OVERRIDE CONFIG FOR THIS SPECIFIC MESSAGE TO FORCE STRING RESPONSE
+        config_response = genai_types.GenerateContentConfig(
+            temperature=1.0,
+            #top_p=self.ai_config.top_p,
+            #response_mime_type="text/plain",
+            #thinking_config=self.ai_config.thinking_config, # Reuse the same thinking config with tools
+            #system_instruction=self.ai_config.system_instruction, # Reuse the same system instruction
+            #safety_settings=self.ai_config.safety_settings, # Reuse the same safety settings
+            #tools=self.ai_config.tools, # Reuse the same tools (e.g. Google Search)
+        )
+        
+        logger.debug(f"{'' * 2}Sending chat question to Gemini API...")
         try:
-            response_stream = self.chat_session.send_message_stream(follow_up_question)
-            logger.debug("Follow-up response stream initialized")
-            chunk_count = 0
-            for chunk in response_stream:
-                if chunk.text:
-                    chunk_count += 1
-                    yield chunk.text
-            logger.debug(f"Follow-up question completed: {chunk_count} chunks received")
+            response_stream = self.chat_session.send_message_stream(
+                question,
+                config=config_response
+            )
+            logger.debug(f"{'' * 4}Streaming response received from API")
         except Exception as e:
-            logger.error(f"Error during follow-up question: {str(e)}", exc_info=True)
+            logger.error(f"Error during API call: {str(e)}", exc_info=True)
             raise
+
+        chunk_count = 0
+        for chunk in response_stream:
+            if chunk.text:
+                chunk_count += 1
+                logger.debug(f"{'' * 4}Received chunk #{chunk_count}")
+                yield chunk.text
+        
+        logger.debug(f"Streaming completed: received {chunk_count} chunks")
