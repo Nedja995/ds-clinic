@@ -12,7 +12,9 @@
         "name": "gemini-3-pro-preview",
         "temperature": 1.0,
         "top_p": 0.95,
-        "top_k": 64.0
+        "top_k": 64.0,
+        "max_output_tokens": 65535,
+        "thinking_level": "HIGH"
     },
     "ai_initial_task_key": "TASK_1",
     "ai_task_descriptions": {

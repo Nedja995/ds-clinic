@@ -110,6 +110,14 @@ AI_MODEL_NAME: str = AI_MODEL_CONFIG.get("name", None)
 if not AI_MODEL_NAME or len(AI_MODEL_NAME) == 0:
     raise Exception(f"'ai_initial_model_config.name' not defined. Please check onfig.json")
 
+AI_MODEL_TOP_P: float = AI_MODEL_CONFIG.get("top_p", 0.95)
+AI_MODEL_TEMPERATURE: float = AI_MODEL_CONFIG.get("temperature", 1.0)
+AI_MODEL_MAX_OUTPUT_TOKENS: int = AI_MODEL_CONFIG.get("max_output_tokens", 65535)
+AI_MODEL_TOP_K: int = AI_MODEL_CONFIG.get("top_k", 64)
+AI_THINKING_LEVEL: str = AI_MODEL_CONFIG.get("thinking_level", "default")
+
+
+
 # System instructions
 AI_SYSTEM_INSTRUCTIONS: list[str] = json_config.get("ai_system_instructions", [])
 

@@ -24,7 +24,14 @@ class DSClinic:
         logger.info(f"Initializing DSClinic with model: {self.model_name}, input_dir: {self.input_dir}, output_dir: {self.output_dir}")
         
         # AI Client
-        self.client_config = AIServiceConfig(api_key=config.GOOGLE_API_KEY, model_settings=GeminiModelConfig(model_name=model_name))
+        self.client_config = AIServiceConfig(api_key=config.GOOGLE_API_KEY, model_settings=GeminiModelConfig(
+            model_name=model_name, 
+            system_instruction=config.AI_SYSTEM_INSTRUCTIONS,
+            thinking_level=config.AI_THINKING_LEVEL,
+            temperature=config.AI_MODEL_TEMPERATURE,
+            top_p=config.AI_MODEL_TOP_P,
+            max_output_tokens=config.AI_MODEL_MAX_OUTPUT_TOKENS
+        ))
         self.gemini_client = api_gemini_client.MedicalAnalyzerClient(config=self.client_config)
         
         self.report: MedicalReport | None = None
