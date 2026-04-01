@@ -1,7 +1,7 @@
-MIN_WIDTH: int = 800
-MIN_HEIGHT: int = 700
-INIT_WIDTH: int = 1000 # Increased width for chat view
-INIT_HEIGHT: int = 900
+MIN_WIDTH: int = 500
+MIN_HEIGHT: int = 400
+INIT_WIDTH: int = 800 # Increased width for chat view
+INIT_HEIGHT: int = 700
 
 CHAT_BUBBLE_MAX_WIDTH_RATIO: float = 0.7 # 70% of the chat view width
 CHAT_BUBBLE_WRAP_LENGTH: int = 300

@@ -17,6 +17,7 @@ from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingMode
 from dsclinic_gui.styles import *
 from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.chat_session_view import ChatSessionView
+from dsclinic_gui.settings.window import open_settings
 
 logger = setup_logger()
 
@@ -72,12 +73,12 @@ class MedicalReportView(ttk.Frame):
         self.btn_submit.config(command=self._handle_export_click)
 
         self.btn_full_report = self._tooolbar_button(self.top_frame, text="Details", state="disabled")
-        self.btn_settings    = self._tooolbar_button(self.top_frame, text="Settings", side="right")
+        self.btn_settings    = self._tooolbar_button(self.top_frame, text="Settings", side="right", command=lambda: open_settings(self.master))
 
         ttk.Frame(parent, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
-    def _tooolbar_button(self, parent, text="", textvariable=None,state="normal", side="left") -> ttk.Button:
-        kw: dict = dict(style="Toolbar.TButton", state=state)
+    def _tooolbar_button(self, parent, text="", textvariable=None, state="normal", command=None, side="left") -> ttk.Button:
+        kw: dict = dict(style="Toolbar.TButton", state=state, command=command)
         btn = (ttk.Button(parent, textvariable=textvariable, **kw) if textvariable else ttk.Button(parent, text=text, **kw))
         btn.pack(side=side, padx=(6, 0) if side == "left" else (0, 6))
         return btn

@@ -7,7 +7,8 @@ from models import MedicalReport
 from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
-from dsclinic_gui.constants import MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
+from dsclinic_gui.constants import   MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
+from dsclinic_gui.settings.window import open_settings
 
 from typing import Any
 #
@@ -58,6 +59,8 @@ class DSClinicAppGUI(tk.Tk):
         x = (sw - w) // 2
         y = (sh - h) // 2
         self.geometry(f"{w}x{h}+{x}+{y}")
+         
+    # ---- DISPATCHER & POLLING MECHANISM ----
          
     def _setup_dispatcher(self) -> None:
         """
