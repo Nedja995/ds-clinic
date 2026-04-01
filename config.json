@@ -9,7 +9,7 @@
         "Always highlight severe abnormalities."
     ],
     "ai_initial_model_config": {
-        "name": "gemini-2.5-flash",
+        "name": "gemini-3-pro-preview",
         "temperature": 1.0,
         "top_p": 0.95,
         "top_k": 64.0

@@ -39,7 +39,7 @@ import configparser
 ini_config = configparser.ConfigParser()
 
 ini_config_path = os.path.join(_base_dir_path, "settings.ini")
-ini_config.read(ini_config_path)
+ini_config.read(ini_config_path, encoding='utf-8')
 
 
 #############################  LOAD TOML CONFIG  ###############################

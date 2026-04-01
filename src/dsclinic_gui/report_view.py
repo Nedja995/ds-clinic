@@ -148,7 +148,7 @@ class MedicalReportView(ttk.Frame):
 
     def _build_form(self):
         sf  = self.scrollable_frame
-        PAD = dict(padx=16, pady=8)
+        PAD = dict(padx=4, pady=8)
 
         # Card: Pacijent
         patient_card = self._card(sf, "Podaci o pacijentu")
@@ -158,7 +158,7 @@ class MedicalReportView(ttk.Frame):
         pr.pack(fill="x")
 
         ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_ime = ttk.Entry(pr, width=36, font=FI, textvariable=self.view_model.var_patient_name)
+        self.ent_ime = ttk.Entry(pr, width=26, font=FI, textvariable=self.view_model.var_patient_name)
         self.ent_ime.pack(side="left", padx=(6, 28), ipady=2, pady=4)
 
         ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
@@ -220,7 +220,7 @@ class MedicalReportView(ttk.Frame):
             wrap="word", undo=True, height=height,
             insertbackground=ACCENT,
             selectbackground=ACCENT, selectforeground=WHITE,
-            padx=6, pady=4,
+            padx=6, pady=4
         )
         t.bind("<FocusIn>",  lambda _: t.config(highlightbackground=ACCENT))
         t.bind("<FocusOut>", lambda _: t.config(highlightbackground=BORDER))

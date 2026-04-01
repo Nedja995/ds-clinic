@@ -7,7 +7,7 @@ from models import MedicalReport
 from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
-from dsclinic_gui.constants import WINDOW_TITLE, MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
+from dsclinic_gui.constants import MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
 
 from typing import Any
 #
@@ -37,19 +37,28 @@ class DSClinicAppGUI(tk.Tk):
         # View
         #self.report_view = MedicalReportView(self, self.view_model, self.medical_report)
         
+        self._center_window(INIT_WIDTH, INIT_HEIGHT)
+        
         # 3. Setup App-Level Dispatcher
         self._setup_dispatcher()
         
     def _configure_app(self):
-        self.title(WINDOW_TITLE)
+        self.title(config.APP_NAME)
         self.minsize(MIN_WIDTH, MIN_HEIGHT)
         self.geometry(f"{INIT_WIDTH}x{INIT_HEIGHT}")
         self.resizable(width=True, height=True)
-        # self.root.update_idletasks() # Ensure geometry is applied before further calculations
-        # self.root.grid_columnconfigure(0, weight=1)
-        # self.root.grid_rowconfigure(0, weight=1)
+        # self.update_idletasks() # Ensure geometry is applied before further calculations
+        # self.grid_columnconfigure(0, weight=1)
+        # self.grid_rowconfigure(0, weight=1)
     
-    
+    def _center_window(self, w: int, h: int):
+        self.update_idletasks()
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        x = (sw - w) // 2
+        y = (sh - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
+         
     def _setup_dispatcher(self) -> None:
         """
         The App monitors all ViewModels. When a ViewModel is processing, 

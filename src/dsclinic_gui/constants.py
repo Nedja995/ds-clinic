@@ -1,4 +1,3 @@
-WINDOW_TITLE: str = "Holisticki centar"
 MIN_WIDTH: int = 800
 MIN_HEIGHT: int = 700
 INIT_WIDTH: int = 1000 # Increased width for chat view
