@@ -23,23 +23,45 @@ class SettingsWindow(tk.Toplevel):
 
     _WIDTH  = 640
     _HEIGHT = 760
+    _MIN_WIDTH = 400
+    _MIN_HEIGHT = 400
+
 
     def __init__(self, master: tk.Misc, **kwargs) -> None:
         super().__init__(master, **kwargs)
+        # Window setup
         self.title("Settings")
         self.geometry(f"{self._WIDTH}x{self._HEIGHT}")
-        self.resizable(False, True)
-        self.minsize(self._WIDTH, 400)
+        self.resizable(True, True)
+        self.minsize(self._MIN_WIDTH, self._MIN_HEIGHT)
         self.configure(bg=BG)
-
-        self._vm = SettingsViewModel(self)
+        #
+        self._center_window(self._WIDTH, self._HEIGHT)
+        
+        # 
+        self.view_model = SettingsViewModel()
+        
+        
+        # UI initialization
         self._setup_ui()
+        
         self._bind_events()
 
-        # Modal
+        # Make the settings window modal
         self.transient(master)
         self.grab_set()
+        
+        # Load initial values from config into ViewModel
+        self.view_model.update_from_config()  
 
+    def _center_window(self, w: int, h: int):
+        self.update_idletasks()
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        x = (sw - w) // 2
+        y = (sh - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
+        
     # ─────────────────────────────────────────────────────────────────────────
     # Setup
     # ─────────────────────────────────────────────────────────────────────────
@@ -63,6 +85,7 @@ class SettingsWindow(tk.Toplevel):
             style="Toolbar.TButton",
             command=self._on_save,
         ).pack(side="right")
+        # Separator
         ttk.Frame(self, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
     def _build_scroll_area(self) -> None:
@@ -108,36 +131,36 @@ class SettingsWindow(tk.Toplevel):
         c0.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         ttk.Label(c0, text="Model Name", style="FormLabel.TLabel").pack(anchor="w")
         ttk.Combobox(
-            c0, textvariable=self._vm.var_model_name,
-            values=self._vm.available_models,
+            c0, textvariable=self.view_model.var_model_name,
+            values=self.view_model.available_models,
             state="readonly", font=FI,
         ).pack(fill="x", pady=(2, 0))
 
         # Temperature slider
         c1 = ttk.Frame(row, style="Panel.TFrame")
         c1.grid(row=0, column=1, sticky="ew", padx=(0, 10))
-        self._slider_field(c1, "Temperature", self._vm.var_temperature, 0.0, 2.0)
+        self._slider_field(c1, "Temperature", self.view_model.var_temperature, 0.0, 2.0)
 
         # Top P slider
         c2 = ttk.Frame(row, style="Panel.TFrame")
         c2.grid(row=0, column=2, sticky="ew")
-        self._slider_field(c2, "Top P", self._vm.var_top_p, 0.0, 1.0)
+        self._slider_field(c2, "Top P", self.view_model.var_top_p, 0.0, 1.0)
 
     def _build_analyze_instructions_panel(self, parent: ttk.Frame) -> None:
         panel = self._sub_panel(parent, "Analyze Instructions")
 
         self._entry_field(panel, "Recommended Therapy and Advice",
-                          self._vm.var_recommended_therapy_prompt)
+                          self.view_model.var_recommended_therapy_prompt)
         self._entry_field(panel, "Critical Findings",
-                          self._vm.var_critical_findings_prompt)
+                          self.view_model.var_critical_findings_prompt)
 
         # Nested sub-panel: column label customization for Critical Findings table
         nested = self._nested_card(panel, "Critical Findings")
-        self._entry_field(nested, "Expertsko Mišljenje", self._vm.var_expert_opinion_label)
-        self._entry_field(nested, "Parameter and Value", self._vm.var_parameter_value_label)
+        self._entry_field(nested, "Expertsko Mišljenje", self.view_model.var_expert_opinion_label)
+        self._entry_field(nested, "Parameter and Value", self.view_model.var_parameter_value_label)
 
         self._text_field(panel, "Initial Task Description",
-                         self._vm.var_initial_task_text, height=4)
+                         self.view_model.var_initial_task_text, height=4)
 
         # System Instructions – wrapped in a named frame so it can be replaced later
         self.system_instructions_frame = ttk.Frame(panel, style="Panel.TFrame",
@@ -146,10 +169,10 @@ class SettingsWindow(tk.Toplevel):
         ttk.Label(self.system_instructions_frame,
                   text="System Instructions", style="FormLabel.TLabel").pack(anchor="w")
         self._sys_instr_text = self._make_text_widget(self.system_instructions_frame, height=5)
-        self._sync_text_widget(self._sys_instr_text, self._vm.var_system_instructions_text)
+        self._sync_text_widget(self._sys_instr_text, self.view_model.var_system_instructions_text)
 
         self._entry_field(panel, "Google API Key",
-                          self._vm.var_google_api_key, show="•")
+                          self.view_model.var_google_api_key)
 
     # ─────────────────────────────────────────────────────────────────────────
     # General Section
@@ -161,15 +184,15 @@ class SettingsWindow(tk.Toplevel):
         btn_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 0, 0, 10))
         btn_row.pack(fill="x")
         ttk.Button(btn_row, text="Send Logs", style="Accent.TButton",
-                   command=self._vm.on_send_logs).pack(side="left", padx=(0, 8))
+                   command=self.view_model.on_send_logs).pack(side="left", padx=(0, 8))
         ttk.Button(btn_row, text="Show Logs Folder", style="Accent.TButton",
-                   command=self._vm.on_show_logs_folder).pack(side="left")
+                   command=self.view_model.on_show_logs_folder).pack(side="left")
 
         # Support email + inline validation error
         email_frame = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 0, 0, 6))
         email_frame.pack(fill="x")
         ttk.Label(email_frame, text="Support Email", style="FormLabel.TLabel").pack(anchor="w")
-        self._email_entry = ttk.Entry(email_frame, textvariable=self._vm.var_support_email)
+        self._email_entry = ttk.Entry(email_frame, textvariable=self.view_model.var_support_email)
         self._email_entry.pack(fill="x", pady=(2, 0))
         self._email_error_lbl = ttk.Label(
             email_frame, text="✕  Invalid email format",
@@ -180,7 +203,7 @@ class SettingsWindow(tk.Toplevel):
         ver_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 4, 0, 2))
         ver_row.pack(fill="x")
         ttk.Label(ver_row, text="App Version", style="FormLabel.TLabel").pack(side="left")
-        ttk.Label(ver_row, textvariable=self._vm.var_app_version,
+        ttk.Label(ver_row, textvariable=self.view_model.var_app_version,
                   background=PANEL, foreground=SUBTLE, font=FI).pack(side="left", padx=(8, 0))
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -263,8 +286,10 @@ class SettingsWindow(tk.Toplevel):
         w.pack(fill="x", pady=(2, 0))
         return w
 
-    def _text_field(self, parent: ttk.Frame, label: str,
-                    var: tk.StringVar, height: int = 4) -> scrolledtext.ScrolledText:
+    def _text_field(self, parent: ttk.Frame, 
+                    label: str, 
+                    var: tk.StringVar, 
+                    height: int = 4) -> scrolledtext.ScrolledText:
         frame = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 0, 0, 6))
         frame.pack(fill="x")
         ttk.Label(frame, text=label, style="FormLabel.TLabel").pack(anchor="w")
@@ -293,10 +318,9 @@ class SettingsWindow(tk.Toplevel):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _bind_events(self) -> None:
-        self._vm.var_support_email.trace_add(
-            "write", lambda *_: self._vm.validate_email())
-        self._vm.var_email_valid.trace_add(
-            "write", self._on_email_validity_changed)
+        # email validation
+        self.view_model.var_support_email.trace_add("write", lambda *_: self.view_model.validate_email())
+        self.view_model.var_email_valid.trace_add("write", self._on_email_validity_changed)
         # Linux scroll support
         self._canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self._canvas.bind_all("<Button-4>",   self._on_mousewheel)
@@ -313,13 +337,13 @@ class SettingsWindow(tk.Toplevel):
         self._canvas.yview_scroll(delta, "units")
 
     def _on_email_validity_changed(self, *_: object) -> None:
-        if self._vm.var_email_valid.get():
+        if self.view_model.var_email_valid.get():
             self._email_error_lbl.pack_forget()
         else:
             self._email_error_lbl.pack(anchor="w", pady=(2, 0))
 
     def _on_save(self) -> None:
-        if not self._vm.validate_email():
+        if not self.view_model.validate_email():
             return
-        # TODO: persist settings to JSON
+        self.view_model.save_to_config()
         self.destroy()

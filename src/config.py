@@ -42,32 +42,6 @@ ini_config_path = os.path.join(_base_dir_path, "settings.ini")
 ini_config.read(ini_config_path, encoding='utf-8')
 
 
-#############################  LOAD TOML CONFIG  ###############################
-##
-## get string example: ini_config['APP']['TASK_AI_DESCRIPTION'].replace('"', '').replace("'", "")
-##
-import tomllib
-toml_config = None
-
-toml_config_path = os.path.join(_base_dir_path, "pyproject.toml")
-try:
-    with open(toml_config_path, "rb") as f:
-        toml_config = tomllib.load(f)
-except FileNotFoundError:
-    logger.warning(f"Missing toml config file at: '{toml_config_path}'")
-    #raise FileNotFoundError(f"Missing toml config file at: '{toml_config_path}'")
-    pass
-except tomllib.TOMLDecodeError as e:
-    raise tomllib.TOMLDecodeError(f"Error decoding TOML file: {e}")
-except Exception as e:
-    raise Exception(f"Error reading TOML: {e}")
-
-def get_version_from_toml(file_path="pyproject.toml"):
-    version = toml_config.get("project", {}).get("version")
-    if version: return version
-    else: return toml_config.get("tool", {}).get("poetry", {}).get("version")
-
-
 ################################  PROPERTIES  ##################################
 ##
 
@@ -97,8 +71,8 @@ AI_TASK_DESCRIPTIONS: dict[str, dict[str, list[str]]] = json_config.get("ai_task
 AI_TASK_DESCRIPTION: dict[str, str] = AI_TASK_DESCRIPTIONS.get(AI_TASK_KEY, {})
 AI_TASK_DESCRIPTION: list[str] = AI_TASK_DESCRIPTION.get("description", "")
 
-# Supported Models
-AI_SUPPORTED_MODELS: dict[str, dict[str, str]] = json_config.get("ai_supported_models", {})
+# Supported Models (Gemini)
+AI_SUPPORTED_MODELS: dict[str, str] = json_config.get("ai_supported_models", {})
 
 # Model Parameters
 AI_MODEL_CONFIG: dict = json_config.get("ai_initial_model_config", None)
@@ -116,18 +90,76 @@ AI_MODEL_MAX_OUTPUT_TOKENS: int = AI_MODEL_CONFIG.get("max_output_tokens", 65535
 AI_MODEL_TOP_K: int = AI_MODEL_CONFIG.get("top_k", 64)
 AI_THINKING_LEVEL: str = AI_MODEL_CONFIG.get("thinking_level", "default")
 
-
-
 # System instructions
 AI_SYSTEM_INSTRUCTIONS: list[str] = json_config.get("ai_system_instructions", [])
+
+AI_INITIAL_TASK_DESCRIPTION: list[str] = json_config.get("ai_initial_task_description", [
+    "Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. Provide accurate and concise information. If you dont know the answer, state that you dont know. Always answer in Serbian."
+])
 
 # Supported
 AI_SUPPORTED_INPUT_FILETYPES: dict[str, str] = json_config.get("ai_supported_input_filetypes", {})
 # Ensure extensions have a dot prefix for endswith() to work correctly
 #supported_exts = tuple(f".{ext.lstrip('.')}" for ext in config.SUPPORTED_INPUT_FILETYPES.values())
 
+AI_RESPONSE_DESCRIPTION: dict[str, str] = json_config.get("ai_response_description", {})
+
+AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE: str = AI_RESPONSE_DESCRIPTION.get(
+    "ai_response_recommended_therapy_and_advice", 
+    "Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.")
+
+AI_RESPONSE_CRITICAL_FINDINGS: str = AI_RESPONSE_DESCRIPTION.get(
+    "ai_response_critical_findings", 
+    "List of all critical or notable medical findings with expert opinions and raw parameter values.")
+
+AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION: str = AI_RESPONSE_DESCRIPTION.get(
+    "ai_response_critical_finding_experts_opinion", 
+    "Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable.")
+
+AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE: str = AI_RESPONSE_DESCRIPTION.get(
+    "ai_response_critical_finding_param_and_value", 
+    "The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004').")
+    
+# add default if empty
+if "ai_response_recommended_therapy_and_advice" not in AI_RESPONSE_DESCRIPTION:
+    AI_RESPONSE_DESCRIPTION["ai_response_recommended_therapy_and_advice"] = AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE
+if "ai_response_critical_findings" not in AI_RESPONSE_DESCRIPTION:
+    AI_RESPONSE_DESCRIPTION["ai_response_critical_findings"] = AI_RESPONSE_CRITICAL_FINDINGS
+if "ai_response_critical_finding_experts_opinion" not in AI_RESPONSE_DESCRIPTION:
+    AI_RESPONSE_DESCRIPTION["ai_response_critical_finding_experts_opinion"] = AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION
+if "ai_response_critical_finding_param_and_value" not in AI_RESPONSE_DESCRIPTION:
+    AI_RESPONSE_DESCRIPTION["ai_response_critical_finding_param_and_value"] = AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE
+    
+    
 #### CLAUDE AI CONFIG
 # Model config block for Claude (optional — app may not always use Claude)
 CLAUDE_MODEL_CONFIG: dict = json_config.get("claude_initial_model_config", {})
 CLAUDE_MODEL_NAME: str = CLAUDE_MODEL_CONFIG.get("name", "claude-3-5-sonnet-20241022")
 CLAUDE_SUPPORTED_MODELS: dict[str, str] = json_config.get("claude_supported_models", {})
+
+
+def save_config():
+    """
+    Save the current configuration back to config.json
+    """
+    # global json_config
+    # json_config["app"] = {
+    #     "log_level": APP_LOG_LEVEL,
+    #     "debug_export_response": APP_DEBUG_EXPORT_RESPONSE,
+    #     "debug_response": APP_DEBUG_RESPONSE
+    # }
+    
+    AI_RESPONSE_DESCRIPTION["ai_response_recommended_therapy_and_advice"] = AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE
+    AI_RESPONSE_DESCRIPTION["ai_response_critical_findings"] = AI_RESPONSE_CRITICAL_FINDINGS
+    AI_RESPONSE_DESCRIPTION["ai_response_critical_finding_experts_opinion"] = AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION
+    AI_RESPONSE_DESCRIPTION["ai_response_critical_finding_param_and_value"] = AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE
+    
+    json_config["ai_response_description"] = AI_RESPONSE_DESCRIPTION
+    json_config["ai_initial_model_config"]["name"] = AI_MODEL_NAME
+    json_config["ai_initial_model_config"]["temperature"] = AI_MODEL_TEMPERATURE
+    json_config["ai_initial_model_config"]["top_p"] = AI_MODEL_TOP_P
+    json_config["ai_initial_task_description"] = AI_TASK_DESCRIPTION
+    json_config["ai_system_instructions"] = AI_SYSTEM_INSTRUCTIONS
+
+    with open(json_config_path, 'w', encoding='utf-8') as f:
+        json.dump(json_config, f, indent=4)

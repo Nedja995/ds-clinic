@@ -1,0 +1,40 @@
+{
+    "gemini": {
+        "supported_models":[
+            "gemini-pro-latest",
+            "gemini-flash-latest",
+            "gemini-3.1-pro-preview",
+            "gemini-3.1-flash-lite-preview",
+            "gemini-3-pro-preview",
+            "gemini-3-flash-preview",
+            "gemini-pro",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
+            "deep-research-pro-preview-12-2025"
+        ]
+    },
+    "claude": {
+        "supported_models":[
+            "claude-opus-4-5",
+            "claude-sonnet-4-5",
+            "claude-haiku-4-5-20251001",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+            "claude-3-opus-20240229"
+        ]
+    },
+    "supported_input_filetypes": {
+        ".txt": "text/plain",
+        ".xml": "text/xml",
+        ".csv": "text/csv",
+        ".rtf": "text/rtf",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".bmp": "image/bmp",
+        ".webp": "image/webp",
+        ".pdf": "application/pdf",
+        ".json": "application/json",
+        ".html": "text/html"
+    }
+}

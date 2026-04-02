@@ -86,7 +86,25 @@ def get_output_data_dirpath(dir_name: str = "IZVESTAJI") -> str:
         logger.info(f"Created missing output directory at '{dirpath}'.")
     return dirpath
 
+def get_app_data_dirpath(dir_name: str = "app_data") -> str:
+    dirpath = os.path.join(get_base_dir_path(), dir_name)
+    if not os.path.exists(dirpath):
+        # Missing - Create it
+        os.makedirs(dirpath, exist_ok=True)
+        logger.info(f"Created missing {dir_name} directory at '{dirpath}'.")
+    return dirpath
 
+def get_app_data_settings_dirpath(dir_name: str = "settings") -> str:
+    app_data = get_app_data_dirpath()
+    settings_dirpath = os.path.join(app_data, dir_name)
+    if not os.path.exists(settings_dirpath):
+        # Missing - Create it
+        os.makedirs(settings_dirpath, exist_ok=True)
+        logger.info(f"Created missing {dir_name} directory at '{settings_dirpath}'.")
+    return settings_dirpath
 
-
-
+def get_app_data_settings_filepath(filename: str = "settings.json") -> str:
+    filepath = os.path.join(get_app_data_settings_dirpath(), filename)
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"FATAL ERROR: Missing resource file at '{filepath}'.")
+    return filepath

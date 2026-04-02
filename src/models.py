@@ -4,22 +4,23 @@ from collections import UserList
 from pydantic import BaseModel, Field
 import uuid
 from datetime import datetime
+import config
 
 ####### Medical Report Models
 ##
 ## Structured Service response models
 #
 class MedicalCriticalFindingModel(BaseModel):
-    expertsko_misljenje: str = Field(default="",description="Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable.")
-    parametar_and_value: str = Field(default="",description="The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004').")
+    expertsko_misljenje: str = Field(default="",description=config.AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION)
+    parametar_and_value: str = Field(default="",description=config.AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE)
 
 class MedicalReportModel(BaseModel):
     patient_name: str = Field(
         default="",
         description="Full name of patient."
     )
-    recommended_therapy_and_advice: str = Field(default="",description="Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.")
-    critical_findings: list[MedicalCriticalFindingModel] = Field(default=[],description="List of all critical or notable medical findings with expert opinions and raw parameter values.")
+    recommended_therapy_and_advice: str = Field(default="",description=config.AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE)
+    critical_findings: list[MedicalCriticalFindingModel] = Field(default=[],description=config.AI_RESPONSE_CRITICAL_FINDINGS)
 
 ## Final Report
 class MedicalReport(BaseModel):

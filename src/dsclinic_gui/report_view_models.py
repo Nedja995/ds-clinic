@@ -8,6 +8,8 @@ import datetime
 from typing import Optional, Any
 from tkinter import filedialog, messagebox
 
+from dsclinic_gui.settings.window import open_settings
+from dsclinic_gui.settings.settings_view_model import SettingsViewModel
 from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
 import config
@@ -21,33 +23,32 @@ from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
 # from hard_worker import run_hardwork
 # from examples import blocking_cpu_task
 
+
 #
 logger = setup_logger()
 
 
 class DSClinicViewModel:
-    def __init__(self, 
+    def __init__(self,
                  schedule_poll_fn: callable[[int, callable], Any], 
-                 model: Optional[MedicalReport] = None) -> None:
-        """
-        ViewModel for the DSClinic App. Holds observable state and business logic. 
-        """
-        
+                 model: Optional[MedicalReport] = None
+                 ) -> None:
+        # Assign arguments to local variables
         self.schedule_poll_fn = schedule_poll_fn
-        
         self._model: MedicalReport = model or MedicalReport()
 
-        # --- Observable UI State ---
+        # --- Report data ---
         self.var_patient_name = tk.StringVar(value=self._model.content.patient_name)
         self.var_report_date = tk.StringVar(value=self._model.report_date) 
-        self.therapy_text_content = self._model.content.recommended_therapy_and_advice  # Handled manually for Text widgets
-        
+         # Handled manually for Text widgets
+        self.therapy_text_content = self._model.content.recommended_therapy_and_advice 
         self.findings: list[MedicalCriticalFindingModel] = self._model.content.critical_findings
 
+        # Chat session (TODO: get rid of these)
         self.var_initial_question = tk.StringVar(value="")
         self.var_response = tk.StringVar(value="")
 
-        # Status & Progress
+        # Analysis Status & Progress
         self.var_status_title = tk.StringVar(value="IDLE")
         self.var_status_detail = tk.StringVar(value="Ready")
         self.var_progress_value = tk.DoubleVar(value=0.0)
@@ -59,6 +60,7 @@ class DSClinicViewModel:
         self._cancel_event: threading.Event = threading.Event()
         self._worker_thread: threading.Thread | None = None
         
+        # Main DSClinic App Logic Handler
         self.dsclinicapp = DSClinic(model_name=config.AI_MODEL_NAME)
 
 
@@ -95,6 +97,9 @@ class DSClinicViewModel:
         if 0 <= index < len(self.findings):
             self.findings.pop(index)
 
+    def open_settings(self):
+        open_settings(self.app)
+
     # --- Logic: Analysis ---
 
     def toggle_analysis(self):
@@ -115,7 +120,7 @@ class DSClinicViewModel:
             target=self._run_task_initial_analyzis,
             args=( self._output_queue, self._cancel_event),
             daemon=True,
-            name="api-hardwork-thread")
+            name="dsclinic-gemini-thread")
         
         self._worker_thread.start()
 

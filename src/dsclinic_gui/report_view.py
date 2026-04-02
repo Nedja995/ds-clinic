@@ -25,6 +25,11 @@ logger = setup_logger()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+class ReportWindow(tk.Toplevel):
+    _WIDTH = 700
+    _HEIGHT = 750
+    _MIN_WIDTH = 400
+    _MIN_HEIGHT = 400
 
 class MedicalReportView(ttk.Frame):
     """
@@ -58,6 +63,10 @@ class MedicalReportView(ttk.Frame):
         self._build_footer(self)   # pack bottom first so canvas fills the gap
         self._build_canvas(self)
         self._build_form()
+        # # 
+        # self.geometry(f"{self._WIDTH}x{self._HEIGHT}")
+        # self.resizable(True, True)
+        # self.minsize(self._MIN_WIDTH, self._MIN_HEIGHT)
 
     # ── Toolbar ───────────────────────────────────────────────────────────────
 

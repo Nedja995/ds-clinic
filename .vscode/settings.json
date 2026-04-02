@@ -53,5 +53,11 @@
     },
     "[html]": {
         "editor.defaultFormatter": "vscode.html-language-features"
-    }
+    },
+    "obsidian-md-vsc.defaultVaultPath": "C:\\NP_DEV\\NP_DEV",
+    "obsidian-md-vsc.defaultVault": "NP_DEV",
+    "obsidian-md-vsc.buttonClass": [
+        "Staa"
+    ],
+    "python.REPL.enableREPLSmartSend": false
 }

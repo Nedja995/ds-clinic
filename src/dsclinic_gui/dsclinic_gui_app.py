@@ -8,7 +8,6 @@ from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
 from dsclinic_gui.constants import   MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
-from dsclinic_gui.settings.window import open_settings
 
 from typing import Any
 #
@@ -21,15 +20,23 @@ logger = setup_logger()
 ## MAIN GUI APP
 #
 class DSClinicAppGUI(tk.Tk):
+    """
+    Main Application Window for DSClinic GUI.
+    """
     def __init__(self, initial_data: MedicalReport | dict):
         super().__init__()
+        # Initialize App Window
         self._configure_app()
         build_styles()
+        
         # Data
         medical_report: MedicalReport = initial_data if not initial_data else MedicalReport.model_validate(initial_data)
-        # View Model
-        self.view_model = DSClinicViewModel(schedule_poll_fn=self.after, 
-                                            model=medical_report)
+        
+        ## View Models 
+        # Report
+        self.view_model = DSClinicViewModel(
+            schedule_poll_fn=self.after, 
+            model=medical_report)
         
         # Main Container View
         self.main_container = MainContainerView(self, self.view_model)
@@ -85,7 +92,6 @@ class DSClinicAppGUI(tk.Tk):
         # If it's still running, schedule the next tick
         if self.view_model.var_is_analyzing.get():
             self.after(QUEUE_POLL_INTERVAL_MS, self._poll_viewmodels)
-        
 
 
 ##########################################################################################
@@ -100,6 +106,7 @@ if __name__ == "__main__":
     base_dir = utils.get_base_dir_path()
     logger.info(f"{' ' * 3}- Root directory: {base_dir}.")
     logger.info("="*60)
+    
     
     
     # Initial / Test Data

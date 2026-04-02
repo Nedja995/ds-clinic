@@ -5,13 +5,16 @@
         "debug_response": false
     },
     "ai_system_instructions": [
-        "You are an expert medical data analyst using equally both holistic and traditional medical data.",
-        "Always highlight severe abnormalities."
+        "You are an expert medical data analyst using equally both holistic and traditional medical data. \n",
+        "- Highlight severe abnormalities.\n",
+        "- Provide accurate and concise information.\n",
+        "- If you dont know the answer, state that you dont know. \n",
+        "- Always answer in Serbian."
     ],
     "ai_initial_model_config": {
-        "name": "gemini-3-pro-preview",
-        "temperature": 1.0,
-        "top_p": 0.95,
+        "name": "gemini-2.5-pro",
+        "temperature": 0.6990291262135923,
+        "top_p": 0.6017699115044248,
         "top_k": 64.0,
         "max_output_tokens": 65535,
         "thinking_level": "HIGH"
@@ -35,8 +38,8 @@
         "TASK_3": {
             "name": "Inicijalno staro pitanje",
             "description": [
-                "Procitaj podatke iz svih priloženih dokumenata, nalaza, rezultata, izveštaja i ostalih podataka ",
-                "i fainlerovu skalu i slike organa ukazi na kritične nalaze, predloži moguće dijagnoze, gde su problemi, sta su uzroci problema i definiši problem (u polje 'problem_defined'). ",
+                "Procitaj podatke iz svih prilo\u017eenih dokumenata, nalaza, rezultata, izve\u0161taja i ostalih podataka ",
+                "i fainlerovu skalu i slike organa ukazi na kriti\u010dne nalaze, predlo\u017ei mogu\u0107e dijagnoze, gde su problemi, sta su uzroci problema i defini\u0161i problem (u polje 'problem_defined'). ",
                 "Predstavi podatke u json formatu, koristeci sledecu strukturu: ",
                 "   {                                                           ",
                 "        'ime_pacijenta',                                       ",
@@ -106,17 +109,26 @@
         "thinking_budget_tokens": 0
     },
     "claude_supported_models": {
-        "claude-opus-4-5":           "claude-opus-4-5",
-        "claude-sonnet-4-5":         "claude-sonnet-4-5",
-        "claude-haiku-4-5":          "claude-haiku-4-5-20251001",
-        "claude-3-5-sonnet-20241022":"claude-3-5-sonnet-20241022",
+        "claude-opus-4-5": "claude-opus-4-5",
+        "claude-sonnet-4-5": "claude-sonnet-4-5",
+        "claude-haiku-4-5": "claude-haiku-4-5-20251001",
+        "claude-3-5-sonnet-20241022": "claude-3-5-sonnet-20241022",
         "claude-3-5-haiku-20241022": "claude-3-5-haiku-20241022",
-        "claude-3-opus-20240229":    "claude-3-opus-20240229"
+        "claude-3-opus-20240229": "claude-3-opus-20240229"
     },
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "rezime+uzrok_problema+uzrok_problema_detaljno+strucno_misljenje_dijagnoza_summarized+preporucena_terapija_i_savet_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza+uzrok_problema",
         "PARAMETAR_APARATA": "parametar_i_vrednost",
         "NALAZI": "nalazi"
+    },
+    "ai_initial_task_description": [
+        "Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice."
+    ],
+    "ai_response_description": {
+        "ai_response_recommended_therapy_and_advice": "Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.",
+        "ai_response_critical_findings": "List of all critical or notable medical findings with expert opinions and raw parameter values.",
+        "ai_response_critical_finding_experts_opinion": "Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable.",
+        "ai_response_critical_finding_param_and_value": "The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004')."
     }
 }

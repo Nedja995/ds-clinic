@@ -56,7 +56,7 @@ class DSClinic:
         # Run Analyzis
         report_content: MedicalReportModel = self.gemini_client.initial_analysis_report_from_chat_stream(
             documents=input_documents_parts,
-            question="".join(config.AI_TASK_DESCRIPTION)
+            question="".join(config.AI_INITIAL_TASK_DESCRIPTION)
         )
         
         self.report = MedicalReport(content=report_content)
