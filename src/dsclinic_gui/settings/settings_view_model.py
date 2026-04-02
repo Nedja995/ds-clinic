@@ -21,7 +21,7 @@ class SettingsViewModel:
         self.var_critical_findings_prompt   = tk.StringVar(value=config.AI_RESPONSE_CRITICAL_FINDINGS)
         self.var_expert_opinion_label       = tk.StringVar(value=config.AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION)
         self.var_parameter_value_label      = tk.StringVar(value=config.AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE)
-        self.var_initial_task_text          = tk.StringVar(value="".join(config.AI_INITIAL_TASK_DESCRIPTION))
+        self.var_initial_task_text          = tk.StringVar(value=config.AI_INITIAL_TASK_DESCRIPTION)
         self.var_system_instructions_text   = tk.StringVar(value="".join(config.AI_SYSTEM_INSTRUCTIONS))
         self.var_google_api_key             = tk.StringVar(value=config.GOOGLE_API_KEY)
 
@@ -37,7 +37,7 @@ class SettingsViewModel:
         self.var_temperature.set(config.AI_MODEL_TEMPERATURE)
         self.var_top_p.set(config.AI_MODEL_TOP_P)
         #
-        self.var_initial_task_text.set("".join(config.AI_INITIAL_TASK_DESCRIPTION))
+        self.var_initial_task_text.set(config.AI_INITIAL_TASK_DESCRIPTION)
         self.var_system_instructions_text.set("".join(config.AI_SYSTEM_INSTRUCTIONS))
         #
         self.var_recommended_therapy_prompt.set(config.AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE)
@@ -54,7 +54,7 @@ class SettingsViewModel:
         config.AI_MODEL_TEMPERATURE = self.var_temperature.get()
         config.AI_MODEL_TOP_P = self.var_top_p.get()
         #
-        config.AI_TASK_DESCRIPTION = self.var_initial_task_text.get().splitlines(keepends=True)
+        config.AI_INITIAL_TASK_DESCRIPTION = self.var_initial_task_text.get().splitlines(keepends=True)
         config.AI_SYSTEM_INSTRUCTIONS = self.var_system_instructions_text.get().splitlines(keepends=True)
         #
         config.AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE = self.var_recommended_therapy_prompt.get()

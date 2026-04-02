@@ -66,6 +66,9 @@ class ChatSessionView(ttk.Frame):
 
     def add_message(self, text: str, is_user: bool = True) -> None:
         """Renders a chat bubble aligned to the correct side."""
+        if not is_user:
+            self.view_model._model.chat_responses.append(text) # Store bot responses
+            
         anchor = "e" if is_user else "w"
         style_frame = "ChatUser.TFrame" if is_user else "ChatBot.TFrame"
         style_label = "ChatUser.TLabel" if is_user else "ChatBot.TLabel"

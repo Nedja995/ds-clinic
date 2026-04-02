@@ -54,6 +54,10 @@ class SettingsWindow(tk.Toplevel):
         # Load initial values from config into ViewModel
         self.view_model.update_from_config()  
 
+    def destroy(self) -> None:
+        self._unbind_all()
+        super().destroy()
+
     def _center_window(self, w: int, h: int):
         self.update_idletasks()
         sw = self.winfo_screenwidth()
@@ -325,6 +329,13 @@ class SettingsWindow(tk.Toplevel):
         self._canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self._canvas.bind_all("<Button-4>",   self._on_mousewheel)
         self._canvas.bind_all("<Button-5>",   self._on_mousewheel)
+        
+    def _unbind_all(self) -> None:
+        # self.view_model.var_support_email.trace_remove("write", self.view_model.validate_email)
+        # self.view_model.var_email_valid.trace_remove("write", self._on_email_validity_changed)
+        self._canvas.unbind_all("<MouseWheel>")
+        self._canvas.unbind_all("<Button-4>")
+        self._canvas.unbind_all("<Button-5>")
 
     def _on_canvas_resize(self, event: tk.Event) -> None:
         self._canvas.itemconfigure(self._canvas_win, width=event.width)
@@ -346,4 +357,5 @@ class SettingsWindow(tk.Toplevel):
         if not self.view_model.validate_email():
             return
         self.view_model.save_to_config()
+        self._unbind_all()
         self.destroy()

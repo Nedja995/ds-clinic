@@ -8,7 +8,6 @@ import datetime
 from typing import Optional, Any
 from tkinter import filedialog, messagebox
 
-from dsclinic_gui.settings.window import open_settings
 from dsclinic_gui.settings.settings_view_model import SettingsViewModel
 from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
@@ -16,7 +15,7 @@ import config
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
 # from dsclinic import get_initial_analysis_report, ask_followup_question
 from dsclinic import DSClinic
-from pdf_maker import export_medical_report_pdf
+from pdf_maker import generate_report_pdf_at_filepath
 from models import TaskStatus, ProgressEvent
 #
 from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
@@ -96,9 +95,6 @@ class DSClinicViewModel:
         logger.debug(f"Removing finding at index {index}...")
         if 0 <= index < len(self.findings):
             self.findings.pop(index)
-
-    def open_settings(self):
-        open_settings(self.app)
 
     # --- Logic: Analysis ---
 
@@ -260,7 +256,7 @@ class DSClinicViewModel:
         self.var_status_detail.set(f"Generating PDF at {output_filepath}...")
 
         try:
-            export_medical_report_pdf(self._model, output_filename=output_filepath)
+            generate_report_pdf_at_filepath(self._model, output_filename=output_filepath)
             self.var_status_title.set("Saved")
             self.var_status_detail.set("PDF Saved Successfully")
 

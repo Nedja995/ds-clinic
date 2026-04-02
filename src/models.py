@@ -27,6 +27,10 @@ class MedicalReport(BaseModel):
     report_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
     report_date: str = Field(description="Datum izveštaja.", default_factory=lambda: datetime.now().strftime("%Y-%m-%d_%H-%M"))
     content: MedicalReportModel = Field(default=MedicalReportModel)
+    chat_responses: list[str] = Field(default=[])
+
+
+####### AI Models
 
 ## Chat models
 #

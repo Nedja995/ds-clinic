@@ -5,11 +5,7 @@
         "debug_response": false
     },
     "ai_system_instructions": [
-        "You are an expert medical data analyst using equally both holistic and traditional medical data. \n",
-        "- Highlight severe abnormalities.\n",
-        "- Provide accurate and concise information.\n",
-        "- If you dont know the answer, state that you dont know. \n",
-        "- Always answer in Serbian."
+        "You are an expert medical data analyst using medical data (tradicional, holistic, western, eastern, etc..) from input documents."
     ],
     "ai_initial_model_config": {
         "name": "gemini-2.5-pro",
@@ -123,7 +119,7 @@
         "NALAZI": "nalazi"
     },
     "ai_initial_task_description": [
-        "Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice."
+        "('Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. Highlight severe abnormalities. Provide accurate and concise information. If you dont know the answer, state that you dont know. Answer in Serbian.',)"
     ],
     "ai_response_description": {
         "ai_response_recommended_therapy_and_advice": "Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.",

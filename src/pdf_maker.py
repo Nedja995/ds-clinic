@@ -175,8 +175,8 @@ class HolisticReport(FPDF):
             self.set_xy(x, y + row_height)
 
         self.ln(10)
-
-    def draw_footer_section(self, terapija_i_savet: str):
+        
+    def draw_recommended_therapy_section(self, terapija_i_savet: str):
         # Preporuka (Crvena boja)
         self.set_font(FONT_BOLD, "", 12)
         self.set_text_color(160, 0, 0)
@@ -187,7 +187,21 @@ class HolisticReport(FPDF):
         self.set_text_color(0, 0, 0)
         self.multi_cell(0, 6, terapija_i_savet)
         self.ln(6)
+        
+    def draw_chat_responses(self, chat_responses: list[str]):
+        # Preporuka (Crvena boja)
+        self.set_font(FONT_BOLD, "", 12)
+        self.set_text_color(160, 0, 0)
+        self.cell(0, 10, "DODATNA ANALIZA:", ln=True)
 
+        # Tekst terapije
+        self.set_font(FONT_NORMAL, "", 11)
+        self.set_text_color(0, 0, 0)
+        self.multi_cell(0, 6, "\n".join(chat_responses))
+        #self.multi_cell(0, 6, chat_responses)
+        self.ln(6)
+        
+    def draw_footer_section(self):
         # Saglasnost (Italic)
         self.set_font(FONT_ITALIC, "", 10)
         self.multi_cell(0, 6, "SAGLASNOST: Pacijent je upoznat sa metodom, preporucenom terapijom i istu u potpunosti prihvata.")
@@ -208,46 +222,25 @@ class HolisticReport(FPDF):
         self.set_font(FONT_ITALIC, "", 9)
         self.cell(line_end - line_start, 8, "M.P. Potpis terapeuta", align="C")
 
-def export_medical_report_pdf(report: MedicalReport, output_filename: str = "report.pdf"):
-    generate_report_pdf(
-        patient_name=report.content.patient_name,
-        report_date=report.report_date,
-        terapija_i_saveti=report.content.recommended_therapy_and_advice,
-        table_data=report.content.critical_findings,
-        output_filename=output_filename
-    )
-
-def generate_report_pdf_bytes(
-    report: MedicalReport,
-    output_filename: str = "report.pdf"
-):
+def create_report_pdf(report: MedicalReport) -> HolisticReport:
     # Initialize PDF
     pdf = HolisticReport()
     pdf.draw_header()
     pdf.draw_patient_info(report.content.patient_name, report.report_date)
     pdf.draw_table(report.content.critical_findings)
-    pdf.draw_footer_section(report.content.recommended_therapy_and_advice)
+    pdf.draw_recommended_therapy_section(report.content.recommended_therapy_and_advice)
+    pdf.draw_chat_responses(report.chat_responses)
+    pdf.draw_footer_section()
+    return pdf
 
+def generate_report_pdf_bytes(report: MedicalReport) -> bytes:
+    pdf = create_report_pdf(report)
     data = pdf.buffer
     logger.info(f"Report generated (bytes): {len(data)}")
     return data
 
-
-def generate_report_pdf(
-    patient_name: str = "NEPOZNATO",
-    report_date: str = "NEPOZNATO",
-    terapija_i_saveti: str = "NEPOZNATO",
-    table_data: list[MedicalCriticalFindingModel] | None = [],
-    output_filename: str = "report.pdf"
-):
-    # Initialize PDF
-    pdf = HolisticReport()
-    pdf.draw_header()
-    pdf.draw_patient_info(patient_name, report_date)
-    pdf.draw_table(table_data)
-    pdf.draw_footer_section(terapija_i_saveti)
-
-    # Output
+def generate_report_pdf_at_filepath(report: MedicalReport, output_filename: str = "report.pdf"):
+    pdf = create_report_pdf(report)
     pdf.output(output_filename)
     logger.info(f"Report generated: {output_filename}")
 
@@ -272,10 +265,10 @@ if __name__ == "__main__":
 
     output_path = os.path.join('.', f"sample_output_report_{datetime.now().strftime("%Y%m%d_%H-%M")}.pdf")
 
-    generate_report_pdf(
-        patient_name="DRAGAN STAMENKOVIĆ",
+    generate_report_pdf_at_filepath(MedicalReport(
+        patient_name="DRAGAN STAMENOVIĆ",
         report_date="12.02.2026",
         terapija_i_saveti="Nastaviti sa biljnim kapima po dogovoru. Kontrola za 3 nedelje.",
-        table_data=data_input,
-        output_filename="report.pdf"
-    )
+        critical_findings=data_input
+    ), output_filename=output_path)
+       

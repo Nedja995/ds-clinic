@@ -103,7 +103,7 @@ def main():
     # input_documents_parts = [api_claude_utils.load_document_from_file(fp) for fp in input_files]
     
     # # Same downstream call:
-    # report = claude_client.initial_analysis_report_from_chat_stream(input_documents_parts, "".join(config.AI_TASK_DESCRIPTION))
+    # report = claude_client.initial_analysis_report_from_chat_stream(input_documents_parts, config.AI_INITIAL_TASK_DESCRIPTION)
     # logger.info(report)
 
 

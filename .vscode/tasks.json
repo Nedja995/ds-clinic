@@ -35,6 +35,33 @@
             "problemMatcher": []
         },
         {
+            "label": "Build Windows Executable (PyInstaller)",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "-m",
+                "PyInstaller",
+                "--name",
+                "'Holisticki Centar Dar Prirode - Izvestaji'",
+                "--onedir",
+                "--console",
+                "--clean",
+                "--noconfirm",
+                "--paths",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/dsclinic_gui/dsclinic_gui_app.py"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Remove pycache folders (Unix)",
             "type": "shell",
             "command": "find . -name '__pycache__' -type d -exec rm -rf {} +",

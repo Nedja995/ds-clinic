@@ -78,8 +78,8 @@ class MedicalReportView(ttk.Frame):
         self.btn_analyze = self._tooolbar_button(self.top_frame, textvariable=self.view_model.var_btn_analyze_text)
         self.btn_analyze.config(command=self.view_model.toggle_analysis)
 
-        self.btn_submit = self._tooolbar_button(self.top_frame, text="Export")
-        self.btn_submit.config(command=self._handle_export_click)
+        self.btn_export = self._tooolbar_button(self.top_frame, text="Export")
+        self.btn_export.config(command=self._handle_export_click)
 
         self.btn_full_report = self._tooolbar_button(self.top_frame, text="Details", state="disabled")
         self.btn_settings    = self._tooolbar_button(self.top_frame, text="Settings", side="right", command=lambda: open_settings(self.master))
@@ -240,7 +240,7 @@ class MedicalReportView(ttk.Frame):
     # Nalazi rows
     # ─────────────────────────────────────────────────────────────────────────
 
-    def _render_finding_row(self, index: int, finding: MedicalCriticalFindingModel):
+    def _render_finding_row(self, index: int, finding: MedicalCriticalFindingModel, is_enabled=True):
         """Renders a single row based on VM data."""
         logger.debug(f"Rendering finding row {index}: {finding.parametar_and_value}")
         self._row_parity += 1
@@ -262,6 +262,7 @@ class MedicalReportView(ttk.Frame):
 
         btn_ukloni = ttk.Button(
             row_frame, text="✕", style="Danger.TButton",
+            state="normal" if is_enabled else "disabled",
             command=lambda i=index: [self.update_viewmodel_from_view(), self.view_model.remove_finding(i), self.update_view_from_viewmodel()]
         )
         btn_ukloni.place(relx=0.918, rely=0.15, relwidth=0.074, relheight=0.70)
@@ -271,6 +272,21 @@ class MedicalReportView(ttk.Frame):
             "parametar":  ent_p,
             "misljenje":  ent_m,
         })
+
+    def set_all_entries_state(self, state: str):
+        self.ent_ime.config(state=state)
+        self.ent_datum.config(state=state)
+        self.txt_terapija.config(state=state)
+        self.btn_dodaj_nalaz.config(state=state)
+        self.btn_analyze.config(state=state)
+        self.btn_export.config(state=state)
+
+        for widgets in self.critical_finding_widgets:
+            widgets["parametar"].config(state=state)
+            widgets["misljenje"].config(state=state)
+            widgets["frame"].children.get("!button", tk.Button()).config(state=state) # Ukloni button
+            
+
 
     # ─────────────────────────────────────────────────────────────────────────
     # MVVM Bindings
@@ -298,6 +314,10 @@ class MedicalReportView(ttk.Frame):
         """Updates complex widgets based on current VM state."""
         
         logger.debug("Updating View from ViewModel...")
+        
+        #
+        is_analyzing = self.view_model.var_is_analyzing.get()
+        
         # Therapy Text
         self.txt_terapija.delete("1.0", tk.END)
         self.txt_terapija.insert("1.0", self.view_model.therapy_text_content)
@@ -310,4 +330,6 @@ class MedicalReportView(ttk.Frame):
         
         # Rebuild
         for i, finding in enumerate(self.view_model.findings):
-            self._render_finding_row(i, finding)
+            self._render_finding_row(i, finding, not is_analyzing)
+            
+        self.set_all_entries_state("disabled" if is_analyzing else "normal")

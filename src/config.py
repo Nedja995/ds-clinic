@@ -69,7 +69,7 @@ AI_TASK_KEY: str = json_config.get("ai_initial_task_key", "")
 AI_TASK_DESCRIPTIONS: dict[str, dict[str, list[str]]] = json_config.get("ai_task_descriptions", {})
 # Initial Task Description
 AI_TASK_DESCRIPTION: dict[str, str] = AI_TASK_DESCRIPTIONS.get(AI_TASK_KEY, {})
-AI_TASK_DESCRIPTION: list[str] = AI_TASK_DESCRIPTION.get("description", "")
+AI_TASK_DESCRIPTION: str = "".join(AI_TASK_DESCRIPTION.get("description", []))
 
 # Supported Models (Gemini)
 AI_SUPPORTED_MODELS: dict[str, str] = json_config.get("ai_supported_models", {})
@@ -93,9 +93,13 @@ AI_THINKING_LEVEL: str = AI_MODEL_CONFIG.get("thinking_level", "default")
 # System instructions
 AI_SYSTEM_INSTRUCTIONS: list[str] = json_config.get("ai_system_instructions", [])
 
-AI_INITIAL_TASK_DESCRIPTION: list[str] = json_config.get("ai_initial_task_description", [
-    "Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. Provide accurate and concise information. If you dont know the answer, state that you dont know. Always answer in Serbian."
-])
+AI_INITIAL_TASK_DESCRIPTION: str = "".join(json_config.get("ai_initial_task_description", [
+    "Analyze given medical documents like labaratory results, holistic results and other medical reports.",
+    "and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. ",
+    "Provide accurate and concise information. ",
+    "If you don't know the answer, state that you don't know. ",
+    "Always answer in Serbian."
+]))
 
 # Supported
 AI_SUPPORTED_INPUT_FILETYPES: dict[str, str] = json_config.get("ai_supported_input_filetypes", {})
@@ -143,12 +147,6 @@ def save_config():
     Save the current configuration back to config.json
     """
     # global json_config
-    # json_config["app"] = {
-    #     "log_level": APP_LOG_LEVEL,
-    #     "debug_export_response": APP_DEBUG_EXPORT_RESPONSE,
-    #     "debug_response": APP_DEBUG_RESPONSE
-    # }
-    
     AI_RESPONSE_DESCRIPTION["ai_response_recommended_therapy_and_advice"] = AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE
     AI_RESPONSE_DESCRIPTION["ai_response_critical_findings"] = AI_RESPONSE_CRITICAL_FINDINGS
     AI_RESPONSE_DESCRIPTION["ai_response_critical_finding_experts_opinion"] = AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION
@@ -158,7 +156,7 @@ def save_config():
     json_config["ai_initial_model_config"]["name"] = AI_MODEL_NAME
     json_config["ai_initial_model_config"]["temperature"] = AI_MODEL_TEMPERATURE
     json_config["ai_initial_model_config"]["top_p"] = AI_MODEL_TOP_P
-    json_config["ai_initial_task_description"] = AI_TASK_DESCRIPTION
+    json_config["ai_initial_task_description"] = AI_INITIAL_TASK_DESCRIPTION
     json_config["ai_system_instructions"] = AI_SYSTEM_INSTRUCTIONS
 
     with open(json_config_path, 'w', encoding='utf-8') as f:

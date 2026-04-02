@@ -56,7 +56,7 @@ class DSClinic:
         # Run Analyzis
         report_content: MedicalReportModel = self.gemini_client.initial_analysis_report_from_chat_stream(
             documents=input_documents_parts,
-            question="".join(config.AI_INITIAL_TASK_DESCRIPTION)
+            question=config.AI_INITIAL_TASK_DESCRIPTION
         )
         
         self.report = MedicalReport(content=report_content)
@@ -82,7 +82,7 @@ def write_report_pdf(report: MedicalReport, output_dir: str | None = None):
     if output_dir is None: output_dir = get_output_data_dirpath()
     output_path = make_output_filepath(report.content.patient_name, "pdf", output_dir)
 
-    pdf_maker.export_medical_report_pdf(
+    pdf_maker.generate_report_pdf_at_filepath(
         report,
         output_filename=output_path
     )
