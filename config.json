@@ -5,7 +5,7 @@
         "debug_response": false
     },
     "ai_system_instructions": [
-        "You are an expert medical data analyst using medical data (tradicional, holistic, western, eastern, etc..) from input documents."
+        "You are an expert medical data analyst using medical data (tradicional, holistic, western, eastern, etc..) from input documents. In reponses dont use more then one character asterix \"*\" in row"
     ],
     "ai_initial_model_config": {
         "name": "gemini-3.1-pro-preview",
