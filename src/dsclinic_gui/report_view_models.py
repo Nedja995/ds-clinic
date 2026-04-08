@@ -5,8 +5,8 @@ import time
 import tkinter as tk
 import os
 import datetime
-from typing import Optional, Any
-from tkinter import filedialog, messagebox
+from typing import Optional, Any, Callable
+from dataclasses import dataclass
 
 from dsclinic_gui.settings.settings_view_model import SettingsViewModel
 from npy.core.logger import setup_logger
@@ -27,13 +27,39 @@ from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
 logger = setup_logger()
 
 
+# ── EventEmitter ──────────────────────────────────────────────────────────────
+
+class EventEmitter:
+    """Pure-Python, Tkinter-free observer. Holds N callables and fires them all."""
+    def __init__(self) -> None:
+        self._listeners: list[Callable] = []
+
+    def subscribe(self, fn: Callable) -> None:
+        self._listeners.append(fn)
+
+    def emit(self, *args: Any, **kwargs: Any) -> None:
+        for fn in self._listeners:
+            fn(*args, **kwargs)
+
+
+# ── ExportRequest ─────────────────────────────────────────────────────────────
+
+@dataclass
+class ExportRequest:
+    """Payload emitted by the ViewModel when a PDF export is ready to proceed."""
+    default_filename: str
+    default_dir: str
+
+
 class DSClinicViewModel:
+
     def __init__(self,
                  schedule_poll_fn: callable[[int, callable], Any], 
                  model: Optional[MedicalReport] = None
                  ) -> None:
         # Assign arguments to local variables
         self.schedule_poll_fn = schedule_poll_fn
+        # Make default / empty model if not provided
         self._model: MedicalReport = model or MedicalReport()
 
         # --- Report data ---
@@ -58,6 +84,10 @@ class DSClinicViewModel:
         self._output_queue: queue.Queue[ProgressEvent] = queue.Queue()
         self._cancel_event: threading.Event = threading.Event()
         self._worker_thread: threading.Thread | None = None
+        
+        # Events (View subscribes to these)
+        self.on_export_requested: EventEmitter = EventEmitter()  # emits ExportRequest
+        self.on_export_succeeded: EventEmitter = EventEmitter()  # emits output_filepath: str
         
         # Main DSClinic App Logic Handler
         self.dsclinicapp = DSClinic(model_name=config.AI_MODEL_NAME)
@@ -227,44 +257,40 @@ class DSClinicViewModel:
                 return False
  
             case _:
+                logger.warning(f"Received ProgressEvent with unknown status: {progress_event.status}")
                 return True
             
-    def save_report(self):
-        """Handles PDF Export logic."""
-        # Note: The View must have already synced its ScrolledText data to VM before calling this.
-        ls = self._model.content.critical_findings
-        # 1. Sync Observables to Model
+    def prepare_export(self) -> None:
+        """
+        Step 1 of the export flow (ViewModel side).
+        Syncs observables → model, builds a suggested filename + output dir,
+        then fires on_export_requested so the View can show the file dialog.
+        The ViewModel never touches filedialog or messagebox.
+        """
         self._update_model_from_viewmodel()
 
-        # 2. Export
         patient_slug = self.var_patient_name.get().replace(".", " ").replace("/", "")
         timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
         default_name = f"NALAZ_{patient_slug}_{timestamp_str}.pdf"
         output_dir = utils.get_output_data_dirpath()
 
-        output_filepath = filedialog.asksaveasfilename(
-            defaultextension=".pdf",
-            filetypes=[("PDF files", "*.pdf")],
-            initialdir=output_dir,
-            initialfile=default_name
-        )
+        self.on_export_requested.emit(ExportRequest(
+            default_filename=default_name,
+            default_dir=output_dir,
+        ))
 
-        if not output_filepath:
-            return
-
+    def execute_export(self, output_filepath: str) -> None:
+        """
+        Step 2 of the export flow (ViewModel side).
+        Called by the View after the user confirms a filepath in the dialog.
+        Performs the actual PDF generation and updates status observables.
+        Raises on failure so the View can show an appropriate error dialog.
+        """
         self.var_status_title.set("Exporting")
         self.var_status_detail.set(f"Generating PDF at {output_filepath}...")
 
-        try:
-            generate_report_pdf_at_filepath(self._model, output_filename=output_filepath)
-            self.var_status_title.set("Saved")
-            self.var_status_detail.set("PDF Saved Successfully")
+        generate_report_pdf_at_filepath(self._model, output_filename=output_filepath)
 
-            if messagebox.askyesno("Success", "Report generated. Open file?"):
-                fileutils.open_file_from_filepath(output_filepath)
-
-        except Exception as e:
-            logger.error(e)
-            self.var_status_title.set("Error")
-            self.var_status_detail.set("Failed to generate PDF")
-            messagebox.showerror("Error", str(e))
+        self.var_status_title.set("Saved")
+        self.var_status_detail.set("PDF Saved Successfully")
+        self.on_export_succeeded.emit(output_filepath)

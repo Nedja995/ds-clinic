@@ -9,7 +9,7 @@ Jedini izuzeci su:
 """
 
 import tkinter as tk
-from tkinter import ttk, scrolledtext
+from tkinter import ttk, scrolledtext, filedialog, messagebox
 
 from npy.core.logger import setup_logger
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
@@ -49,6 +49,11 @@ class MedicalReportView(ttk.Frame):
         
         self.view_model.var_status_title.trace_add("write", lambda *args: self.update_view_from_viewmodel())
         self.view_model.var_is_analyzing.trace_add("write", lambda *args: self.update_view_from_viewmodel())
+
+        # Subscribe to ViewModel export events
+        self.view_model.on_export_requested.subscribe(self._on_export_requested)
+        self.view_model.on_export_succeeded.subscribe(self._on_export_succeeded)
+
         # Initial Population
         self.update_view_from_viewmodel()
         
@@ -293,10 +298,37 @@ class MedicalReportView(ttk.Frame):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _handle_export_click(self):
-        # 1. Sync Text widgets -> VM
+        """Export button handler. Syncs Text widgets → VM, then asks the VM to prepare."""
         self.update_viewmodel_from_view()
-        # 2. Call VM Export
-        self.view_model.save_report()
+        self.view_model.prepare_export()   # VM will emit on_export_requested
+
+    def _on_export_requested(self, request) -> None:
+        """
+        View-owned dialog logic. Receives an ExportRequest from the ViewModel,
+        shows the file dialog, then calls VM.execute_export() with the chosen path.
+        """
+        output_filepath = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialdir=request.default_dir,
+            initialfile=request.default_filename,
+        )
+        if not output_filepath:
+            return  # user cancelled — nothing to do
+
+        try:
+            self.view_model.execute_export(output_filepath)
+        except Exception as e:
+            logger.error(e)
+            self.view_model.var_status_title.set("Error")
+            self.view_model.var_status_detail.set("Failed to generate PDF: ")
+            messagebox.showerror("Error", str(e))
+
+    def _on_export_succeeded(self, output_filepath: str) -> None:
+        """Called by the ViewModel after a successful export. Shows the open-file prompt."""
+        from npy.core import fileutils
+        if messagebox.askyesno("Success", "Report generated. Open file?"):
+            fileutils.open_file_from_filepath(output_filepath)
 
     def update_viewmodel_from_view(self):
         """Extracts data from complex widgets (ScrolledText) and updates the VM."""
