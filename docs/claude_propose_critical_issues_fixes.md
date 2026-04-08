@@ -39,7 +39,6 @@ self.view_model.var_is_analyzing.trace_add("write", lambda *args: self.update_vi
 
 The findings list should have its own dedicated observable or `EventEmitter` that fires only when findings data actually changes.
 
-
 ---
 
 ### 10. `RootContainerView` in `app_container.py` is dead code
