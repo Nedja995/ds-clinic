@@ -26,6 +26,7 @@ class DSClinicAppGUI(tk.Tk):
         super().__init__()
         # Initialize App Window
         self._configure_app()
+        # Styles
         build_styles()
         
         # Data

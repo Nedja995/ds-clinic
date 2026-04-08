@@ -16,6 +16,13 @@ class ChatSessionView(ttk.Frame):
         self._build_ui()
         
         self.view_model.var_response.trace_add("write", lambda *args: self.add_message(self.view_model.var_response.get(), is_user=False))
+        self.view_model.var_is_analyzing.trace_add("write", lambda *args: self._update_ui_state())
+        self._update_ui_state()
+
+    def _update_ui_state(self) -> None:
+        state = "disabled" if self.view_model.var_is_analyzing.get() else "normal"
+        self.btn_send.config(state=state)
+        self.ent_message.config(state=state)
 
     def _build_ui(self) -> None:
         # Header (Matching report_view card strip style)
@@ -31,8 +38,8 @@ class ChatSessionView(ttk.Frame):
         self.ent_message = ttk.Entry(input_pane, textvariable=self.view_model.var_initial_question)
         self.ent_message.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=2)
 
-        btn_send = ttk.Button(input_pane, text="Pošalji", style="Accent.TButton", command=lambda: [self.add_message(self.view_model.var_initial_question.get()), self.view_model.followup_question_submit(), self.view_model.var_initial_question.set("")])
-        btn_send.pack(side="right")
+        self.btn_send = ttk.Button(input_pane, text="Pošalji", style="Accent.TButton", command=lambda: [self.add_message(self.view_model.var_initial_question.get()), self.view_model.followup_question_submit()])
+        self.btn_send.pack(side="right")
 
         # Message History (Canvas with vertical scrollbar)
         self._build_history_canvas()
@@ -73,6 +80,9 @@ class ChatSessionView(ttk.Frame):
     def add_message(self, text: str, is_user: bool = True) -> None:
         """Renders a chat bubble aligned to the correct side."""
         logger.debug(f"Adding message: {text}")
+        if not text or len(text) == 0:
+            return
+
         if not is_user:
             self.view_model._model.chat_responses.append(text) # Store bot responses
             

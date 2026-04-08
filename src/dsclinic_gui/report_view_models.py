@@ -171,10 +171,6 @@ class DSClinicViewModel:
             return
             
         logger.debug(f"Follow-up question submitted: {question}")
-        self.var_initial_question.set("")
-        #answer = self.dsclinicapp.ask_followup_question(question)
-        self.var_response.set("Loading...")
-
         
         # Clear input and lock UI for processing
         self.var_initial_question.set("")
