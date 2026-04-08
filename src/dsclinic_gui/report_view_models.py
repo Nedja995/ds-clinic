@@ -49,14 +49,16 @@ class DSClinicViewModel:
         self.schedule_poll_fn = schedule_poll_fn
         # Make default / empty model if not provided
         self._model: MedicalReport = model or MedicalReport()
-
-        # --- Report data ---
-        self.var_patient_name = tk.StringVar(value=self._model.content.patient_name)
-        self.var_report_date = tk.StringVar(value=self._model.report_date) 
+        
          # Handled manually for Text widgets
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice 
         self.findings: list[MedicalCriticalFindingModel] = self._model.content.critical_findings
 
+        # --- Observable data ---
+        # Report
+        self.var_patient_name = tk.StringVar(value=self._model.content.patient_name)
+        self.var_report_date = tk.StringVar(value=self._model.report_date)
+        
         # Chat session (TODO: get rid of these)
         self.var_initial_question = tk.StringVar(value="")
         self.var_response = tk.StringVar(value="")
@@ -251,7 +253,8 @@ class DSClinicViewModel:
                     self.var_is_analyzing.set(False)
                     self.var_btn_analyze_text.set("Analyze")
 
-                    self.on_vm_data_changed.emit()  # Notify the view to refresh based on new data
+                    # Notify the view to refresh based on new data
+                    self.on_vm_data_changed.emit() 
                 elif isinstance(progress_event.result, str):
                     # This is a follow-up answer from the chat session
                     self.var_response.set(progress_event.result)

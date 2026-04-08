@@ -4,21 +4,6 @@
 
 ## MVVM Violations in `dsclinic_gui` and `settings`
 
-
-### 3. `followup_question_submit` is a synchronous blocking call on the main thread
-
-**File:** `report_view_models.py`
-
-```python
-def followup_question_submit(self):
-    answer = self.dsclinicapp.ask_followup_question(question)  # blocks!
-    self.var_response.set(answer)
-```
-
-This freezes the entire Tkinter event loop while the Gemini API call is in flight. Every pattern established for `_start_analysis` (thread + queue + `ProgressEvent`) is completely skipped here. A chat reply call can take 2–10 seconds; the window will be unresponsive for all of it.
-
----
-
 ---
 
 ### 5. `SettingsWindow` creates its own ViewModel — no dependency injection
@@ -54,53 +39,6 @@ self.view_model.var_is_analyzing.trace_add("write", lambda *args: self.update_vi
 
 The findings list should have its own dedicated observable or `EventEmitter` that fires only when findings data actually changes.
 
----
-
-### 7. `_row_parity` is never reset before a row rebuild
-
-**File:** `report_view.py`
-
-```python
-def update_view_from_viewmodel(self):
-    for w in self.critical_finding_widgets:
-        w["frame"].destroy()
-    self.critical_finding_widgets.clear()
-    # _row_parity is NOT reset here
-    for i, finding in enumerate(self.view_model.findings):
-        self._render_finding_row(i, finding)   # _row_parity += 1 inside
-```
-
-`_row_parity` accumulates across every rebuild. After two rebuilds of 3 rows each, it reaches 6 — so the alternating row color pattern is wrong from the second rebuild onward. Fix: `self._row_parity = 0` before the loop.
-
----
-
-### 8. `therapy_text_content` is a plain string attribute — no observable, no EventEmitter
-
-**File:** `report_view_models.py`
-
-```python
-self.therapy_text_content = self._model.content.recommended_therapy_and_advice
-```
-
-This is a plain `str` attribute. There's no `tk.StringVar` and no `EventEmitter` on it. The View must manually call `update_viewmodel_from_view()` before every operation that needs it up-to-date, and manually call `update_view_from_viewmodel()` to push it back. If either call is missed — for example before `save_report()` is triggered via keyboard shortcut rather than the export button — the therapy content silently lags behind what the user typed.
-
-The correct approach is either a `tk.StringVar` (with the `ScrolledText ↔ StringVar` bidirectional sync pattern already demonstrated in `settings_view.py` via `_sync_text_widget`) or an `EventEmitter` that fires on focus-out.
-
----
-
-### 9. `_on_save` in `SettingsWindow` is a no-op — ViewModel commands are stubs
-
-**File:** `settings/settings_view.py`
-
-```python
-def _on_save(self) -> None:
-    if not self.view_model.validate_email():
-        return
-    # TODO: persist settings to JSON
-    self.destroy()
-```
-
-Settings are validated but never written back to `config` or to `settings.ini`. The ViewModel's own command stubs (`on_send_logs`, `on_show_logs_folder`) are also `pass`. The ViewModel's command layer exists in name only, breaking the contract that the ViewModel owns all application logic.
 
 ---
 
@@ -129,7 +67,5 @@ Settings are validated but never written back to `config` or to `settings.ini`. 
 
 ### Follow-up Questions
 
-- How should `save_report()` be refactored so the ViewModel emits an event and the View owns the `filedialog`/`messagebox` interactions?
-- What is the cleanest fix to eliminate the double polling problem — should the `_setup_dispatcher` in `DSClinicAppGUI` be removed entirely, or should the ViewModel stop self-scheduling?
 - How should `followup_question_submit` be refactored to use the existing `thread + queue + ProgressEvent` pattern, and should chat history state live in the same ViewModel or a dedicated `ChatSessionViewModel`?
 - How should `SettingsViewModel` be constructed and shared so that saving settings actually updates the live `DSClinicViewModel`'s `dsclinicapp` instance?
