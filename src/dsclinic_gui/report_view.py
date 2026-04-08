@@ -45,7 +45,8 @@ class MedicalReportView(ttk.Frame):
         self._setup_ui()
         
         # Event Binding (MVVM)
-        self.master.bind("<<VM_DataChanged>>", lambda e: self.update_view_from_viewmodel())
+        #self.master.bind("<<VM_DataChanged>>", lambda e: self.update_view_from_viewmodel())
+        self.view_model.on_vm_data_changed.subscribe(self.update_view_from_viewmodel)
         
         self.view_model.var_status_title.trace_add("write", lambda *args: self.update_view_from_viewmodel())
         self.view_model.var_is_analyzing.trace_add("write", lambda *args: self.update_view_from_viewmodel())
@@ -308,11 +309,17 @@ class MedicalReportView(ttk.Frame):
     def update_view_from_viewmodel(self):
         """Updates complex widgets based on current VM state."""
         
-        logger.debug("Updating View from ViewModel...")
+        logger.debug(f"Updating View from ViewModel={self.view_model}...")
         
-        #
+        # Reset parity for row colors
+        self._row_parity = 0
+
         is_analyzing = self.view_model.var_is_analyzing.get()
         
+        # ScrolledText (tk.Text) ignores delete/insert if state is 'disabled'.
+        # We must temporarily enable it to update content.
+        self.txt_terapija.config(state="normal")
+
         # Therapy Text
         self.txt_terapija.delete("1.0", tk.END)
         self.txt_terapija.insert("1.0", self.view_model.therapy_text_content)

@@ -225,12 +225,28 @@ class HolisticReport(FPDF):
 def create_report_pdf(report: MedicalReport) -> HolisticReport:
     # Initialize PDF
     pdf = HolisticReport()
+    
+    # Draw Report Sections
     pdf.draw_header()
+    
+    # Patient Information
     pdf.draw_patient_info(report.content.patient_name, report.report_date)
-    pdf.draw_table(report.content.critical_findings)
-    pdf.draw_recommended_therapy_section(report.content.recommended_therapy_and_advice)
-    pdf.draw_chat_responses(report.chat_responses)
+    
+    # Critical Findings Table
+    if len(report.content.critical_findings) > 0:
+        pdf.draw_table(report.content.critical_findings)
+    
+    # Recommended Therapy
+    if len(report.content.recommended_therapy_and_advice) > 0:
+        pdf.draw_recommended_therapy_section(report.content.recommended_therapy_and_advice)
+        
+    # Chat Responses (if any)
+    if len(report.chat_responses) > 0:
+        pdf.draw_chat_responses(report.chat_responses)
+        
+    # Footer
     pdf.draw_footer_section()
+    
     return pdf
 
 def generate_report_pdf_bytes(report: MedicalReport) -> bytes:

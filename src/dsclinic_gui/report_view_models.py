@@ -74,6 +74,7 @@ class DSClinicViewModel:
         self._worker_thread: threading.Thread | None = None
         
         # Events (View subscribes to these)
+        self.on_vm_data_changed: EventEmitter = EventEmitter()  # emits no payload, just a signal that "data changed, update view"
         self.on_show_error_message: EventEmitter = EventEmitter() # emits ErrorMessageEvent
         self.on_export_requested: EventEmitter = EventEmitter()  # emits ExportRequest
         self.on_export_succeeded: EventEmitter = EventEmitter()  # emits output_filepath: str
@@ -85,10 +86,11 @@ class DSClinicViewModel:
     def _update_viewmodel_from_model(self):
         logger.debug("Updating ViewModel from Model...")
         # Sync Model to Observables
-        self.var_patient_name.set(self._model.content.patient_name)
-        self.var_report_date.set(self._model.report_date)
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
         self.findings = self._model.content.critical_findings
+        self.var_patient_name.set(self._model.content.patient_name)
+        self.var_report_date.set(self._model.report_date)
+
         #self.app.event_generate("<<VM_DataChanged>>")
         
     def _update_model_from_viewmodel(self):
@@ -217,8 +219,14 @@ class DSClinicViewModel:
                     # Update the ViewModel's model with the new report
                     self._model = progress_event.result
                     self._update_viewmodel_from_model()
+                    
+                    # Update status vars BEFORE emitting data change to ensure View sees the unlocked state
                     self.var_progress_value.set(100)
                     self.var_status_detail.set("Analysis completed successfully.")
+                    self.var_is_analyzing.set(False)
+                    self.var_btn_analyze_text.set("Analyze")
+
+                    self.on_vm_data_changed.emit()  # Notify the view to refresh based on new data
                 else:
                     # This shouldn't happen - if the task finished successfully, we expect a MedicalReport result. Log an error if not.
                     error_msg = f"Unexpected result type in ProgressEvent: {type(progress_event.result)}. Expected MedicalReport. Details: {progress_event.result}"
@@ -226,11 +234,9 @@ class DSClinicViewModel:
                     self.show_error_message("Error", error_msg)
                     self.var_status_title.set("Finished")
                     self.var_progress_value.set(50)
-                    self.var_status_detail.set(f"Analysis Failed with error: 'Unexpected result type. Results={progress_event.result}'.")     
-                # Reset ViewModel variables
-                self.var_is_analyzing.set(False)
-                self.var_btn_analyze_text.set("Analyze")
-                #self._update_viewmodel_from_model()
+                    self.var_status_detail.set(f"Analysis Failed with error: 'Unexpected result type. Results={progress_event.result}'.")
+                    self.var_is_analyzing.set(False)
+                    self.var_btn_analyze_text.set("Analyze")
                 #
                 return False
             case TaskStatus.CANCELED:
@@ -262,16 +268,17 @@ class DSClinicViewModel:
                 #
                 return True
             
+    # Logic: View Updates
+    
+    def update_view_from_viewmodel(self):
+        logger.debug("Updating View from ViewModel...")
+        self.on_vm_data_changed.emit()
+            
     # Logic: Error Handling
             
     def show_error_message(self, title: str, message: str) -> None:
         logger.debug(f"Emitting error message: {title} - {message}")
         self.on_show_error_message.emit(ErrorMessageEvent(title=title, message=message))
-            
-    def close_error_message(self) -> None:
-        logger.debug("Emitting close error message event.")
-        self.on_close_error_message.emit()
-        
         
     # Logic: Export        
     
