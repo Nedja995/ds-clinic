@@ -18,10 +18,10 @@ from dsclinic_gui.styles import *
 from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.chat_session_view import ChatSessionView
 from dsclinic_gui.settings.window import open_settings
+from npy.core.event_emitter import ErrorMessageEvent
+from dsclinic_gui.report_view_models import ExportRequest
 
 logger = setup_logger()
-
-
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,6 +51,7 @@ class MedicalReportView(ttk.Frame):
         self.view_model.var_is_analyzing.trace_add("write", lambda *args: self.update_view_from_viewmodel())
 
         # Subscribe to ViewModel export events
+        self.view_model.on_show_error_message.subscribe(self._on_show_error_message)
         self.view_model.on_export_requested.subscribe(self._on_export_requested)
         self.view_model.on_export_succeeded.subscribe(self._on_export_succeeded)
 
@@ -291,7 +292,42 @@ class MedicalReportView(ttk.Frame):
             widgets["misljenje"].config(state=state)
             widgets["frame"].children.get("!button", tk.Button()).config(state=state) # Ukloni button
             
+    def update_viewmodel_from_view(self):
+        """Extracts data from complex widgets (ScrolledText) and updates the VM."""
+        logger.debug("Updating ViewModel from View...")
+        # Therapy Text
+        self.view_model.therapy_text_content = self.txt_terapija.get("1.0", tk.END).strip()
+        
+        # Findings List
+        for i, widgets in enumerate(self.critical_finding_widgets):
+            if i < len(self.view_model.findings):
+                self.view_model.findings[i].expertsko_misljenje = widgets["misljenje"].get("1.0", tk.END).strip()
+                self.view_model.findings[i].parametar_and_value = widgets["parametar"].get("1.0", tk.END).strip()
 
+
+    def update_view_from_viewmodel(self):
+        """Updates complex widgets based on current VM state."""
+        
+        logger.debug("Updating View from ViewModel...")
+        
+        #
+        is_analyzing = self.view_model.var_is_analyzing.get()
+        
+        # Therapy Text
+        self.txt_terapija.delete("1.0", tk.END)
+        self.txt_terapija.insert("1.0", self.view_model.therapy_text_content)
+        
+        # Findings Rows (Rebuild completely)
+        # Cleanup old
+        for w in self.critical_finding_widgets:
+            w["frame"].destroy()
+        self.critical_finding_widgets.clear()
+        
+        # Rebuild
+        for i, finding in enumerate(self.view_model.findings):
+            self._render_finding_row(i, finding, not is_analyzing)
+            
+        self.set_all_entries_state("disabled" if is_analyzing else "normal")
 
     # ─────────────────────────────────────────────────────────────────────────
     # MVVM Bindings
@@ -302,7 +338,7 @@ class MedicalReportView(ttk.Frame):
         self.update_viewmodel_from_view()
         self.view_model.prepare_export()   # VM will emit on_export_requested
 
-    def _on_export_requested(self, request) -> None:
+    def _on_export_requested(self, request: ExportRequest) -> None:
         """
         View-owned dialog logic. Receives an ExportRequest from the ViewModel,
         shows the file dialog, then calls VM.execute_export() with the chosen path.
@@ -330,38 +366,6 @@ class MedicalReportView(ttk.Frame):
         if messagebox.askyesno("Success", "Report generated. Open file?"):
             fileutils.open_file_from_filepath(output_filepath)
 
-    def update_viewmodel_from_view(self):
-        """Extracts data from complex widgets (ScrolledText) and updates the VM."""
-        logger.debug("Updating ViewModel from View...")
-        # Therapy Text
-        self.view_model.therapy_text_content = self.txt_terapija.get("1.0", tk.END).strip()
-        
-        # Findings List
-        for i, widgets in enumerate(self.critical_finding_widgets):
-            if i < len(self.view_model.findings):
-                self.view_model.findings[i].expertsko_misljenje = widgets["misljenje"].get("1.0", tk.END).strip()
-                self.view_model.findings[i].parametar_and_value = widgets["parametar"].get("1.0", tk.END).strip()
-
-    def update_view_from_viewmodel(self):
-        """Updates complex widgets based on current VM state."""
-        
-        logger.debug("Updating View from ViewModel...")
-        
-        #
-        is_analyzing = self.view_model.var_is_analyzing.get()
-        
-        # Therapy Text
-        self.txt_terapija.delete("1.0", tk.END)
-        self.txt_terapija.insert("1.0", self.view_model.therapy_text_content)
-        
-        # Findings Rows (Rebuild completely)
-        # Cleanup old
-        for w in self.critical_finding_widgets:
-            w["frame"].destroy()
-        self.critical_finding_widgets.clear()
-        
-        # Rebuild
-        for i, finding in enumerate(self.view_model.findings):
-            self._render_finding_row(i, finding, not is_analyzing)
-            
-        self.set_all_entries_state("disabled" if is_analyzing else "normal")
+    def _on_show_error_message(self, error_event: ErrorMessageEvent) -> None:
+        """Called by the ViewModel when an error message needs to be displayed."""
+        messagebox.showerror(error_event.title, error_event.message)

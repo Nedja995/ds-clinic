@@ -16,6 +16,7 @@ from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingMode
 # from dsclinic import get_initial_analysis_report, ask_followup_question
 from dsclinic import DSClinic
 from pdf_maker import generate_report_pdf_at_filepath
+from npy.core.event_emitter import EventEmitter, ErrorMessageEvent
 from models import TaskStatus, ProgressEvent
 #
 from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
@@ -27,28 +28,15 @@ from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
 logger = setup_logger()
 
 
-# ── EventEmitter ──────────────────────────────────────────────────────────────
-
-class EventEmitter:
-    """Pure-Python, Tkinter-free observer. Holds N callables and fires them all."""
-    def __init__(self) -> None:
-        self._listeners: list[Callable] = []
-
-    def subscribe(self, fn: Callable) -> None:
-        self._listeners.append(fn)
-
-    def emit(self, *args: Any, **kwargs: Any) -> None:
-        for fn in self._listeners:
-            fn(*args, **kwargs)
-
-
-# ── ExportRequest ─────────────────────────────────────────────────────────────
+# ── Events ─────────────────────────────────────────────────────────────
 
 @dataclass
 class ExportRequest:
     """Payload emitted by the ViewModel when a PDF export is ready to proceed."""
     default_filename: str
     default_dir: str
+    
+
 
 
 class DSClinicViewModel:
@@ -86,6 +74,7 @@ class DSClinicViewModel:
         self._worker_thread: threading.Thread | None = None
         
         # Events (View subscribes to these)
+        self.on_show_error_message: EventEmitter = EventEmitter() # emits ErrorMessageEvent
         self.on_export_requested: EventEmitter = EventEmitter()  # emits ExportRequest
         self.on_export_succeeded: EventEmitter = EventEmitter()  # emits output_filepath: str
         
@@ -149,6 +138,9 @@ class DSClinicViewModel:
             name="dsclinic-gemini-thread")
         
         self._worker_thread.start()
+        # Kick off the polling loop. The ViewModel owns this entirely —
+        # no external dispatcher needed.
+        self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
 
     def _reset_task_state(self) -> None:
         self._cancel_event.clear()
@@ -222,44 +214,67 @@ class DSClinicViewModel:
                 # Update Model and Notify View (by updating observables)
                 if progress_event.result and isinstance(progress_event.result, MedicalReport):
                     logger.info("Analysis completed with a MedicalReport result. Updating model and viewmodel...")
+                    # Update the ViewModel's model with the new report
                     self._model = progress_event.result
                     self._update_viewmodel_from_model()
-                    
                     self.var_progress_value.set(100)
                     self.var_status_detail.set("Analysis completed successfully.")
                 else:
-                    logger.error(f"Unexpected result type in ProgressEvent: {type(progress_event.result)}. Expected MedicalReport.")
-                    
-                # Update model variables
+                    # This shouldn't happen - if the task finished successfully, we expect a MedicalReport result. Log an error if not.
+                    error_msg = f"Unexpected result type in ProgressEvent: {type(progress_event.result)}. Expected MedicalReport. Details: {progress_event.result}"
+                    logger.error(error_msg)
+                    self.show_error_message("Error", error_msg)
+                    self.var_status_title.set("Finished")
+                    self.var_progress_value.set(50)
+                    self.var_status_detail.set(f"Analysis Failed with error: 'Unexpected result type. Results={progress_event.result}'.")     
+                # Reset ViewModel variables
                 self.var_is_analyzing.set(False)
                 self.var_btn_analyze_text.set("Analyze")
-                self.var_status_title.set("Finished")
-                self.var_progress_value.set(100)
-                self.var_status_detail.set("Analysis completed successfully.")      
                 #self._update_viewmodel_from_model()
-                
                 #
                 return False
- 
             case TaskStatus.CANCELED:
                 self.var_is_analyzing.set(False)
                 self.var_status_title.set("Cancelled")
                 self.var_status_detail.set(f"✖ " + progress_event.message)            
                 #
                 return False
- 
             case TaskStatus.FAILED:
+                # Reset ViewModel state
                 self.var_is_analyzing.set(False)
                 self.var_btn_analyze_text.set("Analyze")
+                # Set Status
+                error_msg = f"Analysis failed with error: {progress_event.result}"
+                logger.error(error_msg)
                 self.var_status_title.set("Failed")
                 self.var_status_detail.set("✖ " + progress_event.message)
+                self.on_show_error_message.emit(ErrorMessageEvent(
+                    title="Analysis Failed", 
+                    message=error_msg if error_msg else "An unknown error occurred during analysis."))
                 #            
                 return False
- 
             case _:
-                logger.warning(f"Received ProgressEvent with unknown status: {progress_event.status}")
+                error_msg = f"Received ProgressEvent with unknown status: {progress_event.status}"
+                logger.error(error_msg)
+                self.on_show_error_message.emit(ErrorMessageEvent(
+                    title="Error", 
+                    message=error_msg))
+                #
                 return True
             
+    # Logic: Error Handling
+            
+    def show_error_message(self, title: str, message: str) -> None:
+        logger.debug(f"Emitting error message: {title} - {message}")
+        self.on_show_error_message.emit(ErrorMessageEvent(title=title, message=message))
+            
+    def close_error_message(self) -> None:
+        logger.debug("Emitting close error message event.")
+        self.on_close_error_message.emit()
+        
+        
+    # Logic: Export        
+    
     def prepare_export(self) -> None:
         """
         Step 1 of the export flow (ViewModel side).

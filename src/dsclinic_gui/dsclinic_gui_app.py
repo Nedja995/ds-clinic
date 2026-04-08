@@ -7,9 +7,8 @@ from models import MedicalReport
 from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
-from dsclinic_gui.constants import   MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT, QUEUE_POLL_INTERVAL_MS
+from dsclinic_gui.constants import MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT
 
-from typing import Any
 #
 logger = setup_logger()
 
@@ -47,9 +46,6 @@ class DSClinicAppGUI(tk.Tk):
         
         self._center_window(INIT_WIDTH, INIT_HEIGHT)
         
-        # 3. Setup App-Level Dispatcher
-        self._setup_dispatcher()
-        
     def _configure_app(self):
         self.title(config.APP_NAME)
         self.minsize(MIN_WIDTH, MIN_HEIGHT)
@@ -66,32 +62,6 @@ class DSClinicAppGUI(tk.Tk):
         x = (sw - w) // 2
         y = (sh - h) // 2
         self.geometry(f"{w}x{h}+{x}+{y}")
-         
-    # ---- DISPATCHER & POLLING MECHANISM ----
-         
-    def _setup_dispatcher(self) -> None:
-        """
-        The App monitors all ViewModels. When a ViewModel is processing, 
-        the App orchestrates the Tkinter event loop to flush the queue.
-        """
-        self.view_model.var_is_analyzing.trace_add("write", self._on_processing_state_changed)
-
-    def _on_processing_state_changed(self, *args: Any) -> None:
-        """Triggered when the ViewModel signals it has started/stopped a thread."""
-        if self.view_model.var_is_analyzing.get():
-            self._poll_viewmodels()
-
-    def _poll_viewmodels(self) -> None:
-        """
-        The framework-specific polling loop.
-        Safely flushes cross-thread queues on the main UI thread.
-        """
-        # Ask ViewModel to handle its queue
-        self.view_model._poll_result_queue()
-        
-        # If it's still running, schedule the next tick
-        if self.view_model.var_is_analyzing.get():
-            self.after(QUEUE_POLL_INTERVAL_MS, self._poll_viewmodels)
 
 
 ##########################################################################################

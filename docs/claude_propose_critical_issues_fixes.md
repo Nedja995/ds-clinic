@@ -6,21 +6,6 @@
 
 ---
 
-### 1. ViewModel calls `filedialog` and `messagebox` directly — the worst offender
-
-**File:** `report_view_models.py` → `save_report()`
-
-```python
-from tkinter import filedialog, messagebox
-...
-output_filepath = filedialog.asksaveasfilename(...)
-if messagebox.askyesno("Success", "Report generated. Open file?"):
-```
-
-The ViewModel is spawning dialogs. This is a hard MVVM boundary violation — dialogs are View responsibilities. The ViewModel should emit an event (e.g., `on_save_ready.emit(default_path, report)`) and the View handles the dialog, then calls back the ViewModel with the chosen path. As it stands, `save_report()` can never be unit-tested without a live GUI.
-
----
-
 ### 2. Double polling — the ViewModel and the App both reschedule `_poll_result_queue`
 
 **Files:** `dsclinic_gui_app.py` + `report_view_models.py`
