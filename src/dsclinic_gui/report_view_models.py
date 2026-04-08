@@ -124,7 +124,14 @@ class DSClinicViewModel:
             self._start_analysis()
         else:
             self._cancel_analysis()
-
+            
+    def _reset_task_state(self) -> None:
+        self._cancel_event.clear()
+        self._output_queue = queue.Queue()
+        self.var_is_analyzing.set(False)
+        self.var_status_title.set("Cancelling")
+        self.var_status_detail.set("Cancelling analysis...")
+        
     def _start_analysis(self):
         self.var_is_analyzing.set(True)
         self.var_btn_analyze_text.set("Cancel")
@@ -143,13 +150,6 @@ class DSClinicViewModel:
         # Kick off the polling loop. The ViewModel owns this entirely —
         # no external dispatcher needed.
         self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
-
-    def _reset_task_state(self) -> None:
-        self._cancel_event.clear()
-        self._output_queue = queue.Queue()
-        self.var_is_analyzing.set(False)
-        self.var_status_title.set("Cancelling")
-        self.var_status_detail.set("Cancelling analysis...")
         
     def _cancel_analysis(self):
         self._reset_task_state()
@@ -161,18 +161,47 @@ class DSClinicViewModel:
             output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, message="Analysis complete", result=report))
         except Exception as e:
             logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
-            output_queue.put(ProgressEvent(
-                status=TaskStatus.FAILED,
-                message="Task failed",
-                result=str(e)
-            ))
+            output_queue.put(ProgressEvent(status=TaskStatus.FAILED,message="Task failed",result=str(e)))
 
     def followup_question_submit(self):
+        logger.debug("Submitting followup question...")
         question = self.var_initial_question.get()
+        question = self.var_initial_question.get().strip()
+        if not question or self.var_is_analyzing.get():
+            return
+            
         logger.debug(f"Follow-up question submitted: {question}")
         self.var_initial_question.set("")
-        answer = self.dsclinicapp.ask_followup_question(question)
-        self.var_response.set(answer)
+        #answer = self.dsclinicapp.ask_followup_question(question)
+        self.var_response.set("Loading...")
+
+        
+        # Clear input and lock UI for processing
+        self.var_initial_question.set("")
+        self.var_is_analyzing.set(True)
+        self.var_status_title.set("Chatting")
+        self.var_status_detail.set("Waiting for AI response...")
+        self.var_progress_value.set(0)
+
+        # Start background thread for the blocking API call
+        self._worker_thread = threading.Thread(
+            target=self._run_task_followup_question,
+            args=(question, self._output_queue),
+            daemon=True,
+            name="dsclinic-chat-thread"
+        )
+        self._worker_thread.start()
+        
+        # Ensure the polling loop is active
+        self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
+
+    def _run_task_followup_question(self, question: str, output_queue: queue.Queue[ProgressEvent]):
+        try:
+            answer = self.dsclinicapp.ask_followup_question(question)
+            output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, result=answer))
+        except Exception as e:
+            logger.error(f"Error in chat followup: {e}", exc_info=True)
+            output_queue.put(ProgressEvent(status=TaskStatus.FAILED, message=str(e), result=str(e)))
 
 
     def _poll_result_queue(self) -> None:
@@ -227,6 +256,13 @@ class DSClinicViewModel:
                     self.var_btn_analyze_text.set("Analyze")
 
                     self.on_vm_data_changed.emit()  # Notify the view to refresh based on new data
+                elif isinstance(progress_event.result, str):
+                    # This is a follow-up answer from the chat session
+                    self.var_response.set(progress_event.result)
+                    self.var_is_analyzing.set(False)
+                    self.var_status_title.set("Ready")
+                    self.var_status_detail.set("Chat response received.")
+                    self.var_progress_value.set(100)
                 else:
                     # This shouldn't happen - if the task finished successfully, we expect a MedicalReport result. Log an error if not.
                     error_msg = f"Unexpected result type in ProgressEvent: {type(progress_event.result)}. Expected MedicalReport. Details: {progress_event.result}"

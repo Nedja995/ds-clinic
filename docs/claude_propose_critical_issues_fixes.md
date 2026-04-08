@@ -4,17 +4,6 @@
 
 ## MVVM Violations in `dsclinic_gui` and `settings`
 
----
-
-### 2. Double polling — the ViewModel and the App both reschedule `_poll_result_queue`
-
-**Files:** `dsclinic_gui_app.py` + `report_view_models.py`
-
-`_poll_result_queue` reschedules itself internally via `self.schedule_poll_fn(...)`. But `DSClinicAppGUI._poll_viewmodels()` **also** calls `self.view_model._poll_result_queue()` and reschedules **itself** via `self.after(...)`. Every polling interval, the queue is drained **twice**. The first drain might consume the `FINISHED` event, so the second drain sees an empty queue and does nothing — but it still runs every tick for the lifetime of the task. This is a latent bug that becomes obvious the moment you add a second `ProgressEvent`.
-
-The established pattern — injecting `schedule_poll_fn` into the ViewModel so it self-schedules — was the right solution. The `_setup_dispatcher` in the App is a redundant layer that contradicts it.
-
----
 
 ### 3. `followup_question_submit` is a synchronous blocking call on the main thread
 

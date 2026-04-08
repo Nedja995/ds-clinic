@@ -3,10 +3,15 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dsclinic_gui.styles import BG
 from dsclinic_gui.report_view_models import DSClinicViewModel
+from npy.core.logger import setup_logger
+
+
+logger = setup_logger()
 
 class ChatSessionView(ttk.Frame):
     def __init__(self, parent: tk.Misc, view_model: DSClinicViewModel, **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
+        logger.debug("Building ChatSessionView...")
         self.view_model = view_model
         self._build_ui()
         
@@ -33,6 +38,7 @@ class ChatSessionView(ttk.Frame):
         self._build_history_canvas()
 
     def _build_history_canvas(self) -> None:
+        logger.debug("Building history canvas...")
         wrap = ttk.Frame(self)
         wrap.pack(fill="both", expand=True)
 
@@ -66,6 +72,7 @@ class ChatSessionView(ttk.Frame):
 
     def add_message(self, text: str, is_user: bool = True) -> None:
         """Renders a chat bubble aligned to the correct side."""
+        logger.debug(f"Adding message: {text}")
         if not is_user:
             self.view_model._model.chat_responses.append(text) # Store bot responses
             

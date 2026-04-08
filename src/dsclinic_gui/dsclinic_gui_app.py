@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # Initial / Test Data
     test_podaci = {
         "report_id": "1",
-        "report_date": "03/19/2026",
+        "report_date": "03.19.2026",
         "content": {
             "patient_name": "Marko Marković",
             "recommended_therapy_and_advice": "Smanjiti fizički napor.",
