@@ -14,12 +14,7 @@ Medical analysis tools
 
 ### Parameters
 
-Check ```config.py```
-
-- Models:
-  - gemini-3-pro-preview
-  - gemini-3-flash-preview
-  - gemini-3-pro-image-preview
+Check ```config.py, settings.ini, config.json```
 
 ### Usage with Poetry
 
@@ -40,8 +35,13 @@ Add to PATH: After installation, you may need to manually add the installation p
 ### Make Windows executables
 
 ```bash
+# CLI
 pyinstaller --noconfirm --onefile --console --name "DSClinic_v2_0_1" --paths "src" src/dsclinic_cli.py
+
+# Win
 pyinstaller --noconfirm --onefile --windowed --name "Holisticki Centar Dar Prirode - Izvestaji" --paths "src" src/dsclinic_gui/dsclinic_gui_app.py
+
+# 
 pyinstaller --noconfirm --onefile --windowed --name "DSClinicGUI" --paths "src" src/testgui.py
 ```
 
@@ -51,8 +51,11 @@ pyinstaller --noconfirm --onefile --windowed --name "DSClinicGUI" --paths "src" 
 
 - Unix: `"autopep8.interpreter":["${workspaceFolder}/.venv/bin/python"]`
 
-### Output format
+### Output data
 
-- nalaz
-- terapija
-- napomena
+- title
+- date
+- patient_name
+- diagnosis
+- findings table
+- additional: chat responses

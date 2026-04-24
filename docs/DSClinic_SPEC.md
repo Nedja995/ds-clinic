@@ -204,10 +204,10 @@ Three-tier config loaded at startup:
       Arial-Unicode-Bold.ttf
       Arial-Unicode-Italic.ttf
       Arial-Unicode-Bold-Italic.ttf
-    sample_response.json   (debug fixture)
   ULAZ/                   ← input documents (PDF, images, TXT, CSV…)
   IZVESTAJI/              ← output PDF reports
     DEBUG/                ← debug JSON dumps (when debug_export_response=true)
+      sample_response.json   (debug fixture)
   logs/                   ← log files
 ```
 

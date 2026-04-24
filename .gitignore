@@ -1,6 +1,6 @@
 # Custom Project
 IZVESTAJI/*
-dsclinic_v0_9.exe
+*.exe
 src/api_gemini/api_gemini.txt
 
 
@@ -233,3 +233,4 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+Holisticki Centar Dar Prirode - Izvestaji_v2_1_3.exe

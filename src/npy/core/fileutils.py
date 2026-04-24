@@ -18,7 +18,10 @@ def open_file_from_filepath(filepath: str):
 
 def read_debug_sample_response_json(name: str = "sample_response", input_filepath: str | None = None) -> dict | None:
     if not input_filepath:
-        input_filepath = get_resource_filepath(f"{name}.json")
+        output_dir = get_output_data_dirpath()
+        output_dir = os.path.join(output_dir, "DEBUG")
+        if not os.path.exists(output_dir): os.makedirs(output_dir, exist_ok=True)
+        input_filepath = os.path.join(output_dir, f"{name}.json")
         
     logger.debug(f"DEBUG MOD: Čitam podatke iz {input_filepath}")
     if os.path.exists(input_filepath):

@@ -1,7 +1,10 @@
-Source
+# Gemini ChatSessionView Explained
 
-https://aistudio.google.com/prompts/1333Jdgy52zwuMoj4E_jYHPhSmIaD64Jo
+## Gemini Prompt
 
+### Source
+
+[https://aistudio.google.com/prompts/1333Jdgy52zwuMoj4E_jYHPhSmIaD64Jo](https://aistudio.google.com/prompts/1333Jdgy52zwuMoj4E_jYHPhSmIaD64Jo)
 
 ---
 
