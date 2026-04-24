@@ -53,23 +53,18 @@ ini_config.read(ini_config_path, encoding='utf-8')
 ##
 
 ###########  APP BASE  ###########
-#
 APP_VERSION: str                = ini_config["APP"]["VERSION"].replace('"', '').replace("'", "")
 APP_NAME: str                   = ini_config["APP"]["NAME"].replace('"', '').replace("'", "")
-
 ###########  DEBUG  ##############
-#
 APP_LOG_LEVEL: str              = json_config.get("app", {}).get("log_level", "INFO")
 APP_DEBUG_EXPORT_RESPONSE: bool = json_config.get("app", {}).get("debug_export_response", True)
 APP_DEBUG_RESPONSE: bool        = json_config.get("app", {}).get("debug_response", False)
-                                                          
+                                               
 ###########  SERVICES  ###########
-#
 GOOGLE_API_KEY: str    = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '').replace("'", "")       # GOOGLE API (Gemini)
 ANTHROPIC_API_KEY: str = ini_config['ANTHROPIC']['ANTHROPIC_API_KEY'].replace('"', '').replace("'", "") # ANTHROPIC API (Claude)
 
 ###########  AI CONFIG  ##########
-##
 AI_TASK_KEY: str                                      = json_config.get("ai_initial_task_key", "")          # Initial Task Key (TODO: check is neccessery)
 AI_TASK_DESCRIPTIONS: dict[str, dict[str, list[str]]] = json_config.get("ai_task_descriptions", {})         # Task Descriptions
 AI_TASK_DESCRIPTION:  dict[str, str]                  = AI_TASK_DESCRIPTIONS.get(AI_TASK_KEY, {})           # Initial Task Description dict
@@ -81,11 +76,13 @@ AI_SUPPORTED_MODELS: dict[str, str] = json_config.get("ai_supported_models", {})
 # Model Parameters
 AI_MODEL_CONFIG: dict = json_config.get("ai_initial_model_config", None)
 if not AI_MODEL_CONFIG:
+    # FATAL: Model Confgir is not defined
     raise Exception(f"'ai_model_config' is not defined in config.json or is empty.")
 
 # Model name
 AI_MODEL_NAME: str = AI_MODEL_CONFIG.get("name", None)
 if not AI_MODEL_NAME or len(AI_MODEL_NAME) == 0:
+    # FATAL: Model name not defined
     raise Exception(f"'ai_initial_model_config.name' not defined. Please check onfig.json")
 
 AI_MODEL_TOP_P: float = AI_MODEL_CONFIG.get("top_p", 0.95)
@@ -105,13 +102,14 @@ AI_INITIAL_TASK_DESCRIPTION: str = "".join(json_config.get("ai_initial_task_desc
     "Always answer in Serbian."
 ]))
 
-# Supported
+####### Supported INPUT FILETYPES ########
 AI_SUPPORTED_INPUT_FILETYPES: dict[str, str] = json_config.get("ai_supported_input_filetypes", {})
 # Ensure extensions have a dot prefix for endswith() to work correctly
 #supported_exts = tuple(f".{ext.lstrip('.')}" for ext in config.SUPPORTED_INPUT_FILETYPES.values())
 
 AI_RESPONSE_DESCRIPTION: dict[str, str] = json_config.get("ai_response_description", {})
 
+# IF AI SETTINGS NOT SET - SET PREDEFINED DEFAULT VALES
 AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE: str = AI_RESPONSE_DESCRIPTION.get(
     "ai_response_recommended_therapy_and_advice", 
     "Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.")
@@ -128,13 +126,16 @@ AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE: str = AI_RESPONSE_DESCRIPTION.get(
     "ai_response_critical_finding_param_and_value", 
     "The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004').")
     
-# add default if empty
+# IF AI SETTINGS NOT SET - SET DEFAULT PREDEFINED
 if "ai_response_recommended_therapy_and_advice" not in AI_RESPONSE_DESCRIPTION:
     AI_RESPONSE_DESCRIPTION["ai_response_recommended_therapy_and_advice"] = AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE
+    
 if "ai_response_critical_findings" not in AI_RESPONSE_DESCRIPTION:
     AI_RESPONSE_DESCRIPTION["ai_response_critical_findings"] = AI_RESPONSE_CRITICAL_FINDINGS
+    
 if "ai_response_critical_finding_experts_opinion" not in AI_RESPONSE_DESCRIPTION:
     AI_RESPONSE_DESCRIPTION["ai_response_critical_finding_experts_opinion"] = AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION
+    
 if "ai_response_critical_finding_param_and_value" not in AI_RESPONSE_DESCRIPTION:
     AI_RESPONSE_DESCRIPTION["ai_response_critical_finding_param_and_value"] = AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE
     
