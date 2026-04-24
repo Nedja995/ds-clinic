@@ -9,67 +9,71 @@ from npy.core.utils import get_base_dir_path
 
 logger = setup_logger()
 
+###########################  APP ROOT DIRECTORY  ###############################
 ##
 _base_dir_path = get_base_dir_path()
 
 
 ############################  LOAD JSON CONFIG  ################################
 ##
-json_config: dict[str, any] = {}
+json_config: dict[str, any] = {}                                          # Load JSON config with error handling
+json_config_path: str       = os.path.join(_base_dir_path, "config.json") # Path to config.json
 
-json_config_path = os.path.join(_base_dir_path, "config.json")
 try:
     with open(json_config_path, 'r', encoding='utf-8') as f:
         json_config = json.load(f)
 except FileNotFoundError:
     logger.error(f"Ne mogu da pronađem config.json na putanji: {json_config_path}")
+    # Dodato da se konzola ne zatvori odmah
     print("Enter to exit...")
-    input() # Dodato da se konzola ne zatvori odmah
+    input()
+    # Exit app with error code
     sys.exit(1)
 except json.JSONDecodeError as e:
     logger.error(f"Ne mogu da dekodiram config.json! Greška:\n{e}")
+    # Dodato da se konzola ne zatvori odmah
     print("Enter to exit...")
-    input() # Dodato da se konzola ne zatvori odmah
+    input() 
+    # Exit app with error code
     sys.exit(1)
 
 
 #############################  LOAD INI CONFIG  ################################
 ##
+# Using configparser to load settings.ini
 import configparser
 ini_config = configparser.ConfigParser()
-
+# Path to settings.ini
 ini_config_path = os.path.join(_base_dir_path, "settings.ini")
+# Read the INI config file
 ini_config.read(ini_config_path, encoding='utf-8')
 
 
-################################  PROPERTIES  ##################################
+##############################  READ CONFIG PROPERTIES  ################################
 ##
 
-#### APP BASE
-APP_VERSION: str = ini_config["APP"]["VERSION"].replace('"', '').replace("'", "")
-APP_NAME: str = ini_config["APP"]["NAME"].replace('"', '').replace("'", "")
-# Debug
-APP_LOG_LEVEL: str = json_config.get("app", {}).get("log_level", "INFO")
+###########  APP BASE  ###########
+#
+APP_VERSION: str                = ini_config["APP"]["VERSION"].replace('"', '').replace("'", "")
+APP_NAME: str                   = ini_config["APP"]["NAME"].replace('"', '').replace("'", "")
+
+###########  DEBUG  ##############
+#
+APP_LOG_LEVEL: str              = json_config.get("app", {}).get("log_level", "INFO")
 APP_DEBUG_EXPORT_RESPONSE: bool = json_config.get("app", {}).get("debug_export_response", True)
-APP_DEBUG_RESPONSE: bool = json_config.get("app", {}).get("debug_response", False)
+APP_DEBUG_RESPONSE: bool        = json_config.get("app", {}).get("debug_response", False)
+                                                          
+###########  SERVICES  ###########
+#
+GOOGLE_API_KEY: str    = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '').replace("'", "")       # GOOGLE API (Gemini)
+ANTHROPIC_API_KEY: str = ini_config['ANTHROPIC']['ANTHROPIC_API_KEY'].replace('"', '').replace("'", "") # ANTHROPIC API (Claude)
 
-#### SERVICES
-## Google
-GOOGLE_API_KEY: str = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '').replace("'", "")
-
-## Anthropic
-ANTHROPIC_API_KEY: str = ini_config['ANTHROPIC']['ANTHROPIC_API_KEY'].replace('"', '').replace("'", "")
-
-
-#### AI
-
-# Initial Task Key
-AI_TASK_KEY: str = json_config.get("ai_initial_task_key", "")
-# Task Descriptions
-AI_TASK_DESCRIPTIONS: dict[str, dict[str, list[str]]] = json_config.get("ai_task_descriptions", {})
-# Initial Task Description
-AI_TASK_DESCRIPTION: dict[str, str] = AI_TASK_DESCRIPTIONS.get(AI_TASK_KEY, {})
-AI_TASK_DESCRIPTION: str = "".join(AI_TASK_DESCRIPTION.get("description", []))
+###########  AI CONFIG  ##########
+##
+AI_TASK_KEY: str                                      = json_config.get("ai_initial_task_key", "")          # Initial Task Key (TODO: check is neccessery)
+AI_TASK_DESCRIPTIONS: dict[str, dict[str, list[str]]] = json_config.get("ai_task_descriptions", {})         # Task Descriptions
+AI_TASK_DESCRIPTION:  dict[str, str]                  = AI_TASK_DESCRIPTIONS.get(AI_TASK_KEY, {})           # Initial Task Description dict
+AI_TASK_DESCRIPTION:  str                             = "".join(AI_TASK_DESCRIPTION.get("description", [])) # Initial Task Description string
 
 # Supported Models (Gemini)
 AI_SUPPORTED_MODELS: dict[str, str] = json_config.get("ai_supported_models", {})
