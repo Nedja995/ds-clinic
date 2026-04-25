@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog, messagebox
 
 from npy.core.logger import setup_logger
-from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
+from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
 
 from dsclinic_gui.styles import *
 from dsclinic_gui.report_view_models import DSClinicViewModel
@@ -219,6 +219,26 @@ class MedicalReportView(ttk.Frame):
         )
         self.btn_dodaj_nalaz.pack(fill="x", padx=2, pady=(4, 4))
 
+        # Card: Terapija
+        terapija_card = self._card(sf, "Terapija")
+        terapija_card.pack(fill="x", **PAD)
+
+        th2 = ttk.Frame(terapija_card, style="THead.TFrame", height=26)
+        th2.pack(fill="x", padx=0, pady=(0, 2))
+        th2.pack_propagate(False)
+        ttk.Label(th2, text="Artikal / Preparat", style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
+        ttk.Label(th2, text="Uputstvo za upotrebu", style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
+
+        self.terapija_container = ttk.Frame(terapija_card, style="Rows.TFrame")
+        self.terapija_container.pack(fill="x", padx=0)
+
+        self.btn_dodaj_terapiju = ttk.Button(
+            terapija_card, text="＋   Dodaj novu terapiju",
+            style="Accent.TButton",
+            command=lambda: [self.update_viewmodel_from_view(), self.view_model.add_therapy(), self.update_view_from_viewmodel()]
+        )
+        self.btn_dodaj_terapiju.pack(fill="x", padx=2, pady=(4, 4))
+
         ttk.Frame(sf, height=24).pack()
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -290,18 +310,57 @@ class MedicalReportView(ttk.Frame):
             "misljenje":  ent_m,
         })
 
+    def _render_therapy_row(self, index: int, therapy: MedicalTherapyModel, is_enabled=True):
+        """Renders a single therapy row based on VM data."""
+        logger.debug(f"Rendering therapy row {index}: {therapy.article}")
+        self._row_parity_therapy += 1
+
+        row_style = "RowA.TFrame" if self._row_parity_therapy % 2 else "RowB.TFrame"
+        row_bg    = ROW_A         if self._row_parity_therapy % 2 else ROW_B
+
+        row_frame = ttk.Frame(self.terapija_container, style=row_style, height=72)
+        row_frame.pack(fill="x", pady=(0, 0))
+        row_frame.pack_propagate(False)
+
+        ent_article = self._scrolled_text(row_frame, height=1, bg=row_bg)
+        ent_article.insert("1.0", therapy.article)
+        ent_article.place(relx=0.0, rely=0.06, relwidth=0.595, relheight=0.88)
+
+        ent_instructions = self._scrolled_text(row_frame, height=1, bg=row_bg)
+        ent_instructions.insert("1.0", therapy.using_instructions)
+        ent_instructions.place(relx=0.610, rely=0.06, relwidth=0.295, relheight=0.88)
+
+        btn_ukloni = ttk.Button(
+            row_frame, text="✕", style="Danger.TButton",
+            state="normal" if is_enabled else "disabled",
+            command=lambda i=index: [self.update_viewmodel_from_view(), self.view_model.remove_therapy(i), self.update_view_from_viewmodel()]
+        )
+        btn_ukloni.place(relx=0.918, rely=0.15, relwidth=0.074, relheight=0.70)
+
+        self.therapy_widgets.append({
+            "frame":        row_frame,
+            "article":      ent_article,
+            "instructions": ent_instructions,
+        })
+
     def set_all_entries_state(self, state: str):
         self.ent_ime.config(state=state)
         self.ent_datum.config(state=state)
         self.txt_terapija.config(state=state)
         self.btn_dodaj_nalaz.config(state=state)
+        self.btn_dodaj_terapiju.config(state=state)
         self.btn_analyze.config(state=state)
         self.btn_export.config(state=state)
 
         for widgets in self.critical_finding_widgets:
             widgets["parametar"].config(state=state)
             widgets["misljenje"].config(state=state)
-            widgets["frame"].children.get("!button", tk.Button()).config(state=state) # Ukloni button
+            widgets["frame"].children.get("!button", tk.Button()).config(state=state)
+
+        for widgets in self.therapy_widgets:
+            widgets["article"].config(state=state)
+            widgets["instructions"].config(state=state)
+            widgets["frame"].children.get("!button", tk.Button()).config(state=state)
             
     def update_viewmodel_from_view(self):
         """Extracts data from complex widgets (ScrolledText) and updates the VM."""
@@ -315,6 +374,12 @@ class MedicalReportView(ttk.Frame):
                 self.view_model.findings[i].expertsko_misljenje = widgets["misljenje"].get("1.0", tk.END).strip()
                 self.view_model.findings[i].parametar_and_value = widgets["parametar"].get("1.0", tk.END).strip()
 
+        # Therapy List
+        for i, widgets in enumerate(self.therapy_widgets):
+            if i < len(self.view_model.therapy_data):
+                self.view_model.therapy_data[i].article            = widgets["article"].get("1.0", tk.END).strip()
+                self.view_model.therapy_data[i].using_instructions = widgets["instructions"].get("1.0", tk.END).strip()
+
 
     def update_view_from_viewmodel(self):
         """Updates complex widgets based on current VM state."""
@@ -323,6 +388,7 @@ class MedicalReportView(ttk.Frame):
         
         # Reset parity for row colors
         self._row_parity_findings = 0
+        self._row_parity_therapy  = 0
 
         is_analyzing = self.view_model.var_is_analyzing.get()
         
@@ -343,6 +409,14 @@ class MedicalReportView(ttk.Frame):
         # Rebuild
         for i, finding in enumerate(self.view_model.findings):
             self._render_finding_row(i, finding, not is_analyzing)
+
+        # Therapy Rows (Rebuild completely)
+        for w in self.therapy_widgets:
+            w["frame"].destroy()
+        self.therapy_widgets.clear()
+
+        for i, therapy in enumerate(self.view_model.therapy_data):
+            self._render_therapy_row(i, therapy, not is_analyzing)
             
         self.set_all_entries_state("disabled" if is_analyzing else "normal")
 
