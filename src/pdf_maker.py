@@ -231,6 +231,12 @@ class HolisticReport(FPDF):
         header_height   = 10
         line_height     = 5  # Visina jedne linije teksta unutar multi_cell-a
 
+        # --- NASLOV SEKCIJE ---
+        self.set_font(FONT_BOLD, "", 12)
+        self.set_text_color(160, 0, 0)
+        self.cell(0, 10, "TERAPIJA:", ln=True)
+        self.set_text_color(0, 0, 0)
+
         # --- ZAGLAVLJE TABELE ---
         self.set_font(FONT_BOLD, "", 10)
         self.set_fill_color(235, 235, 235)  # Svetlo siva boja
@@ -377,14 +383,14 @@ def create_report_pdf(report: MedicalReport) -> HolisticReport:
     # 6. Recommended Therapy Table (if therapies are provided)
     if len(report.therapies) > 0:
         pdf.draw_table_therapy(report.therapies)
-        
-    # 7. Chat Responses (if any)
+     
+    # 7. Footer
+    pdf.draw_footer_section()
+           
+    # 8. Chat Responses (if any)
     if len(report.chat_responses) > 0:
         pdf.draw_chat_responses(report.chat_responses)
         
-    # 8. Footer
-    pdf.draw_footer_section()
-    
     # Return the generated PDF document object
     return pdf
 
