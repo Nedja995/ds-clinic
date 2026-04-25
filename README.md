@@ -40,6 +40,8 @@ pyinstaller --noconfirm --onefile --console --name "DSClinic_v2_0_1" --paths "sr
 
 # Win
 pyinstaller --noconfirm --onefile --windowed --name "Holisticki Centar Dar Prirode - Izvestaji" --paths "src" src/dsclinic_gui/dsclinic_gui_app.py
+# Win icon (dont work)
+pyinstaller --noconfirm --onefile --windowed --name "Holisticki Centar Dar Prirode - Izvestaji" --icon "src/assets/icon.ico" --add-data "src/assets/icon.ico;." --paths "src" src/dsclinic_gui/dsclinic_gui_app.py
 
 # 
 pyinstaller --noconfirm --onefile --windowed --name "DSClinicGUI" --paths "src" src/testgui.py
