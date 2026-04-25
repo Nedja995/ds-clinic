@@ -21,27 +21,37 @@ from dsclinic_gui.settings.window import open_settings
 from npy.core.event_emitter import ErrorMessageEvent
 from dsclinic_gui.report_view_models import ExportRequest
 
+
+## App Logger
 logger = setup_logger()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+##### ---------------------------------------------------------------- #####
 class ReportWindow(tk.Toplevel):
-    _WIDTH = 700
-    _HEIGHT = 750
-    _MIN_WIDTH = 400
+    """Top-level window for displaying a medical report. Hosts the MedicalReportView and related dialogs."""
+    _WIDTH      = 700
+    _HEIGHT     = 750
+    _MIN_WIDTH  = 400
     _MIN_HEIGHT = 400
 
+
+##### ----------------------------------------------------------------- #####
 class MedicalReportView(ttk.Frame):
-    """
-    View for displaying and editing medical reports.
-    """
+    """View for displaying and editing medical reports."""
+    
     def __init__(self, parent: ttk.Misc, view_model: DSClinicViewModel, **kwargs: any) -> None:
         super().__init__(parent, **kwargs)
         self.view_model = view_model
 
-        self.critical_finding_widgets: list[dict] = [] # Tracks widgets for rows
-        self._row_parity = 0
+         # Tracks widgets for rows in the "Nalazi" section, so we can update/destroy them as needed.
+        self.critical_finding_widgets:  list[dict]  = []
+        self._row_parity_findings:      int         = 0
+        
+        # Track widget for rows in the "Terapija" section, if we later want to support multiple therapies with add/remove functionality.
+        self.therapy_widgets:           list[dict] = []
+        self._row_parity_therapy:       int        = 0
 
+        # Layout and widgets
         self._setup_ui()
         
         # Event Binding (MVVM)
@@ -250,10 +260,10 @@ class MedicalReportView(ttk.Frame):
     def _render_finding_row(self, index: int, finding: MedicalCriticalFindingModel, is_enabled=True):
         """Renders a single row based on VM data."""
         logger.debug(f"Rendering finding row {index}: {finding.parametar_and_value}")
-        self._row_parity += 1
+        self._row_parity_findings += 1
         
-        row_style = "RowA.TFrame" if self._row_parity % 2 else "RowB.TFrame"
-        row_bg    = ROW_A         if self._row_parity % 2 else ROW_B
+        row_style = "RowA.TFrame" if self._row_parity_findings % 2 else "RowB.TFrame"
+        row_bg    = ROW_A         if self._row_parity_findings % 2 else ROW_B
 
         row_frame = ttk.Frame(self.nalazi_container, style=row_style, height=72)
         row_frame.pack(fill="x", pady=(0, 0))
@@ -312,7 +322,7 @@ class MedicalReportView(ttk.Frame):
         logger.debug(f"Updating View from ViewModel={self.view_model}...")
         
         # Reset parity for row colors
-        self._row_parity = 0
+        self._row_parity_findings = 0
 
         is_analyzing = self.view_model.var_is_analyzing.get()
         

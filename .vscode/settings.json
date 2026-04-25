@@ -17,7 +17,14 @@
         "*.spec": true,
         "dist": true,
         "*.venv": true,
-        "**/**/*.egg-info": true
+        "**/**/*.egg-info": true,
+        "build": true,
+        "app_data": true,
+        "settings.json": true,
+        "LICENSE": true,
+        "**/api_claude/**": true,
+        "**/db/**": true,
+        "**/test_guis/**": true
     },
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
     "python-envs.defaultEnvManager": "ms-python.python:venv",

@@ -1,33 +1,48 @@
-from enum import Enum
 from typing import TypeVar, Generic, Callable
-from collections import UserList
-from pydantic import BaseModel, Field
 import uuid
 from datetime import datetime
+from enum import Enum
+from collections import UserList
+from pydantic import BaseModel, Field
 import config
 
-####### Medical Report Models
+
+######################### Medical Report Models #########################
 ##
-## Structured Service response models
+# Structured Service response models
 #
 class MedicalCriticalFindingModel(BaseModel):
-    expertsko_misljenje: str = Field(default="",description=config.AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION)
-    parametar_and_value: str = Field(default="",description=config.AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE)
+    """Model representing a critical finding in a medical report, including the finding description, expert opinion, and original parameter values."""
+    expertsko_misljenje: str                             = Field(default="",    description=config.AI_RESPONSE_CRITICAL_FINDING_EXPERTS_OPINION)
+    parametar_and_value: str                             = Field(default="",    description=config.AI_RESPONSE_CRITICAL_FINDING_PARAM_AND_VALUE)
 
 class MedicalReportModel(BaseModel):
-    patient_name: str = Field(
-        default="",
-        description="Full name of patient."
-    )
-    recommended_therapy_and_advice: str = Field(default="",description=config.AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE)
-    critical_findings: list[MedicalCriticalFindingModel] = Field(default=[],description=config.AI_RESPONSE_CRITICAL_FINDINGS)
+    """Model representing the structured content of a medical report, including patient information, recommended therapy, and critical findings."""
+    patient_name: str                                    = Field(default="",    description="Full name of patient.")
+    recommended_therapy_and_advice: str                  = Field(default="",    description=config.AI_RESPONSE_RECOMMENDED_THERAPY_AND_ADVICE)
+    critical_findings: list[MedicalCriticalFindingModel] = Field(default=[],    description=config.AI_RESPONSE_CRITICAL_FINDINGS)
 
-## Final Report
+
+######################### Additional report data #########################
+##
+class MedicalTherapyModel(BaseModel):
+    """Model representing a recommended therapy for a medical report, including the Medical Articles and Using Instructions."""
+    article:                str                             = Field(default="",    description="Name of the medical article supporting the recommended therapy.")
+    using_instructions:     str                             = Field(default="",    description="Instructions on how to use the recommended therapy, based on the medical article.")
+
+
+######################### FINAL REPORT MODEL #############################
+#
 class MedicalReport(BaseModel):
-    report_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
-    report_date: str = Field(description="Datum izveštaja.", default_factory=lambda: datetime.now().strftime('%d.%m.%Y.'))
-    content: MedicalReportModel = Field(default=MedicalReportModel)
-    chat_responses: list[str] = Field(default=[])
+    """
+    Model representing a complete medical report, including metadata such as report ID and date,
+    the structured content of the report, and any chat responses from the AI analysis.
+    """
+    report_id:      str                       = Field(default_factory = lambda: uuid.uuid4().hex)
+    report_date:    str                       = Field(description     = "Datum izveštaja.", default_factory = lambda: datetime.now().strftime('%d.%m.%Y.'))
+    content:        MedicalReportModel        = Field(default         = MedicalReportModel)
+    therapies:      list[MedicalTherapyModel] = Field(default         = [])
+    chat_responses: list[str]                 = Field(default         = [])
 
 
 ####### AI Models
@@ -35,21 +50,23 @@ class MedicalReport(BaseModel):
 ## Chat models
 #
 class ChatMessage(BaseModel):
-    content: str = Field(description="The content of the message.")
-    timestamp: datetime = Field(default_factory=datetime.now)
+    content:    str         = Field(description="The content of the message.")
+    timestamp:  datetime    = Field(default_factory = datetime.now)
 
 ## AI Models Config
 #
 class GeminiModelConfig(BaseModel):
-    model_name: str = Field(default="gemini-3-pro-preview")
-    temperature: float = Field(default=1.0)
-    top_p: float = Field(default=0.95)
-    #top_k: int = Field(default=40)
-    max_output_tokens: int = Field(default=65535)
-    thinking_level: str = Field(default="HIGH")
-    system_instruction: tuple = Field(default=(
+    model_name:         str     = Field(default = "gemini-3-pro-preview")
+    temperature:        float   = Field(default = 1.0)
+    top_p:              float   = Field(default = 0.95)
+    #top_k:             int     = Field(default = 40)
+    max_output_tokens:  int     = Field(default = 65535)
+    thinking_level:     str     = Field(default = "HIGH")
+    system_instruction: tuple   = Field(default = (
         "You are an expert medical data analyst using equally both holistic and traditional medical data.",
-        "Always highlight severe abnormalities."))
+        "Always highlight severe abnormalities."
+        )
+    )
 
 
 class ChatSessionModel(BaseModel):

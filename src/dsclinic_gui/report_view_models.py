@@ -12,7 +12,7 @@ from dsclinic_gui.settings.settings_view_model import SettingsViewModel
 from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
 import config
-from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
+from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
 # from dsclinic import get_initial_analysis_report, ask_followup_question
 from dsclinic import DSClinic
 from pdf_maker import generate_report_pdf_at_filepath
@@ -50,11 +50,14 @@ class DSClinicViewModel:
         # Make default / empty model if not provided
         self._model: MedicalReport = model or MedicalReport()
         
-         # Handled manually for Text widgets
+        ## Handled manually for Text widgets
+        # Structured model data (response)
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice 
         self.findings: list[MedicalCriticalFindingModel] = self._model.content.critical_findings
+        # Additional report data (therapy)
+        self.therapy_data: list[MedicalTherapyModel] = self._model.therapies
 
-        # --- Observable data ---
+        ## --- Observable data ---
         # Report
         self.var_patient_name = tk.StringVar(value=self._model.content.patient_name)
         self.var_report_date = tk.StringVar(value=self._model.report_date)
@@ -76,10 +79,10 @@ class DSClinicViewModel:
         self._worker_thread: threading.Thread | None = None
         
         # Events (View subscribes to these)
-        self.on_vm_data_changed: EventEmitter = EventEmitter()  # emits no payload, just a signal that "data changed, update view"
-        self.on_show_error_message: EventEmitter = EventEmitter() # emits ErrorMessageEvent
-        self.on_export_requested: EventEmitter = EventEmitter()  # emits ExportRequest
-        self.on_export_succeeded: EventEmitter = EventEmitter()  # emits output_filepath: str
+        self.on_vm_data_changed:    EventEmitter   = EventEmitter()  # emits no payload, just a signal that "data changed, update view"
+        self.on_show_error_message: EventEmitter   = EventEmitter()  # emits ErrorMessageEvent
+        self.on_export_requested:   EventEmitter   = EventEmitter()  # emits ExportRequest
+        self.on_export_succeeded:   EventEmitter   = EventEmitter()  # emits output_filepath: str
         
         # Main DSClinic App Logic Handler
         self.dsclinicapp = DSClinic(model_name=config.AI_MODEL_NAME)
@@ -89,7 +92,7 @@ class DSClinicViewModel:
         logger.debug("Updating ViewModel from Model...")
         # Sync Model to Observables
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
-        self.findings = self._model.content.critical_findings
+        self.findings             = self._model.content.critical_findings
         self.var_patient_name.set(self._model.content.patient_name)
         self.var_report_date.set(self._model.report_date)
 
@@ -98,14 +101,17 @@ class DSClinicViewModel:
     def _update_model_from_viewmodel(self):
         logger.debug("Updating Model from ViewModel...")
         # Sync Observables to Model
-        self._model.content.patient_name = self.var_patient_name.get()
-        self._model.report_date = self.var_report_date.get()
+        self._model.content.patient_name                   = self.var_patient_name.get()
+        self._model.report_date                            = self.var_report_date.get()
         self._model.content.recommended_therapy_and_advice = self.therapy_text_content
-        self._model.content.critical_findings = self.findings
+        self._model.content.critical_findings              = self.findings
+        self._model.therapies                              = self.therapy_data
 
 
     # --- Logic: Data Management ---
 
+    ## Findings management is separate from therapy, but has the same structure (add/remove blank entries)
+    #
     def add_finding(self):
         """Adds a blank finding to the list."""
         logger.debug("Adding new finding...")
@@ -119,15 +125,31 @@ class DSClinicViewModel:
         if 0 <= index < len(self.findings):
             self.findings.pop(index)
 
-    # --- Logic: Analysis ---
+    ## Therapy management is separate from findings, but has the same structure (add/remove blank entries)
+    #
+    def add_therapy(self):
+        """Adds a blank therapy to the list."""
+        logger.debug("Adding new therapy...")
+        self.therapy_data.append(MedicalTherapyModel())
+        # self._update_viewmodel_from_model()
+        # self.app.event_generate("<<VM_DataChanged>>")
 
+    def remove_therapy(self, index: int):
+        """Removes a therapy at the specified index."""
+        logger.debug(f"Removing therapy at index {index}...")
+        if 0 <= index < len(self.therapy_data):
+            self.therapy_data.pop(index)
+
+    # --- Logic: Analysis ---
     def toggle_analysis(self):
+        """Toggles the analysis process. If not currently analyzing, starts the analysis. If already analyzing, cancels it."""
         if not self.var_is_analyzing.get():
             self._start_analysis()
         else:
             self._cancel_analysis()
-            
+    
     def _reset_task_state(self) -> None:
+        """Resets the ViewModel state related to an ongoing analysis task. Called when cancelling an analysis."""
         self._cancel_event.clear()
         self._output_queue = queue.Queue()
         self.var_is_analyzing.set(False)
@@ -135,6 +157,7 @@ class DSClinicViewModel:
         self.var_status_detail.set("Cancelling analysis...")
         
     def _start_analysis(self):
+        """Starts the analysis process in a background thread and sets up the ViewModel state for tracking progress."""
         self.var_is_analyzing.set(True)
         self.var_btn_analyze_text.set("Cancel")
         self.var_status_title.set("Running")

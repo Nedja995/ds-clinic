@@ -8,25 +8,34 @@ from datetime import datetime
 
 from fpdf import FPDF
 from fpdf import enums as FPDFEnums
-from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel
+from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
 from npy.core import utils
 from npy.core.logger import setup_logger
 
 logger = setup_logger()
 
-
+########################  FONTS  ############################
+##
+####  PATH  ####
+#
 FONTS_DIR = utils.get_resource_dirpath("fonts")
 logger.info(f"Fonts directory: {FONTS_DIR}")
+# Check
 if not os.path.exists(FONTS_DIR):
+    ## FATAL: Font are not exists
     raise Exception(f"Missing resource fonts directory at: '{FONTS_DIR}'.")
 
+#### FONTS DEFINED  ####
+#
 CONST_FONTS: dict[str, dict[str, str]] = {
-    "Normal": {"name": "Arial Unicode MS", "filename": "Arial-Unicode-Regular.ttf"},
-    "Bold": {"name": "Arial Unicode MS Bold", "filename": "Arial-Unicode-Bold.ttf"},
-    "Italic": {"name": "Arial Unicode MS Italic", "filename": "Arial-Unicode-Italic.ttf"},
-    "BoldItalic": {"name": "Arial-Unicode-Bold-Italic.ttf", "filename": "Arial-Unicode-Bold-Italic.ttf"},
+    "Normal":     {"name": "Arial Unicode MS",              "filename": "Arial-Unicode-Regular.ttf"     },
+    "Bold":       {"name": "Arial Unicode MS Bold",         "filename": "Arial-Unicode-Bold.ttf"        },
+    "Italic":     {"name": "Arial Unicode MS Italic",       "filename": "Arial-Unicode-Italic.ttf"      },
+    "BoldItalic": {"name": "Arial-Unicode-Bold-Italic.ttf", "filename": "Arial-Unicode-Bold-Italic.ttf" },
 }
 
+####  FONTS CONSTANTS  ####
+#
 FONT_NORMAL = CONST_FONTS["Normal"]["name"]
 FONT_BOLD = CONST_FONTS["Bold"]["name"]
 FONT_ITALIC = CONST_FONTS["Italic"]["name"]
@@ -52,14 +61,18 @@ class HolisticReport(FPDF):
         self.add_font(FONT_BOLD_ITALIC, "", os.path.join(FONTS_DIR, CONST_FONTS["BoldItalic"]["filename"]))
         self.set_font(FONT_NORMAL, "", 10)
 
+        # 3. Add first page
         self.add_page()
         # self.set_auto_page_break(auto=True, margin=15)
 
-    def draw_header(self):
+    def draw_header(self) -> None:
+        """
+        Draws the header section of the PDF.
+        """
         row_height_mm = 20
         title: str = "HOLISTIČKI CENTAR DAR PRIRODE"
         
-        ## TITLE
+        ## TITLE CELL
         self.set_font(FONT_BOLD, "", 16)
         self.set_text_color(0, 51, 102)
         self.set_fill_color(235, 235, 235)
@@ -83,9 +96,15 @@ class HolisticReport(FPDF):
         self.set_draw_color(0, 0, 0)
         self.set_line_width(0.4)
         self.line(10, self.get_y(), 200, self.get_y())
-        self.ln(8)  # Razmak nakon linije do pacijenta
+        
+        # Razmak nakon linije do pacijenta
+        self.ln(8)  
 
-    def draw_patient_info(self, name: str, date: str):
+    def draw_patient_info(self, name: str = "/", date: str = "/") -> None:
+        """
+        Draws the patient's name and the report date on the PDF.
+        """
+        # Set Fonts
         self.set_font(FONT_BOLD, "", 11)
         self.set_text_color(0, 0, 0)
 
@@ -94,11 +113,17 @@ class HolisticReport(FPDF):
         self.set_xy(10, curr_y)
         self.cell(100, 5, f"Pacijent: {name.upper()}")
 
+        # Pacijent i Datum u istom redu sa minimalnim razmakom
         self.set_xy(10, curr_y)
         self.cell(190, 5, f"Datum: {date}", align="R", ln=True)
-        self.ln(8)  # Razmak do tabele
         
-    def draw_table(self, data: list[MedicalCriticalFindingModel] | None = []):
+        # Razmak do tabele
+        self.ln(8)
+        
+    def draw_table_foundings(self, data: list[MedicalCriticalFindingModel] | None = []) -> None:
+        """
+        Draws a table of medical critical findings on the PDF.
+        """
         # Definicija širina kolona (ukupno 190mm za A4)
         col1_width = 85
         col2_width = 105
@@ -119,8 +144,11 @@ class HolisticReport(FPDF):
         # Očitavanje podrazumevane fpdf unutrašnje margine za siguran proračun prostora
         c_margin = getattr(self, "c_margin", 1)
         
-        # Pomoćna funkcija za računanje ukupnog broja linija koje će tekst zauzeti
-        def get_lines(text, max_w):
+        #
+        def get_lines(text, max_w: float) -> list[int]:
+            """
+            Pomoćna funkcija za računanje ukupnog broja linija koje će tekst zauzeti
+            """
             if not text: return 1
             lines = 0
             for paragraph in text.split('\n'):
@@ -138,11 +166,118 @@ class HolisticReport(FPDF):
                         else:
                             current_line = test_line
                 lines += 1
+            # Finish functiion and return lines count
             return lines
 
+        # Ispis podataka
         for item in data:
             misljenje = f"{item.expertsko_misljenje}"
             parametar = f"{item.parametar_and_value}"
+            
+            # Izračunavanje broja linija (-1mm tolerancije za besprekorno uklapanje)
+            lines1 = get_lines(misljenje, col1_width - 2 * c_margin - 1)
+            lines2 = get_lines(parametar, col2_width - 2 * c_margin - 1)
+            
+            max_lines = max(lines1, lines2)
+            row_height = max_lines * line_height + 4  # +4mm za gornji i donji unutrašnji razmak (padding)
+            
+            # Provera da li novi red probija dno stranice (page break check)
+            page_bottom = getattr(self, "page_break_trigger", self.h - self.b_margin)
+            if self.get_y() + row_height > page_bottom:
+                self.add_page()
+            
+            x = self.get_x()
+            y = self.get_y()
+            
+            # 1. Crtanje okvira ćelija
+            self.rect(x, y, col1_width, row_height)
+            self.rect(x + col1_width, y, col2_width, row_height)
+            # 2. Ispis teksta prve kolone (pomeren za y + 2mm dole zbog estetskog padding-a)
+            self.set_xy(x, y + 2)
+            self.multi_cell(col1_width, line_height, misljenje, border=0, align="L")
+            # 3. Ispis teksta druge kolone
+            self.set_xy(x + col1_width, y + 2)
+            self.multi_cell(col2_width, line_height, parametar, border=0, align="L")
+            # 4. Vraćanje pokazivača ispod upravo iscrtanog dinamičkog reda
+            self.set_xy(x, y + row_height)
+            
+        # Spacing nakon tabele
+        self.ln(10)
+        
+    def draw_recommended_therapy_section(self, terapija_i_savet: str) -> None:
+        """
+        Draws the recommended therapy and advice on the PDF.
+        """
+        # Preporuka (Crvena boja)
+        self.set_font(FONT_BOLD, "", 12)
+        self.set_text_color(160, 0, 0)
+        self.cell(0, 10, "PREPORUCENA TERAPIJA I SAVET:", ln=True)
+
+        # Tekst terapije
+        self.set_font(FONT_NORMAL, "", 11)
+        self.set_text_color(0, 0, 0)
+        self.multi_cell(0, 6, terapija_i_savet)
+        
+        # Spacing
+        self.ln(6)
+        
+    def draw_table_therapy(self, data: list[MedicalTherapyModel] | None = []) -> None:
+        """
+        Draws a table of recommended therapy based on critical findings on the PDF. This table is identical in structure to the findings table.
+        """
+        # Definicija širina kolona (ukupno 190mm za A4)
+        col1_width      = 85
+        col2_width      = 105
+        header_height   = 10
+        line_height     = 5  # Visina jedne linije teksta unutar multi_cell-a
+
+        # --- ZAGLAVLJE TABELE ---
+        self.set_font(FONT_BOLD, "", 10)
+        self.set_fill_color(235, 235, 235)  # Svetlo siva boja
+        self.set_draw_color(50, 50, 50)    # Boja ivica
+
+        self.cell(col1_width, header_height, " Naziv Artikla", border=1, fill=True)
+        self.cell(col2_width, header_height, " Primena Terapije", border=1, fill=True, ln=True)
+
+        # --- PODACI TABELE ---
+        self.set_font(FONT_NORMAL, "", 10)
+        
+        # Očitavanje podrazumevane fpdf unutrašnje margine za siguran proračun prostora
+        c_margin = getattr(self, "c_margin", 1)
+        
+        #
+        def get_lines(text, max_w: float) -> list[int]:
+            """
+            Pomoćna funkcija za računanje ukupnog broja linija koje će tekst zauzeti
+            """
+            if not text: 
+                # Empty text, retrn 1 line to ensure at least one line height is reserved for empty cells
+                return 1
+            
+            # Count lines based on word wrapping logic
+            lines = 0
+            for paragraph in text.split('\n'):
+                words = paragraph.split(' ')
+                current_line = ""
+                for word in words:
+                    if current_line == "":
+                        current_line = word
+                    else:
+                        test_line = current_line + " " + word
+                        # Ako dodavanje nove reči prelazi dozvoljenu širinu, prelazimo u novu liniju
+                        if self.get_string_width(test_line) > max_w:
+                            lines += 1 # Završavamo trenutnu liniju i započinjemo novu sa sledećom rečju
+                            current_line = word
+                        else:
+                            current_line = test_line
+                lines += 1 # Count the last line of the paragraph
+            # Finish functiion and return lines count
+            return lines
+
+        # Ispis podataka
+        for item in data:
+            misljenje = f"{item.article}"
+            parametar = f"{item.using_instructions}"
             
             # Izračunavanje broja linija (-1mm tolerancije za besprekorno uklapanje)
             lines1 = get_lines(misljenje, col1_width - 2 * c_margin - 1)
@@ -174,21 +309,13 @@ class HolisticReport(FPDF):
             # 4. Vraćanje pokazivača ispod upravo iscrtanog dinamičkog reda
             self.set_xy(x, y + row_height)
 
+        # Spacing nakon tabele
         self.ln(10)
         
-    def draw_recommended_therapy_section(self, terapija_i_savet: str):
-        # Preporuka (Crvena boja)
-        self.set_font(FONT_BOLD, "", 12)
-        self.set_text_color(160, 0, 0)
-        self.cell(0, 10, "PREPORUCENA TERAPIJA I SAVET:", ln=True)
-
-        # Tekst terapije
-        self.set_font(FONT_NORMAL, "", 11)
-        self.set_text_color(0, 0, 0)
-        self.multi_cell(0, 6, terapija_i_savet)
-        self.ln(6)
-        
-    def draw_chat_responses(self, chat_responses: list[str]):
+    def draw_chat_responses(self, chat_responses: list[str]) -> None:
+        """
+        Draws the chat responses on the PDF.
+        """
         # Preporuka (Crvena boja)
         self.set_font(FONT_BOLD, "", 12)
         self.set_text_color(160, 0, 0)
@@ -201,7 +328,10 @@ class HolisticReport(FPDF):
         #self.multi_cell(0, 6, chat_responses)
         self.ln(6)
         
-    def draw_footer_section(self):
+    def draw_footer_section(self) -> None:
+        """
+        Draws the footer section of the PDF.
+        """
         # Saglasnost (Italic)
         self.set_font(FONT_ITALIC, "", 10)
         self.multi_cell(0, 6, "SAGLASNOST: Pacijent je upoznat sa metodom, preporucenom terapijom i istu u potpunosti prihvata.")
@@ -222,41 +352,59 @@ class HolisticReport(FPDF):
         self.set_font(FONT_ITALIC, "", 9)
         self.cell(line_end - line_start, 8, "M.P. Potpis terapeuta", align="C")
 
+
+######################### PDF Output Functions ########################
+##
 def create_report_pdf(report: MedicalReport) -> HolisticReport:
-    # Initialize PDF
+    """Creates a PDF report from a MedicalReport object."""
+    # 1. Initialize PDF Document Object
     pdf = HolisticReport()
     
-    # Draw Report Sections
+    # 2. Draw Report Sections (Logo, Title)
     pdf.draw_header()
     
-    # Patient Information
+    # 3. Patient Information (Name, Report date)
     pdf.draw_patient_info(report.content.patient_name, report.report_date)
     
-    # Critical Findings Table
+    # 4. Critical Findings Table
     if len(report.content.critical_findings) > 0:
-        pdf.draw_table(report.content.critical_findings)
+        pdf.draw_table_foundings(report.content.critical_findings)
     
-    # Recommended Therapy
+    # 5. Recommended Therapy
     if len(report.content.recommended_therapy_and_advice) > 0:
         pdf.draw_recommended_therapy_section(report.content.recommended_therapy_and_advice)
         
-    # Chat Responses (if any)
+    # 6. Recommended Therapy Table (if therapies are provided)
+    if len(report.therapies) > 0:
+        pdf.draw_table_therapy(report.therapies)
+        
+    # 7. Chat Responses (if any)
     if len(report.chat_responses) > 0:
         pdf.draw_chat_responses(report.chat_responses)
         
-    # Footer
+    # 8. Footer
     pdf.draw_footer_section()
     
+    # Return the generated PDF document object
     return pdf
 
-def generate_report_pdf_bytes(report: MedicalReport) -> bytes:
+def create_report_pdf_bytes(report: MedicalReport) -> bytes:
+    """
+    Creates a PDF report from a MedicalReport object and returns it as bytes.
+    """
     pdf = create_report_pdf(report)
     data = pdf.buffer
     logger.info(f"Report generated (bytes): {len(data)}")
+    #
     return data
 
-def generate_report_pdf_at_filepath(report: MedicalReport, output_filename: str = "report.pdf"):
+def generate_report_pdf_at_filepath(report: MedicalReport, output_filename: str = "report.pdf") -> None:
+    """
+    Generates a PDF report from a MedicalReport object and saves it to a file.
+    """
+    # Create PDF document
     pdf = create_report_pdf(report)
+    # Output to file
     pdf.output(output_filename)
     logger.info(f"Report generated: {output_filename}")
 
