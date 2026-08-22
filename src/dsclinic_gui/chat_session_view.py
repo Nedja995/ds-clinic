@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Any
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -7,6 +8,74 @@ from npy.core.logger import setup_logger
 
 
 logger = setup_logger()
+
+
+
+
+#### ---- MARKDOWN LABEL CLASS ---- ####
+
+class MarkdownLabel(tk.Text):
+    def __init__(self, container, text, style_name, wraplength=300, **kwargs):
+        # Uzimamo boje iz ttk stila (ako su definisane) ili koristimo default
+        # Napomena: Tkinter Text zahteva eksplicitne boje, ne vidi direktno ttk stilove lako
+        bg_color = "#f0f0f0" if "Bot" in style_name else "#d1e7ff" # Primer boja
+        fg_color = "black"
+
+        super().__init__(container, 
+                         width=1, # Širina će se prilagoditi preko pack(fill)
+                         highlightthickness=0, 
+                         borderwidth=0, 
+                         wrap="word", 
+                         bg=bg_color, 
+                         fg=fg_color,
+                         font=("Segoe UI", 10),
+                         cursor="arrow",
+                         **kwargs)
+        
+        self.wraplength_px = wraplength
+        
+        # Definisanje tagova za formatiranje
+        self.tag_configure("bold", font=("Segoe UI", 10, "bold"))
+        self.tag_configure("header", font=("Segoe UI", 12, "bold"))
+        self.tag_configure("bullet", lmargin1=10, lmargin2=20)
+        
+        self.insert_markdown(text)
+        self.configure(state="disabled") # Da korisnik ne može da menja tekst
+        
+        # Automatsko podešavanje visine prema sadržaju
+        self.update_height()
+
+    def insert_markdown(self, text):
+        # Jednostavno parsiranje liniju po liniju
+        lines = text.split('\n')
+        for i, line in enumerate(lines):
+            # Provera za naslove (npr. ### Naslov)
+            header_match = re.match(r'^(#{1,6})\s*(.*)', line)
+            if header_match:
+                self.insert("end", header_match.group(2), "header")
+            else:
+                # Parsiranje bold teksta (**tekst**) unutar linije
+                parts = re.split(r'(\*\*.*?\*\*)', line)
+                for part in parts:
+                    if part.startswith("**") and part.endswith("**"):
+                        content = part[2:-2]
+                        self.insert("end", content, "bold")
+                    else:
+                        self.insert("end", part)
+            
+            if i < len(lines) - 1:
+                self.insert("end", "\n")
+
+    def update_height(self):
+        # Trik za računanje visine Text vidžeta na osnovu sadržaja
+        self.update_idletasks()
+        line_count = float(self.index('end-1c').split('.')[0])
+        self.configure(height=int(line_count))
+        # Fiksiramo širinu da bi wraplength radio unutar bubble-a
+        self.configure(width=40) # Okvirna širina u karakterima
+        
+ 
+ #### ---- MAIN CHAT SESSION VIEW CLASS ---- ####       
 
 class ChatSessionView(ttk.Frame):
     def __init__(self, parent: tk.Misc, view_model: DSClinicViewModel, **kwargs: Any) -> None:
@@ -102,3 +171,36 @@ class ChatSessionView(ttk.Frame):
         # Auto scroll to bottom
         self.canvas.update_idletasks()
         self.canvas.yview_moveto(1.0)
+
+
+    ### --- ALTERNATIVE IMPLEMENTATION USING MARKDOWN LABEL --- ###
+
+    # def add_message(self, text: str, is_user: bool = True) -> None:
+    #     """Renders a chat bubble aligned to the correct side."""
+    #     logger.debug(f"Adding message: {text}")
+    #     if not text or len(text) == 0:
+    #         return
+
+    #     if not is_user:
+    #         self.view_model._model.chat_responses.append(text) 
+            
+    #     anchor = "e" if is_user else "w"
+    #     style_frame = "ChatUser.TFrame" if is_user else "ChatBot.TFrame"
+    #     style_label = "ChatUser.TLabel" if is_user else "ChatBot.TLabel"
+        
+    #     bubble_wrap = ttk.Frame(self.history_frame, padding=(12, 6))
+    #     bubble_wrap.pack(side="top", fill="x")
+        
+    #     bubble = ttk.Frame(bubble_wrap, style=style_frame, padding=8)
+    #     bubble.pack(anchor=anchor)
+        
+    #     # --- IZMENA OVDE ---
+    #     # Umesto: lbl = ttk.Label(bubble, text=text, style=style_label, wraplength=300)
+    #     # Koristimo MarkdownLabel:
+    #     lbl = MarkdownLabel(bubble, text=text, style_name=style_label, wraplength=300)
+    #     lbl.pack(fill="both", expand=True)
+    #     # -------------------
+        
+    #     # Auto scroll to bottom
+    #     self.canvas.update_idletasks()
+    #     self.canvas.yview_moveto(1.0)
