@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.1.4"
-description = "DSClinic AI - Alat za analizu medicinskih izveštaja (Laboratorija i NLS)"
+version = "2.1.5"
+description = "MedAI Assistant - ViTec"
 dependencies = [
     "google-genai",
     "pydantic"
