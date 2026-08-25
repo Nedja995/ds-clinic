@@ -216,11 +216,13 @@ class MedicalReportView(ttk.Frame):
         nalazi_card = self._card(sf, "Nalazi")
         nalazi_card.pack(fill="x", **PAD)
 
-        th = ttk.Frame(nalazi_card, style="THead.TFrame", height=26)
-        th.pack(fill="x", padx=0, pady=(0, 2))
-        th.pack_propagate(False)
-        ttk.Label(th, text="Mišljenje / Objašnjenje", style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
-        ttk.Label(th, text="Parametar i vrednost", style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
+        self.th = ttk.Frame(nalazi_card, style="THead.TFrame", height=26)
+        self.th.pack(fill="x", padx=0, pady=(0, 2))
+        self.th.pack_propagate(False)
+        ttk.Label(self.th, text="Mišljenje / Objašnjenje", style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
+        ttk.Label(self.th, text="Parametar i vrednost", style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
+        #self.th.grid_remove()  # Hide initially; only show if there are findings
+        #self.th.pack_forget()  # Hide initially; only show if there are findings
 
         self.nalazi_container = ttk.Frame(nalazi_card, style="Rows.TFrame")
         self.nalazi_container.pack(fill="x", padx=0)
@@ -435,6 +437,14 @@ class MedicalReportView(ttk.Frame):
         """Updates complex widgets based on current VM state."""
         
         logger.debug(f"Updating View from ViewModel={self.view_model}...")
+        
+        # if self.view_model.findings and len(self.view_model.findings) > 0:
+        #     self.th.grid()  # Show header if there are findings
+        #     # self.th.pack(fill="x", padx=0, pady=(0, 2))
+        #     self.th.pack(fill="x", padx=0, pady=(0, 2), before=self.th_or_first_element)
+        # else:
+        #     #self.th.grid_remove()  # Hide header if no findings
+        #     self.th.pack_forget()  # Hide header if no findings
         
         # Reset parity for row colors
         self._row_parity_findings = 0

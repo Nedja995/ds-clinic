@@ -94,13 +94,22 @@ if __name__ == "__main__":
     formatted_date = current_date.strftime("%d.%m.%Y")
     
     # Initial / Test Data
+    # test_podaci = {
+    #     "report_id": "1",
+    #     "report_date": formatted_date,
+    #     "content": {
+    #         "patient_name": "Nepoznato",
+    #         "recommended_therapy_and_advice": "Smanjiti fizički napor.",
+    #         "critical_findings": [{"expertsko_misljenje": "Puls je povišen.", "parametar_and_value": "Puls: 75 bpm"}]
+    #     }
+    # }
     test_podaci = {
         "report_id": "1",
         "report_date": formatted_date,
         "content": {
             "patient_name": "Nepoznato",
-            "recommended_therapy_and_advice": "Smanjiti fizički napor.",
-            "critical_findings": [{"expertsko_misljenje": "Puls je povišen.", "parametar_and_value": "Puls: 75 bpm"}]
+            "recommended_therapy_and_advice": "",
+            "critical_findings": []
         }
     }
 
