@@ -48,6 +48,11 @@ class DSClinic:
         if not os.path.exists(self.input_dir):
             raise FileNotFoundError(f"Input directory not found: {self.input_dir}")
         
+        # Get input dir
+        saved = load_saved_settings()
+        appSettings = AppSettings(**{k: v for k, v in saved.items() if not k.startswith("_")})
+        self.input_dir = appSettings.input_dir
+        
         # Find documents
         documents_filepaths = find_input_documents(self.input_dir)
         if not documents_filepaths:
