@@ -9,3 +9,4 @@ pydantic==2.12.5
 pyinstaller==6.19.0
 ttkbootstrap==1.20.2
 matplotlib==3.10.8
+pydantic-settings==2.6.0

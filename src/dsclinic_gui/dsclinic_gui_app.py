@@ -41,11 +41,16 @@ class DSClinicAppGUI(tk.Tk):
         # Main Container View
         self.main_container = MainContainerView(self, self.view_model)
         self.main_container.pack(fill=tk.BOTH, expand=True)
+    
         
         # View
         #self.report_view = MedicalReportView(self, self.view_model, self.medical_report)
         
         self._center_window(INIT_WIDTH, INIT_HEIGHT)
+    
+        # # Force update and set initial sash position to 80% of INIT_WIDTH
+        # self.update_idletasks()
+        # self.main_container.sashpos(0, int(INIT_WIDTH * 0.7))
         
     def _configure_app(self):
         self.title(config.APP_NAME)

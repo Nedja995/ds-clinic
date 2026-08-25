@@ -3,6 +3,8 @@ import datetime
 import json
 from google.genai import types as genai_types
 import config
+from npy.core.settings_manager import load_saved_settings, save_settings
+from models_new.config import AppSettings
 from npy.core.utils import get_output_data_dirpath, get_input_data_dirpath
 from npy.core.fileutils import find_input_documents, make_output_filepath, open_file_from_filepath
 import pdf_maker
@@ -18,7 +20,11 @@ class DSClinic:
     """Glavna logika za DSClinic aplikaciju."""
     
     def __init__(self, model_name: str = config.AI_MODEL_NAME):
-        self.input_dir = get_input_data_dirpath()
+        # ── settings ──────────────────────────────────────────────────────
+        # from npy.core.settings_manager import load_saved_settings, save_settings
+        saved = load_saved_settings()
+        appSettings = AppSettings(**{k: v for k, v in saved.items() if not k.startswith("_")})
+        self.input_dir = appSettings.input_dir
         self.output_dir = get_output_data_dirpath()
         self.model_name = model_name
         logger.info(f"Initializing DSClinic with model: {self.model_name}, input_dir: {self.input_dir}, output_dir: {self.output_dir}")

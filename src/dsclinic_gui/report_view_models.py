@@ -61,6 +61,7 @@ class DSClinicViewModel:
         # Report
         self.var_patient_name = tk.StringVar(value=self._model.content.patient_name)
         self.var_report_date = tk.StringVar(value=self._model.report_date)
+        self.var_input_dir = tk.StringVar(value=self._model.input_dir)
         
         # Chat session (TODO: get rid of these)
         self.var_initial_question = tk.StringVar(value="")
@@ -95,7 +96,7 @@ class DSClinicViewModel:
         self.findings             = self._model.content.critical_findings
         self.var_patient_name.set(self._model.content.patient_name)
         self.var_report_date.set(self._model.report_date)
-
+        self.var_input_dir.set(self._model.input_dir)
         #self.app.event_generate("<<VM_DataChanged>>")
         
     def _update_model_from_viewmodel(self):
@@ -103,6 +104,7 @@ class DSClinicViewModel:
         # Sync Observables to Model
         self._model.content.patient_name                   = self.var_patient_name.get()
         self._model.report_date                            = self.var_report_date.get()
+        self._model.input_dir                              = self.var_input_dir.get()
         self._model.content.recommended_therapy_and_advice = self.therapy_text_content
         self._model.content.critical_findings              = self.findings
         self._model.therapies                              = self.therapy_data

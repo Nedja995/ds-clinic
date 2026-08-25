@@ -41,7 +41,7 @@ class Toolbar(ttk.Frame):
 
         # Export Button
         self.btn_export = self._toolbar_button(
-            self, text="Export", command=self.export_command, side="left"
+            self, text="Export 1", command=self.export_command, side="left"
         )
 
         # Details Button (disabled if no command provided)

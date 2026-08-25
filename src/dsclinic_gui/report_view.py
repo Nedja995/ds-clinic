@@ -11,6 +11,8 @@ Jedini izuzeci su:
 import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog, messagebox
 
+from npy.core.settings_manager import load_saved_settings, save_settings
+from models_new.config import AppSettings
 from npy.core.logger import setup_logger
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
 
@@ -20,6 +22,7 @@ from dsclinic_gui.chat_session_view import ChatSessionView
 from dsclinic_gui.settings.window import open_settings
 from npy.core.event_emitter import ErrorMessageEvent
 from dsclinic_gui.report_view_models import ExportRequest
+from npy.core.settings_manager import load_saved_settings
 
 
 ## App Logger
@@ -185,12 +188,22 @@ class MedicalReportView(ttk.Frame):
         pr.pack(fill="x")
 
         ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_ime = ttk.Entry(pr, width=26, font=FI, textvariable=self.view_model.var_patient_name)
-        self.ent_ime.pack(side="left", padx=(6, 28), ipady=2, pady=4)
+        self.ent_ime = ttk.Entry(pr, width=24, font=FI, textvariable=self.view_model.var_patient_name)
+        self.ent_ime.pack(side="left", padx=(2, 2), ipady=2, pady=4)
 
         ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
-        self.ent_datum = ttk.Entry(pr, width=14, font=FI, textvariable=self.view_model.var_report_date)
-        self.ent_datum.pack(side="left", padx=(6, 0), ipady=2, pady=4)
+        self.ent_datum = ttk.Entry(pr, width=10, font=FI, textvariable=self.view_model.var_report_date)
+        self.ent_datum.pack(side="left", padx=(2, 0), ipady=2, pady=4)
+        
+        # Card: Folder Inputs
+        folder_card = self._card(sf, "Ulazni Nalazi")
+        folder_card.pack(fill="x", **PAD)
+        self._build_folder_input_row(folder_card, 
+                                     "Folder:", 
+                                     "Izaberi", 
+                                     command=lambda: [self.update_viewmodel_from_view(), self._browse_folder(self.entry_folder), self.update_view_from_viewmodel()], 
+                                     default_folder=self.view_model.var_input_dir.get())
+
 
         # Card: Terapija
         therapy_card = self._card(sf, "Preporučena terapija i savet")
@@ -272,6 +285,43 @@ class MedicalReportView(ttk.Frame):
         t.bind("<FocusIn>",  lambda _: t.config(highlightbackground=ACCENT))
         t.bind("<FocusOut>", lambda _: t.config(highlightbackground=BORDER))
         return t
+    
+    # -- Folder Input Row ─────────────────────────────────────────────────────
+
+    def _browse_folder(self, entry_folder: ttk.Entry):
+        # Open the native system directory chooser
+        self.selected_directory = filedialog.askdirectory()
+        
+        if self.selected_directory:
+            # Clear any existing text inside the entry box
+            entry_folder.delete(0, tk.END)
+            # Insert the newly selected directory path
+            entry_folder.insert(0, self.selected_directory)
+            
+            self.entry_folder = entry_folder
+            saved = load_saved_settings()
+            appSettings = AppSettings(**{k: v for k, v in saved.items() if not k.startswith("_")})
+            appSettings.input_dir = self.selected_directory
+            save_settings(appSettings.dict())
+            self.view_model.var_input_dir.set(self.selected_directory)
+            self.view_model._update_model_from_viewmodel()
+
+    # --- Folder Input Row ─────────────────────────────────────────────────────
+
+    def _build_folder_input_row(self, parent, label_text: str, button_text: str, command, default_folder: str = None):
+        # Create a frame to hold the label, entry, and button
+        frame = ttk.Frame(parent, style="Panel.TFrame", padding=(12, 0, 12, 2))
+        frame.pack(fill="x", pady=(4, 4))
+        # Add the label, entry, and button to the frame
+        ttk.Label(frame, text=label_text, style="FormLabel.TLabel").pack(side="left")
+        self.entry_folder = ttk.Entry(frame, width=40, font=FI)
+        if default_folder:
+            self.entry_folder.insert(0, default_folder)
+        self.entry_folder.pack(side="left", padx=(6, 6), ipady=2)
+        # Add the button to the frame
+        browse_button = ttk.Button(frame, text=button_text, command=command)
+        browse_button.pack(side="left", padx=(6, 0), ipady=2)
+
 
     # ─────────────────────────────────────────────────────────────────────────
     # Nalazi rows

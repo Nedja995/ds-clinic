@@ -18,18 +18,14 @@ class MainContainerView(ttk.PanedWindow):
         # orient=tk.HORIZONTAL creates panes side-by-side separated by a vertical line
         super().__init__(parent, orient=tk.HORIZONTAL, **kwargs)
 
-        # Calculate initial 70% width based on app constants
-        left_w = int(INIT_WIDTH * 0.7)
-        right_w = int(INIT_WIDTH * 0.3)
-
         # Instantiate sub-views
         self.left_view = MedicalReportView(self, view_model, padding=4)
         self.right_view = ChatSessionView(self, view_model, padding=4)
 
         # Add views to PanedWindow
-        self.add(self.left_view)
-        self.add(self.right_view)
-        
-        
+        self.add(self.left_view, weight=8)  # weight=8 means it takes 8 parts of the scalable space (80% of the total width)
+        self.add(self.right_view, weight=2) # weight=2 means it takes 2 parts of the scalable space (20% of the total width)
+
+
         # self.left_view.configure(width=left_w)
         # self.right_view.configure(width=right_w)

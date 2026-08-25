@@ -3,6 +3,8 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from collections import UserList
+from models_new.config import app_settings
+from npy.core import utils
 from pydantic import BaseModel, Field
 import config
 
@@ -40,6 +42,7 @@ class MedicalReport(BaseModel):
     """
     report_id:      str                       = Field(default_factory = lambda: uuid.uuid4().hex)
     report_date:    str                       = Field(description     = "Datum izveštaja.", default_factory = lambda: datetime.now().strftime('%d.%m.%Y.'))
+    input_dir:      str                       = Field(description     = "Input directory path.", default=app_settings.input_dir)
     content:        MedicalReportModel        = Field(default         = MedicalReportModel)
     therapies:      list[MedicalTherapyModel] = Field(default         = [])
     chat_responses: list[str]                 = Field(default         = [])
