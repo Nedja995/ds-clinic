@@ -10,6 +10,8 @@ Medical analysis tools
 - Activate (unix): `source .venv/bin/activate`
 - Activate (windows): `.venv\Scripts\activate.bat`
 - Install dependencies: `pip install -r requirements.txt`
+- spacy dep: `python -m spacy download en_core_web_sm`
+- spacy dep: `python -m spacy download en_core_web_lg` (no)
 - Run script: `python dsclinic.py`
 
 ### Parameters

@@ -9,7 +9,7 @@ Intentional tk.* exceptions (documented):
   - tk.StringVar / tk.DoubleVar / tk.BooleanVar – always tk
 """
 import tkinter as tk
-from tkinter import ttk, scrolledtext
+from tkinter import Frame, ttk, scrolledtext
 
 from dsclinic_gui.styles import (
     BG, PANEL, TOOLBAR, WHITE, ACCENT, BORDER,
@@ -73,6 +73,7 @@ class SettingsWindow(tk.Toplevel):
     def _setup_ui(self) -> None:
         self._build_toolbar()
         self._build_scroll_area()
+        self._build_patient_data_section()
         self._build_ai_section()
         self._build_general_section()
         self._finalize_scroll()
@@ -114,6 +115,37 @@ class SettingsWindow(tk.Toplevel):
     def _finalize_scroll(self) -> None:
         self._inner.update_idletasks()
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+
+    def _build_row(self, parent) -> ttk.Frame:
+        # Create a frame to hold the elements of the row
+        frame = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 0, 0, 0))
+        frame.pack(fill="x", pady=(0, 0))
+        
+        return frame
+        
+    # ─────────────────────────────────────────────────────────────────────────
+    # Patient Data Section
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _build_patient_data_section(self) -> None:
+        gen = self._card("Patient Data")
+        
+        row = self._build_row(gen)
+
+        # Add anonimization checkbox
+        ttk.Checkbutton(row, text="Auto Anonymization", variable=self.view_model.var_anonymization_on).pack(side="left", padx=(4, 0))
+        
+        if not self.view_model.var_anonymization_on.get():
+            ttk.Checkbutton(row, text="Anonymize Custom Texts", variable=self.view_model.var_anonymization_custom_texts_on).pack(side="left", padx=(4, 0))
+        
+        # # Add entry field
+        # self.entry_folder = ttk.Entry(frame, width=20, font=FI)
+        # self.entry_folder.insert(0, "")
+        # self.entry_folder.pack(side="left", padx=(0, 0), ipady=2)
+        
+        # # Add the button to the frame
+        # browse_button = ttk.Button(frame, text="placeholder", command=lambda: print("Browse button clicked"))
+        # browse_button.pack(side="left", padx=(0, 0), ipady=0)
 
     # ─────────────────────────────────────────────────────────────────────────
     # AI Section

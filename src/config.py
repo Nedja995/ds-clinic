@@ -64,6 +64,11 @@ APP_DEBUG_RESPONSE: bool        = json_config.get("app", {}).get("debug_response
 GOOGLE_API_KEY: str    = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '').replace("'", "")       # GOOGLE API (Gemini)
 ANTHROPIC_API_KEY: str = ini_config['ANTHROPIC']['ANTHROPIC_API_KEY'].replace('"', '').replace("'", "") # ANTHROPIC API (Claude)
 
+########### APP SETTINGS ###########
+## PATIENT DATA
+ANONYMIZATION_ON: bool = json_config.get("anonymization_on", False)  # Enable/Disable automatic anonymization of patient data
+ANONYMIZATION_CUSTOM_TEXTS_ON: bool = json_config.get("anonymization_custom_texts_on", False)  # Enable/Disable anonymization of custom texts
+
 ###########  AI CONFIG  ##########
 AI_TASK_KEY: str                                      = json_config.get("ai_initial_task_key", "")          # Initial Task Key (TODO: check is neccessery)
 AI_TASK_DESCRIPTIONS: dict[str, dict[str, list[str]]] = json_config.get("ai_task_descriptions", {})         # Task Descriptions
@@ -163,6 +168,10 @@ def save_config():
     json_config["ai_initial_model_config"]["top_p"] = AI_MODEL_TOP_P
     json_config["ai_initial_task_description"] = AI_INITIAL_TASK_DESCRIPTION
     json_config["ai_system_instructions"] = AI_SYSTEM_INSTRUCTIONS
+    ##### App Settings
+    ## Patient Data
+    json_config["anonymization_on"] = ANONYMIZATION_ON
+    json_config["anonymization_custom_texts_on"] = ANONYMIZATION_CUSTOM_TEXTS_ON
 
     with open(json_config_path, 'w', encoding='utf-8') as f:
         json.dump(json_config, f, indent=4)

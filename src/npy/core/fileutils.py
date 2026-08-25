@@ -49,15 +49,23 @@ def find_input_documents(input_dir: str) -> list[str]:
     if not os.path.exists(input_dir):
         logger.error(f"Input directory not found: {input_dir}")
         return []
-    # List files
-    filepaths = os.listdir(input_dir)
-    # Ensure extensions have a dot prefix for endswith() to work correctly
+        
+    supported_documents = []
     supported_exts = tuple(f".{ext.lstrip('.')}" for ext, filetype in config.AI_SUPPORTED_INPUT_FILETYPES.items())
-    # Filter files by supported extensions
-    filepaths = [f for f in filepaths if f.lower().endswith(supported_exts)]
-    # Input documents filepaths with full path
-    documents_filepaths = [os.path.join(input_dir, f) for f in filepaths]
-    return documents_filepaths
+    
+    # Use os.walk to search files while ignoring our subfolder
+    for root, dirs, files in os.walk(input_dir):
+        # Modify dirs in-place to prevent os.walk from searching the subfolder
+        if "ANONIMIZOVANO" in dirs:
+            dirs.remove("ANONIMIZOVANO")
+            
+        for file in files:
+            if file.lower().endswith(supported_exts) and "_scrubbed" not in file.lower():
+                full_path = os.path.join(root, file)
+                supported_documents.append(full_path)
+                
+    return supported_documents
+
 
 def make_output_filepath(patient_name: str, extension: str, output_dir: str | None) -> str:
     if not output_dir: output_dir = get_output_data_dirpath()

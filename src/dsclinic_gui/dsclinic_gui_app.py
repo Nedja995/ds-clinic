@@ -1,3 +1,4 @@
+import multiprocessing
 import tkinter as tk
 from npy.core.logger import setup_logger
 import logging
@@ -113,6 +114,9 @@ if __name__ == "__main__":
         }
     }
 
+    # This line is MANDATORY to prevent recursive Tkinter windows spawning 
+    multiprocessing.freeze_support()
+    
     # Init App
     app = DSClinicAppGUI(initial_data=test_podaci)
     # Run App

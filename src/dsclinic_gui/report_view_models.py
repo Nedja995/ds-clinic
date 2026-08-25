@@ -13,7 +13,6 @@ from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
 import config
 from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
-# from dsclinic import get_initial_analysis_report, ask_followup_question
 from dsclinic import DSClinic
 from pdf_maker import generate_report_pdf_at_filepath
 from npy.core.event_emitter import EventEmitter, ErrorMessageEvent
@@ -184,11 +183,121 @@ class DSClinicViewModel:
 
     def _run_task_initial_analyzis(self, output_queue: queue.Queue[ProgressEvent], cancel_event: threading.Event):
         try:
-            report: MedicalReport = self.dsclinicapp.get_initial_analysis_report()
+            output_queue.put(ProgressEvent(status=TaskStatus.RUNNING, message="Finding local medical files..."))
+            
+            # 1. Grab all files sitting in the configured directory
+            input_dir = self.var_input_dir.get()
+            from npy.core.fileutils import find_input_documents
+            documents_filepaths = find_input_documents(input_dir)
+            
+            # Map tracking { original_path: anonymized_path }
+            scrubbed_files_map = {}
+            
+            # ── CHECK: READ USER SETTINGS TO TOGGLE PIPELINE ──────────────────
+            # from npy.core.settings_manager import load_saved_settings
+            # saved_settings = load_saved_settings()
+            #anonymization_enabled = saved_settings.get("ANONYMIZATION_ON", True)
+            anonymization_enabled = config.ANONYMIZATION_ON
+            # ──────────────────────────────────────────────────────────────────
+            
+            if documents_filepaths and anonymization_enabled:
+                output_queue.put(ProgressEvent(status=TaskStatus.RUNNING, message=f"Initializing local privacy layers..."))
+                
+                # 2. Boot up the heavy multiprocessing queues
+                import multiprocessing
+                mp_input_queue = multiprocessing.Queue()
+                mp_output_queue = multiprocessing.Queue()
+                
+                from dsclinic_gui.redaction_worker import redaction_worker_process
+                worker = multiprocessing.Process(
+                    target=redaction_worker_process,
+                    args=(mp_input_queue, mp_output_queue),
+                    daemon=True
+                )
+                worker.start()
+                
+                # 3. Queue every single document to be processed
+                for doc_path in documents_filepaths:
+                    # Isolate parent directory, file name, and extension cleanly
+                    parent_dir = os.path.dirname(doc_path)
+                    filename = os.path.basename(doc_path)
+                    base, ext = os.path.splitext(filename)
+                    
+                    # Create the subfolder path right inside the patient's current folder
+                    anonymized_subfolder = os.path.join(parent_dir, "ANONIMIZOVANO")
+                    if not os.path.exists(anonymized_subfolder):
+                        os.makedirs(anonymized_subfolder, exist_ok=True)
+                        logger.info(f"Created dedicated debug subfolder: {anonymized_subfolder}")
+                    
+                    # Save the scrubbed target asset inside the subfolder path
+                    scrubbed_path = os.path.join(anonymized_subfolder, f"{base}_scrubbed{ext}")
+                    
+                    # Store destination mapping
+                    scrubbed_files_map[doc_path] = scrubbed_path
+                    
+                    # Pass path details to worker process loop
+                    mp_input_queue.put({
+                        "input_path": doc_path,
+                        "output_path": scrubbed_path
+                    })
+
+                # 4. Wait for all files to confirm success via worker loop
+                files_processed = 0
+                scrubbed_text_data_list = [] # Store sanitized strings here if needed later
+                
+                while files_processed < len(documents_filepaths) and not cancel_event.is_set():
+                    try:
+                        # Poll the multiprocessing output stream with a small timeout
+                        process_result = mp_output_queue.get(timeout=0.2)
+                        
+                        # Handle the first-time installation/downloading progress update signal
+                        if process_result.get("status") == "DOWNLOADING_MODELS":
+                            download_msg = process_result.get("message")
+                            output_queue.put(ProgressEvent(status=TaskStatus.RUNNING, message=download_msg))
+                            continue  # Keep blocking in this loop until the actual data returns
+                            
+                        if process_result.get("status") == "ERROR":
+                            raise Exception(f"Local Scrub Failure: {process_result.get('error_message')}")
+                        
+                        if process_result.get("status") == "SUCCESS":
+                            # Grab the safe text layer string if available
+                            if "sanitized_text" in process_result:
+                                scrubbed_text_data_list.append(process_result["sanitized_text"])
+                            
+                            files_processed += 1
+                            output_queue.put(ProgressEvent(
+                                status=TaskStatus.RUNNING, 
+                                message=f"Locally scrubbed {files_processed}/{len(documents_filepaths)} files..."
+                            ))
+                            
+                    except queue.Empty:
+                        continue
+
+                # Shut down child process safely
+                mp_input_queue.put(None)
+                worker.join()
+                
+            elif documents_filepaths and not anonymization_enabled:
+                logger.info("Local anonymization is disabled by user settings. Bypassing scrub pipeline.")
+                output_queue.put(ProgressEvent(status=TaskStatus.RUNNING, message="Bypassing local data obfuscation layer..."))
+                
+            if cancel_event.is_set():
+                output_queue.put(ProgressEvent(status=TaskStatus.CANCELED, message="Analysis cancelled."))
+                return
+
+            # 5. Hand the file map over to your updated dsclinic class instance
+            output_queue.put(ProgressEvent(status=TaskStatus.PROGRESS, message="Sending safely anonymized data to Gemini...", elapsed_seconds=2))
+            
+            report: MedicalReport = self.dsclinicapp.get_initial_analysis_report(scrubbed_files_map=scrubbed_files_map)
+            
             output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, message="Analysis complete", result=report))
+            
         except Exception as e:
             logger.critical(f"Error during analysis: {str(e)}", exc_info=True)
-            output_queue.put(ProgressEvent(status=TaskStatus.FAILED,message="Task failed",result=str(e)))
+            output_queue.put(ProgressEvent(status=TaskStatus.FAILED, message="Task failed", result=str(e)))
+
+
+
 
     def followup_question_submit(self):
         logger.debug("Submitting followup question...")

@@ -10,6 +10,10 @@ import config
 
 class SettingsViewModel:
     def __init__(self) -> None:
+        # __ PATIENT DATA ____________________________________________________________
+        self.var_anonymization_on              = tk.BooleanVar(value=False)
+        self.var_anonymization_custom_texts_on = tk.BooleanVar(value=False)
+        
         # ── AI / Model ────────────────────────────────────────────────────────
         self.available_models               = list(config.AI_SUPPORTED_MODELS.keys())
         self.var_model_name                 = tk.StringVar(value=config.AI_SUPPORTED_MODELS.get(config.AI_MODEL_NAME, list(config.AI_SUPPORTED_MODELS.keys())[0]))
@@ -32,6 +36,9 @@ class SettingsViewModel:
 
     def update_from_config(self) -> None:
         # Update all fields from config (useful if config can be changed at runtime)
+        # Patient Data
+        self.var_anonymization_on.set(config.ANONYMIZATION_ON)
+        self.var_anonymization_custom_texts_on.set(config.ANONYMIZATION_CUSTOM_TEXTS_ON)
         #
         self.var_model_name.set(config.AI_SUPPORTED_MODELS.get(config.AI_MODEL_NAME, list(config.AI_SUPPORTED_MODELS.keys())[0]))
         self.var_temperature.set(config.AI_MODEL_TEMPERATURE)
@@ -49,6 +56,9 @@ class SettingsViewModel:
         
     def save_to_config(self) -> None:
         # Save current settings back to config (useful if you want to persist changes)
+        # Patient Data
+        config.ANONYMIZATION_ON = self.var_anonymization_on.get()
+        config.ANONYMIZATION_CUSTOM_TEXTS_ON = self.var_anonymization_custom_texts_on.get()
         #
         config.AI_MODEL_NAME = self.var_model_name.get()
         config.AI_MODEL_TEMPERATURE = self.var_temperature.get()

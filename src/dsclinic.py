@@ -42,7 +42,7 @@ class DSClinic:
         
         self.report: MedicalReport | None = None
     
-    def get_initial_analysis_report(self) -> MedicalReport:
+    def get_initial_analysis_report(self, scrubbed_files_map: dict[str, str] | None = None) -> MedicalReport:
         """Glavna funkcija"""
         logger.info("Starting initial analysis report generation...")
         if not os.path.exists(self.input_dir):
@@ -53,6 +53,10 @@ class DSClinic:
         appSettings = AppSettings(**{k: v for k, v in saved.items() if not k.startswith("_")})
         self.input_dir = appSettings.input_dir
         
+        # ── CHECK: VERIFY IF ANONYMIZATION TOGGLE IS ACTIVE ──────────────────
+        anonymization_enabled = config.ANONYMIZATION_ON
+        # ──────────────────────────────────────────────────────────────────────
+        
         # Find documents
         documents_filepaths = find_input_documents(self.input_dir)
         if not documents_filepaths:
@@ -61,7 +65,40 @@ class DSClinic:
         # Load documents
         input_documents_parts: list[genai_types.Part] = []
         for doc_filepath in documents_filepaths:
-            part = api_gemini_utils.load_document_from_file(doc_filepath)
+            if "ANONIMIZOVANO" in doc_filepath or "_scrubbed" in doc_filepath:
+                continue
+
+            # ── CONDITIONAL FILE MAPPING PATTERN BLOCK ────────────────────────
+            if anonymization_enabled:
+                # If the original file was a PDF, look for its generated page images inside ANONIMIZOVANO
+                if doc_filepath.lower().endswith('.pdf'):
+                    parent_dir = os.path.dirname(doc_filepath)
+                    filename = os.path.basename(doc_filepath)
+                    base, _ = os.path.splitext(filename)
+                    anonymized_subfolder = os.path.join(parent_dir, "ANONIMIZOVANO")
+                    
+                    # Find all processed pages for this specific PDF file
+                    if os.path.exists(anonymized_subfolder):
+                        for file in os.listdir(anonymized_subfolder):
+                            if file.startswith(f"{base}_scrubbed_page_") and file.lower().endswith('.jpg'):
+                                page_path = os.path.join(anonymized_subfolder, file)
+                                logger.info(f"PDF Page Mapping active: Loading {page_path} for Gemini")
+                                part = api_gemini_utils.load_document_from_file(page_path)
+                                if part: input_documents_parts.append(part)
+                    continue
+
+                # Standard single-image file replacement mapping
+                target_filepath = doc_filepath
+                if scrubbed_files_map and doc_filepath in scrubbed_files_map:
+                    target_filepath = scrubbed_files_map[doc_filepath]
+                    logger.info(f"Anonymization map active: Swapping {doc_filepath} -> {target_filepath}")
+            else:
+                # If anonymization toggle is turned off, parse the raw input directly
+                target_filepath = doc_filepath
+                logger.info(f"Anonymization disabled by user: Loading original asset path {target_filepath}")
+            # ──────────────────────────────────────────────────────────────────
+            
+            part = api_gemini_utils.load_document_from_file(target_filepath)
             if part: input_documents_parts.append(part)
 
         # Run Analyzis
@@ -73,6 +110,8 @@ class DSClinic:
         self.report = MedicalReport(content=report_content)
             
         return self.report
+
+
     
     
     def ask_followup_question(self, question: str) -> str:
