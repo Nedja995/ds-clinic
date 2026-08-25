@@ -16,6 +16,8 @@ import platform
 from pathlib import Path
 from typing import Any
 
+from npy.core.utils import get_base_dir_path
+
 logger = logging.getLogger(__name__)
 
 _APP_NAME = "medai_vitec"
@@ -23,17 +25,18 @@ _APP_NAME = "medai_vitec"
 
 def _get_config_dir() -> Path:
     """Get the platform-appropriate config directory."""
-    system = platform.system()
-    if system == "Windows":
-        base = Path.home() / "AppData" / "Local"
-    elif system == "Darwin":
-        base = Path.home() / "Library" / "Application Support"
-    else:
-        base = Path.home() / ".config"
+    # system = platform.system()
+    # if system == "Windows":
+    #     base = Path.home() / "AppData" / "Local"
+    # elif system == "Darwin":
+    #     base = Path.home() / "Library" / "Application Support"
+    # else:
+    #     base = Path.home() / ".config"
+    base_dir_str = get_base_dir_path()
+    base = Path(base_dir_str) / ".config"
     config_dir = base / _APP_NAME
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir
-
 
 def _get_config_path() -> Path:
     return _get_config_dir() / "settings.json"

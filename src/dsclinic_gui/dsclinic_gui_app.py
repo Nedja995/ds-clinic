@@ -8,6 +8,7 @@ from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
 from dsclinic_gui.constants import MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT
+from datetime import datetime
 
 #
 logger = setup_logger()
@@ -84,13 +85,20 @@ if __name__ == "__main__":
     logger.info("="*60)
     
     
+
+
+    # Get the current local date and time
+    current_date = datetime.now()
+
+    # Format the date as day.month.year
+    formatted_date = current_date.strftime("%d.%m.%Y")
     
     # Initial / Test Data
     test_podaci = {
         "report_id": "1",
-        "report_date": "03.19.2026",
+        "report_date": formatted_date,
         "content": {
-            "patient_name": "Marko Marković",
+            "patient_name": "Nepoznato",
             "recommended_therapy_and_advice": "Smanjiti fizički napor.",
             "critical_findings": [{"expertsko_misljenje": "Puls je povišen.", "parametar_and_value": "Puls: 75 bpm"}]
         }
