@@ -10,6 +10,9 @@ from dsclinic_gui.main_container import MainContainerView
 from dsclinic_gui.styles import build_styles
 from dsclinic_gui.constants import MIN_WIDTH, MIN_HEIGHT, INIT_WIDTH, INIT_HEIGHT
 from datetime import datetime
+from npy.core.localization import TranslationManager
+
+# from tkinter import ttk, messagebox
 
 #
 logger = setup_logger()
@@ -26,6 +29,38 @@ class DSClinicAppGUI(tk.Tk):
     """
     def __init__(self, initial_data: MedicalReport | dict):
         super().__init__()
+        
+        locale_dir = utils.get_resource_dirpath('locale')
+        
+        
+        # App Language
+        initial_lang = self.load_config_language()
+
+        # Initialize the global translator and pass our save method into it
+        self.translator = TranslationManager(
+            locale_dir=locale_dir,
+            default_lang=initial_lang,
+        )
+        
+        # Dropdown translation mappings
+        self.languages = {"English": "en", "Srpski": "sr", "Español": "es"}
+        
+        # # UI Elements Setup
+        self.lang_var = tk.StringVar()
+        # self.dropdown = ttk.Combobox(
+        #     self, textvariable=self.lang_var, values=list(self.languages.keys()), state="readonly"
+        # )
+        # self.dropdown.pack(pady=20)
+        # self.dropdown.bind("<<ComboboxSelected>>", self.on_language_change)
+        
+        # # Trigger button for standard dialog messagebox
+        # self.alert_btn = ttk.Button(self, command=self.show_native_dialog)
+        # self.alert_btn.pack(pady=20)
+        
+        # Register this layout window for live changes
+        self.translator.register_ui(self.refresh_text)
+        self.refresh_text()
+        
         # Initialize App Window
         self._configure_app()
         # Styles
@@ -71,7 +106,44 @@ class DSClinicAppGUI(tk.Tk):
         y = (sh - h) // 2
         self.geometry(f"{w}x{h}+{x}+{y}")
 
+    # def save_config_language(self, lang_code):
+    #     """Automatically updates the JSON config file when a selection changes."""
+    #     config.LANGUAGE_CODE = lang_code
+    #     config.save_config()
+    #     print(f"[Config] Saved updated language preference: {lang_code}")
+        
+    def refresh_text(self):
+        """Updates text elements sitting on the dashboard workspace."""
+        # Update layout widgets
 
+        # Synchronize selection marker inside the combobox widget
+        current_code = self.translator.current_lang
+        for display_name, code in self.languages.items():
+            if code == current_code:
+                self.lang_var.set(display_name)
+                break
+            
+    # --- JSON CONFIG OPERATIONS ---
+    def load_config_language(self):
+        """Loads preference from JSON. Falls back to English if file is missing."""
+        return config.LANGUAGE_CODE
+    
+    # # --- UI & DIALOG MANAGEMENT ---
+    # def on_language_change(self, event):
+    #     selected_display = self.lang_var.get()
+    #     target_lang_code = self.languages[selected_display]
+    #     # This triggers save_config_language automatically, then redraws the layout text
+    #     self.translator.apply_language(target_lang_code)
+
+    # def show_native_dialog(self):
+    #     """Dynamically generates localized standard dialog box elements instantly."""
+    #     # Because these are temporary popups, wrapping them inside the function 
+    #     # means they read the active value of global '_' at the millisecond they open.
+    #     messagebox.showinfo(
+    #         title=_("Action Successful"),
+    #         message=_("Your configuration settings have been successfully updated.")
+    #     )
+        
 ##########################################################################################
 ## SCRIPT FILE ENTRY POINT
 #

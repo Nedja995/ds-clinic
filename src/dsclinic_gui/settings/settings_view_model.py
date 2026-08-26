@@ -10,6 +10,8 @@ import config
 
 class SettingsViewModel:
     def __init__(self) -> None:
+        # __ APP _____________________________________________________________________
+        self.var_app_language = tk.StringVar(value=config.LANGUAGE_CODE)
         # __ PATIENT DATA ____________________________________________________________
         self.var_anonymization_on              = tk.BooleanVar(value=False)
         self.var_anonymization_custom_texts_on = tk.BooleanVar(value=False)
@@ -36,6 +38,7 @@ class SettingsViewModel:
 
     def update_from_config(self) -> None:
         # Update all fields from config (useful if config can be changed at runtime)
+        self.var_app_language.set(config.LANGUAGE_CODE)
         # Patient Data
         self.var_anonymization_on.set(config.ANONYMIZATION_ON)
         self.var_anonymization_custom_texts_on.set(config.ANONYMIZATION_CUSTOM_TEXTS_ON)
@@ -56,6 +59,7 @@ class SettingsViewModel:
         
     def save_to_config(self) -> None:
         # Save current settings back to config (useful if you want to persist changes)
+        config.LANGUAGE_CODE = self.var_app_language.get()
         # Patient Data
         config.ANONYMIZATION_ON = self.var_anonymization_on.get()
         config.ANONYMIZATION_CUSTOM_TEXTS_ON = self.var_anonymization_custom_texts_on.get()

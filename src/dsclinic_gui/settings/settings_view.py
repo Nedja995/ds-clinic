@@ -17,6 +17,8 @@ from dsclinic_gui.styles import (
     FL, FI, FSB, FS,
 )
 from dsclinic_gui.settings.settings_view_model import SettingsViewModel
+from npy.core.localization import TranslationManager
+from npy.core import utils
 
 
 class SettingsWindow(tk.Toplevel):
@@ -39,8 +41,20 @@ class SettingsWindow(tk.Toplevel):
         self._center_window(self._WIDTH, self._HEIGHT)
         
         # 
-        self.view_model = SettingsViewModel()
+
         
+        self.view_model = SettingsViewModel()
+                         # Dropdown translation mappings
+        self.languages = {"English": "en", "Srpski": "sr", "Español": "es"}
+    # App Language
+        initial_lang = self.view_model.var_app_language.get()  # Load from ViewModel (which loads from config)
+        locale_dir = utils.get_resource_dirpath('locale')
+        # Initialize the global translator and pass our save method into it
+        self.translator = TranslationManager(
+            locale_dir=locale_dir,
+            default_lang=initial_lang,
+            save_config_callback=self.save_config_language
+        )
         
         # UI initialization
         self._setup_ui()
@@ -214,8 +228,48 @@ class SettingsWindow(tk.Toplevel):
     # General Section
     # ─────────────────────────────────────────────────────────────────────────
 
+    # ---- Events / Callbacks ---- #
+    
+    def save_config_language(self, lang_code):
+        """Automatically updates the JSON config file when a selection changes."""
+        self.view_model.var_app_language.set(lang_code)
+        self.view_model.save_to_config()
+        print(f"[Config] Saved updated language preference: {lang_code}")
+            
+    def refresh_text(self):
+        """Updates text elements sitting on the dashboard workspace."""
+        # Synchronize selection marker inside the combobox widget
+        current_code = self.translator.current_lang
+        for display_name, code in self.languages.items():
+            if code == current_code:
+                self.view_model.var_app_language.set(display_name)
+                break
+            
+    # --- JSON CONFIG OPERATIONS ---
+    def load_config_language(self):
+        """Loads preference from JSON. Falls back to English if file is missing."""
+        return self.view_model.var_app_language.get()
+    
+    
+    # --- UI & DIALOG MANAGEMENT ---
+    def on_language_change(self, event):
+        selected_display = self.view_model.var_app_language.get()
+        target_lang_code = self.languages[selected_display]
+        # This triggers save_config_language automatically, then redraws the layout text
+        self.translator.apply_language(target_lang_code)
+
     def _build_general_section(self) -> None:
         gen = self._card("General")
+        
+
+        
+        # UI Elements Setup
+        self.view_model.var_app_language = tk.StringVar()
+        self.dropdown = ttk.Combobox(
+            gen, textvariable=self.view_model.var_app_language, values=list(self.languages.keys()), state="readonly"
+        )
+        self.dropdown.pack(pady=20)
+        self.dropdown.bind("<<ComboboxSelected>>", self.on_language_change)
 
         btn_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 0, 0, 10))
         btn_row.pack(fill="x")

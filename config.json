@@ -2,7 +2,8 @@
     "app": {
         "log_level": "DEBUG",
         "debug_export_response": true,
-        "debug_response": false
+        "debug_response": false,
+        "language_code": "sr"
     },
     "ai_system_instructions": [
         "You are an expert medical data analyst using medical data (tradicional, holistic, western, eastern, etc..) from input documents. "
@@ -119,7 +120,7 @@
         "NALAZI": "nalazi"
     },
     "ai_initial_task_description": [
-        "('(\"(\\'Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. Highlight severe abnormalities. Provide accurate and concise information. If you dont know the answer, state that you dont know. Always respond in Serbian lanugage. IMPORTANT PRIVACY NOTICE: - Parts of these documents have been automatically blacked out using a local PII (Personally Identifiable Information) redactor to protect patient privacy. - Solid black rectangles hide administrative data such as patient names, precise residential addresses, or government identification numbers (JMBG/LBO). - Do not attempt to guess or reconstruct the redacted personal info. - Ignore these black blocks completely and focus 100% of your clinical attention on the visible diagnostic data, laboratory metrics, structural values, and reference ranges to form your medical analysis report.\\',)\",)',)"
+        "('(\\'(\\\\\\'(\"(\\\\\\\\\\\\\\'Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. Highlight severe abnormalities. Provide accurate and concise information. If you dont know the answer, state that you dont know. Always respond in Serbian lanugage. IMPORTANT PRIVACY NOTICE: - Parts of these documents have been automatically blacked out using a local PII (Personally Identifiable Information) redactor to protect patient privacy. - Solid black rectangles hide administrative data such as patient names, precise residential addresses, or government identification numbers (JMBG/LBO). - Do not attempt to guess or reconstruct the redacted personal info. - Ignore these black blocks completely and focus 100% of your clinical attention on the visible diagnostic data, laboratory metrics, structural values, and reference ranges to form your medical analysis report.\\\\\\\\\\\\\\',)\",)\\\\\\',)\\',)',)"
     ],
     "ai_response_description": {
         "ai_response_recommended_therapy_and_advice": "Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.",
@@ -127,6 +128,6 @@
         "ai_response_critical_finding_experts_opinion": "Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable.",
         "ai_response_critical_finding_param_and_value": "The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004')."
     },
-    "anonymization_on": true,
+    "anonymization_on": false,
     "anonymization_custom_texts_on": false
 }

@@ -71,8 +71,7 @@ class DSClinicViewModel:
         self.var_status_detail = tk.StringVar(value="Ready")
         self.var_progress_value = tk.DoubleVar(value=0.0)
         self.var_is_analyzing = tk.BooleanVar(value=False)
-        self.var_btn_analyze_text = tk.StringVar(value="Analyze")
-
+        self.var_btn_analyze_text = tk.StringVar(value=_("Analyze"))
         # Threading
         self._output_queue: queue.Queue[ProgressEvent] = queue.Queue()
         self._cancel_event: threading.Event = threading.Event()
@@ -385,7 +384,7 @@ class DSClinicViewModel:
                     self.var_progress_value.set(100)
                     self.var_status_detail.set("Analysis completed successfully.")
                     self.var_is_analyzing.set(False)
-                    self.var_btn_analyze_text.set("Analyze")
+                    self.var_btn_analyze_text.set(_("Analyze"))
 
                     # Notify the view to refresh based on new data
                     self.on_vm_data_changed.emit() 
@@ -405,7 +404,7 @@ class DSClinicViewModel:
                     self.var_progress_value.set(50)
                     self.var_status_detail.set(f"Analysis Failed with error: 'Unexpected result type. Results={progress_event.result}'.")
                     self.var_is_analyzing.set(False)
-                    self.var_btn_analyze_text.set("Analyze")
+                    self.var_btn_analyze_text.set(_("Analyze"))
                 #
                 return False
             case TaskStatus.CANCELED:
@@ -417,7 +416,7 @@ class DSClinicViewModel:
             case TaskStatus.FAILED:
                 # Reset ViewModel state
                 self.var_is_analyzing.set(False)
-                self.var_btn_analyze_text.set("Analyze")
+                self.var_btn_analyze_text.set(_("Analyze"))
                 # Set Status
                 error_msg = f"Analysis failed with error: {progress_event.result}"
                 logger.error(error_msg)

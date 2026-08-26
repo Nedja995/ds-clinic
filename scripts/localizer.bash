@@ -1,0 +1,1 @@
+pybabel compile -d resources/locale -D app

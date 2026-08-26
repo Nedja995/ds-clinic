@@ -65,6 +65,8 @@ GOOGLE_API_KEY: str    = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '')
 ANTHROPIC_API_KEY: str = ini_config['ANTHROPIC']['ANTHROPIC_API_KEY'].replace('"', '').replace("'", "") # ANTHROPIC API (Claude)
 
 ########### APP SETTINGS ###########
+LANGUAGE_CODE: str = json_config.get("app", {}).get("language_code", "en")  # Default language code for localization
+
 ## PATIENT DATA
 ANONYMIZATION_ON: bool = json_config.get("anonymization_on", False)  # Enable/Disable automatic anonymization of patient data
 ANONYMIZATION_CUSTOM_TEXTS_ON: bool = json_config.get("anonymization_custom_texts_on", False)  # Enable/Disable anonymization of custom texts
@@ -169,6 +171,7 @@ def save_config():
     json_config["ai_initial_task_description"] = AI_INITIAL_TASK_DESCRIPTION
     json_config["ai_system_instructions"] = AI_SYSTEM_INSTRUCTIONS
     ##### App Settings
+    json_config["app"]["language_code"] = LANGUAGE_CODE
     ## Patient Data
     json_config["anonymization_on"] = ANONYMIZATION_ON
     json_config["anonymization_custom_texts_on"] = ANONYMIZATION_CUSTOM_TEXTS_ON

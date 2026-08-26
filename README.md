@@ -65,3 +65,9 @@ pyinstaller --noconfirm --onefile --windowed --name "DSClinicGUI" --paths "src" 
 - diagnosis
 - findings table
 - additional: chat responses
+
+### Add translation
+
+```cmd
+pybabel compile -d resources/locale -D app
+```
