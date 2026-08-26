@@ -41,6 +41,111 @@ msgstr "PREPORUCENA TERAPIJA I SAVETI"
 msgid "CRITICAL FINDINGS"
 msgstr "KRITICNI NALAZI"
 
+msgid "Opinion / Explanation"
+msgstr "Misljenje / Objasnjenje"
+
+msgid "Parameter and value"
+msgstr "Parametar i vrednost"
+
+msgid "+ Add new finding"
+msgstr "+ Dodaj novi nalaz"
+
+msgid "THERAPY"
+msgstr "TERAPIJA"
+
+msgid "Article / Product"
+msgstr "Artikal / Preparat"
+
+msgid "Instructions for use"
+msgstr "Uputstvo za upotrebu"
+
+msgid "+ Add new therapy"
+msgstr "+ Dodaj novu terapiju"
+
+msgid "CHAT ASSISTANT"
+msgstr "ASSISTENT"
+
+msgid "Send"
+msgstr "Posalji"
+
+msgid "PATIENT DATA"
+msgstr "PODATCI PACIJENTA"
+
+msgid "Auto Anonymization"
+msgstr "Automatsko anonimiziranje"
+
+msgid "Anonymize Custom Texts"
+msgstr "Anonimiziraj odredjene reci"
+
+msgid "AI"
+msgstr "AI"
+
+msgid "Model"
+msgstr "Model"
+
+msgid "Model Name"
+msgstr "Ime Modela"
+
+msgid "Temperature"
+msgstr "Temperatura"
+
+msgid "Top P"
+msgstr "Top P"
+
+msgid "Analyze Instructions"
+msgstr "Instrukcije za analizu"
+
+msgid "Recommended Therapy and Advice"
+msgstr "Preporucena terapija i savet"
+
+msgid "Critical Findings"
+msgstr "Kriticni Nalazi"
+
+msgid "Expert Opinion"
+msgstr "Expertsko misljenje"
+
+msgid "Initial Task Description"
+msgstr "Opis inicijalnog zadatka"
+
+msgid "System Instructions"
+msgstr "Sistemske instrukcije"
+
+msgid "Google API Key"
+msgstr ""
+
+msgid "GENERAL"
+msgstr "GENERALNO"
+
+msgid "Language"
+msgstr "Jezik"
+
+msgid "Support"
+msgstr "Podrska"
+
+msgid "Send Logs"
+msgstr "Posalji logove"
+
+msgid "Open Logs Directory"
+msgstr "Otvori fasciklu logova"
+
+msgid "Support Email"
+msgstr "Email podrske"
+
+msgid "App Version"
+msgstr "Verzija programa"
+
+msgid "Success"
+msgstr "Uspesno"
+
+msgid "Report generated. Open file?"
+msgstr "Izvestaj generisan. Otvori izvestaj?"
+
+msgid "Yes"
+msgstr "Da"
+
+msgid "No"
+msgstr "Ne"
+
 msgid "Hello, {}!"
 msgstr "Zdravo, {}!"
 
