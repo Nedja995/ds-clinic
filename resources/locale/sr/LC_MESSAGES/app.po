@@ -9,7 +9,7 @@ msgid "Analyze"
 msgstr "Analiziraj"
 
 msgid "Export Report"
-msgid "Izvezi Izvestaj"
+msgstr "Izvezi Izvestaj"
 
 msgid "Details"
 msgstr "Detalji"
@@ -44,10 +44,10 @@ msgstr "KRITICNI NALAZI"
 msgid "Opinion / Explanation"
 msgstr "Misljenje / Objasnjenje"
 
-msgid "Parameter and value"
+msgid "Parameter and Value"
 msgstr "Parametar i vrednost"
 
-msgid "+ Add new finding"
+msgid "+ Add new Finding"
 msgstr "+ Dodaj novi nalaz"
 
 msgid "THERAPY"
@@ -56,10 +56,10 @@ msgstr "TERAPIJA"
 msgid "Article / Product"
 msgstr "Artikal / Preparat"
 
-msgid "Instructions for use"
+msgid "Usage Instructions"
 msgstr "Uputstvo za upotrebu"
 
-msgid "+ Add new therapy"
+msgid "+ Add new Therapy"
 msgstr "+ Dodaj novu terapiju"
 
 msgid "CHAT ASSISTANT"

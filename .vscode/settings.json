@@ -66,5 +66,6 @@
     "obsidian-md-vsc.buttonClass": [
         "Staa"
     ],
-    "python.REPL.enableREPLSmartSend": false
+    "python.REPL.enableREPLSmartSend": false,
+    "python.analysis.stubPath": "typings"
 }

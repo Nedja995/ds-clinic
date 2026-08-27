@@ -98,11 +98,11 @@ class MedicalReportView(ttk.Frame):
         self.btn_analyze = self._tooolbar_button(self.top_frame, textvariable=self.view_model.var_btn_analyze_text)
         self.btn_analyze.config(command=self.view_model.toggle_analysis)
 
-        self.btn_export = self._tooolbar_button(self.top_frame, text="Export")
+        self.btn_export = self._tooolbar_button(self.top_frame, text=_("Export Report"))
         self.btn_export.config(command=self._handle_export_click)
 
-        self.btn_full_report = self._tooolbar_button(self.top_frame, text="Details", state="disabled")
-        self.btn_settings    = self._tooolbar_button(self.top_frame, text="Settings", side="right", command=lambda: open_settings(self.master))
+        self.btn_full_report = self._tooolbar_button(self.top_frame, text=_("Details"), state="disabled")
+        self.btn_settings    = self._tooolbar_button(self.top_frame, text=_("Settings"), side="right", command=lambda: open_settings(self.master))
 
         ttk.Frame(parent, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
@@ -181,46 +181,46 @@ class MedicalReportView(ttk.Frame):
         PAD = dict(padx=4, pady=8)
 
         # Card: Pacijent
-        patient_card = self._card(sf, "Podaci o pacijentu")
+        patient_card = self._card(sf, _("PATIENT DATA"))
         patient_card.pack(fill="x", **PAD)
 
         pr = ttk.Frame(patient_card, style="Panel.TFrame", padding=(12, 0, 12, 2))
         pr.pack(fill="x")
 
-        ttk.Label(pr, text="Ime pacijenta:", style="FormLabel.TLabel").pack(side="left")
+        ttk.Label(pr, text=_("Name:"), style="FormLabel.TLabel").pack(side="left")
         self.ent_ime = ttk.Entry(pr, width=24, font=FI, textvariable=self.view_model.var_patient_name)
         self.ent_ime.pack(side="left", padx=(2, 2), ipady=2, pady=4)
 
-        ttk.Label(pr, text="Datum:", style="FormLabel.TLabel").pack(side="left")
+        ttk.Label(pr, text=_("Date:"), style="FormLabel.TLabel").pack(side="left")
         self.ent_datum = ttk.Entry(pr, width=10, font=FI, textvariable=self.view_model.var_report_date)
         self.ent_datum.pack(side="left", padx=(2, 0), ipady=2, pady=4)
         
         # Card: Folder Inputs
-        folder_card = self._card(sf, "Ulazni Nalazi")
+        folder_card = self._card(sf, _("INPUT FINDINGS"))
         folder_card.pack(fill="x", **PAD)
         self._build_folder_input_row(folder_card, 
-                                     "Folder:", 
-                                     "Izaberi", 
+                                     _("Folder:"), 
+                                     _("Browse"), 
                                      command=lambda: [self.update_viewmodel_from_view(), self._browse_folder(self.entry_folder), self.update_view_from_viewmodel()], 
                                      default_folder=self.view_model.var_input_dir.get())
 
 
         # Card: Terapija
-        therapy_card = self._card(sf, "Preporučena terapija i savet")
+        therapy_card = self._card(sf, _("RECOMMENDED THERAPY AND ADVICES"))
         therapy_card.pack(fill="x", **PAD)
 
         self.txt_terapija = self._scrolled_text(therapy_card, height=9)
         self.txt_terapija.pack(fill="x", padx=0, pady=(0, 0))
 
         # Card: Nalazi
-        nalazi_card = self._card(sf, "Nalazi")
+        nalazi_card = self._card(sf, _("CRITICAL FINDINGS"))
         nalazi_card.pack(fill="x", **PAD)
 
         self.th = ttk.Frame(nalazi_card, style="THead.TFrame", height=26)
         self.th.pack(fill="x", padx=0, pady=(0, 2))
         self.th.pack_propagate(False)
-        ttk.Label(self.th, text="Mišljenje / Objašnjenje", style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
-        ttk.Label(self.th, text="Parametar i vrednost", style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
+        ttk.Label(self.th, text=_("Opinion / Explanation"), style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
+        ttk.Label(self.th, text=_("Parameter and Value"), style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
         #self.th.grid_remove()  # Hide initially; only show if there are findings
         #self.th.pack_forget()  # Hide initially; only show if there are findings
 
@@ -228,27 +228,27 @@ class MedicalReportView(ttk.Frame):
         self.nalazi_container.pack(fill="x", padx=0)
 
         self.btn_dodaj_nalaz = ttk.Button(
-            nalazi_card, text="＋   Dodaj novi nalaz",
+            nalazi_card, text=_("+ Add new Finding"),
             style="Accent.TButton",
             command=lambda: [self.update_viewmodel_from_view(), self.view_model.add_finding(), self.update_view_from_viewmodel()]
         )
         self.btn_dodaj_nalaz.pack(fill="x", padx=2, pady=(4, 4))
 
         # Card: Terapija
-        terapija_card = self._card(sf, "Terapija")
+        terapija_card = self._card(sf, _("THERAPY"))
         terapija_card.pack(fill="x", **PAD)
 
         th2 = ttk.Frame(terapija_card, style="THead.TFrame", height=26)
         th2.pack(fill="x", padx=0, pady=(0, 2))
         th2.pack_propagate(False)
-        ttk.Label(th2, text="Artikal / Preparat", style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
-        ttk.Label(th2, text="Uputstvo za upotrebu", style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
+        ttk.Label(th2, text=_("Article / Product"), style="THeadLabel.TLabel").place(relx=0.0, rely=0, relwidth=0.595, relheight=1.0)
+        ttk.Label(th2, text=_("Usage Instructions"), style="THeadLabel.TLabel").place(relx=0.61, rely=0, relwidth=0.37, relheight=1.0)
 
         self.terapija_container = ttk.Frame(terapija_card, style="Rows.TFrame")
         self.terapija_container.pack(fill="x", padx=0)
 
         self.btn_dodaj_terapiju = ttk.Button(
-            terapija_card, text="＋   Dodaj novu terapiju",
+            terapija_card, text=_("+ Add new Therapy"),
             style="Accent.TButton",
             command=lambda: [self.update_viewmodel_from_view(), self.view_model.add_therapy(), self.update_view_from_viewmodel()]
         )
@@ -265,7 +265,7 @@ class MedicalReportView(ttk.Frame):
         strip = ttk.Frame(outer, style="Strip.TFrame", height=30)
         strip.pack(fill="x")
         strip.pack_propagate(False)
-        ttk.Label(strip, text=title.upper(), style="CardTitle.TLabel").pack(fill="both", expand=True)
+        ttk.Label(strip, text=title, style="CardTitle.TLabel").pack(fill="both", expand=True)
         return outer
 
     def _scrolled_text(self, parent, height=5, bg=PANEL) -> scrolledtext.ScrolledText:
