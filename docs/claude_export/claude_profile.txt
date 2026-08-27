@@ -1,0 +1,8 @@
+Summary
+
+Who Ned is — software developer, primary project DSClinic
+
+Details
+Name: Ned
+Software developer
+Primary project is DSClinic, a medical document analysis desktop application

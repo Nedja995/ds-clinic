@@ -1,0 +1,7 @@
+Preferences
+Summary
+
+How Ned wants Claude to respond
+
+Details
+Prefers minimal, correctly scoped implementations matching exactly what was requested, without added architectural layers (corrected Claude for over-engineering early MVVM examples)

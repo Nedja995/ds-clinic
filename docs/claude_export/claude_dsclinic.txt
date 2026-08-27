@@ -1,0 +1,18 @@
+Summary
+DSClinic — medical document analysis desktop app; v2.0 GUI/architecture work
+
+Details
+Medical document analysis desktop application integrating Google Gemini (google.genai) models to analyze medical documents and produce structured, editable reports exportable as final medical PDF reports
+Handles medical docs including holistic app exports
+Currently working on v2.0: rebuilding the GUI in Tkinter and migrating from MVC to MVVM architecture
+New chat feature is the centerpiece addition of v2.0
+v2.0 goal: intuitive, readable, responsible GUI so the user can more easily review, edit, export, and chat
+Real codebase location: D:__STORAGE__DEV__PROJECTS\DSKlinika\ds-clinic_03_04_2026
+Established MVVM patterns: ViewModel fully owns background task lifecycle; schedule_poll_fn is the only Tkinter coupling injected into the ViewModel; App class handles only window configuration, ViewModel construction, and View mounting
+MVVM audit/refactoring corrected ViewModel violations such as direct filedialog/messagebox calls and a double-polling bug
+Generated a comprehensive Python project template named "dsclinic": src/ layout with api_gemini, dsclinic_gui, and dsclinic_cli packages; toolchain via pyproject.toml/ruff/mypy/pytest/hatchling; cross-platform PyInstaller build scripts
+Built a complete MVVM reference project (dsclinic2_example): dual-panel Tkinter GUI (analysis panel + chat session panel) with PanedWindow, background worker using queue.Queue and root.after() polling, Pydantic v2 models for structured state, full VSCode config (settings.json, launch.json, tasks.json, extensions.json, pyrightconfig.json)
+Implemented persistent JSON-based state management using two Pydantic v2 models (AppSettings, SessionState), with cross-platform data directory resolution and corrupt file backup handling
+UI/UX labels rendered in Serbian; early UI/UX work involved reading existing report_view.py source to produce interactive HTML mockups
+Python conventions across all sessions: tk.StringVar/IntVar/BooleanVar for reactive state, src/ layout, Pydantic for all domain models, threading + queue for non-blocking tasks, lower_snake_case naming, .venv virtual environments
+v1.0 was a CLI app that went well; v2.0 adds the Tkinter GUI (history)

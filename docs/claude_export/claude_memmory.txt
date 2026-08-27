@@ -1,0 +1,45 @@
+Purpose & context
+
+Ned is building DSKlinika (ds-clinic), a Windows-first Python desktop application for holistic medical clinics. The app uses AI to analyze patient documents and generate structured PDF reports. It is a solo development project, actively evolving across versioned directories under D:\__STORAGE\__DEV\__PROJECTS\DSKlinika\, with the active version at ds-clinic_03_04_2026.
+
+Architecture & stack: Python, tkinter/ttk (GUI), FPDF2 (PDF generation), Pydantic v2 (data models), MVVM pattern, PyInstaller (distribution). AI integrations include both Google Gemini (api_gemini) and Anthropic Claude (api_claude) via their respective native SDKs. Configuration uses a three-tier system (JSON + INI + TOML).
+
+Core modules: report_view.py, report_view_models.py, models.py, pdf_maker.py, styles.py, main_container.py, config.py, npy/core/utils.py.
+
+Current state
+
+Medical Report View is the most developed component: full tkinter/ttk form with Nalazi (Findings) and Terapija (Therapy) tables, add/remove row functionality, MVVM sync, and PDF export. The Terapija table UI and its PDF title block ("TERAPIJA:") have been recently completed.
+Settings Window has been implemented (dsclinic_gui/settings/) with AI configuration panels (model selector, temperature/top-p sliders, system instructions, API key) and General settings, following the existing card/panel visual system.
+Chat Session View is partially implemented: ChatSessionViewModel is done (with threading via queue.Queue and root.after polling); the view layer (chat_session_view.py) and main_container.py wiring remain to be completed.
+JSON file-based database (src/db/) has been designed and implemented: a generic JsonCollection[T] engine with a typed AppDatabase class, storing records under app_data/ with per-record JSON files and a _index.json for fast listing. Supports save(), load(), delete(), exists(), list_index(), list_all(), count(), and _rebuild_index_from_disk().
+
+On the horizon
+
+Complete the Chat Session View (chat_session_view.py rewrite, styles.py additions, main_container.py wiring).
+Wire the Settings Window and database layer into the broader application flow.
+Planned roadmap spans v1.x through v3.0 per the product spec.
+
+Key learnings & principles
+
+Minimal, pattern-matched changes are preferred: Ned explicitly favors targeted edits modeled on existing code patterns over refactored abstractions, even if it means some duplication.
+Drop-in compatibility matters: Refactors should not require changes to other layers (e.g., controller/ViewModel changes when the View is refactored).
+ttk throughout, with documented exceptions: tk.Canvas, scrolledtext.ScrolledText, and tk.StringVar are the three intentional tk.* carve-outs; all other widgets use ttk.* with named styles via ttk.Style.
+Threading discipline: Worker threads only write to queue.Queue; all UI updates happen exclusively on the main thread via root.after() polling. event_generate must never be called from worker threads.
+Native SDKs over abstraction layers: The project uses google-genai and anthropic SDKs directly rather than proxies like liteLLM, for lower overhead and direct access to model-specific parameters.
+Claude API cost note: Embedding JSON schema in the system prompt (required for structured output without response_schema) adds tokens per request — acceptable but worth tracking.
+A known bug was identified: a "processing" status branch incorrectly sets the status title to "Failed" in the queue loop.
+
+Approach & patterns
+
+Code exploration before writing: Claude reads existing files (styles, views, models) before implementing anything, to match visual and structural conventions precisely.
+Incremental file writing: Long files are built in logical chunks using append mode rather than single large writes — reliable for files exceeding ~30 lines.
+File navigation discipline: Always use list_directory to confirm exact filenames before reading (filenames have tripped up search-based lookups, e.g., singular vs. plural report_view_model(s).py).
+Specification-driven development: Ned has produced both a technical spec (DSClinic_SPEC.md) and a client-facing product spec (DSClinic_Product_SPEC.md) to guide development.
+
+Tools & resources
+
+MCP tools in use: Desktop Commander (list_directory, read_multiple_files, write_file with append mode, edit_block, create_directory) and Filesystem MCP (read_text_file with head parameter, read_multiple_files).
+Key path: D:\__STORAGE\__DEV\__PROJECTS\DSKlinika\ds-clinic_03_04_2026\src\dsclinic_gui\
+Output path for generated documents: /mnt/user-data/outputs/
+Important encoding note: requirements.txt uses UTF-16 LE BOM — edit_block fails silently on it; use write_file (full rewrite in UTF-8) instead.
+Batch reads: read_multiple_files with an array of absolute Windows paths (double-backslash escaped) is the efficient pattern for reading multiple related files at once.

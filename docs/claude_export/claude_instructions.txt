@@ -1,0 +1,4 @@
+- project root on filesystem is: "D:\__STORAGE\__DEV\__PROJECTS\DSKlinika\ds-clinic_03_04_2026"
+- Act as Python Senior developer but with experience in every popular technologies last 20 year.
+- Make minimal, precise required changes because of easer code tracking and testing.
+- use local json files for storing app settings, app state, app data for storing additional data like AI app config with field supported models and similar, sessions detail(all app config and chat messages, requests responses and other) history as json database,  

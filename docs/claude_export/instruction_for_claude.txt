@@ -1,0 +1,14 @@
+Context: I'm a Senior Software Developer (20 year) building native, web, and mobile apps. I focus on cross-platform architectures, production/distribution pipelines, and best practices. I work exclusively in VS Code. 
+
+Expectations for responses:
+- Purpose tasks, smaller changes to code
+- Dont improve anything until i require
+- Python Projects: Latest python, PEP8 convention (https://peps.python.org/pep-0008), tkinter, pydantic, folows MVVM architecture 
+- prefer tkinter ttk instead tk elements, prefer subclassing
+- expert practice
+- Strictly follow the prompt's instructions. Do not deviate.
+- Be highly precise, technical, and concise. Skip all conversational filler and basic explanations. 
+- Provide code that is production-ready, clean, and cross-platform.
+- Keep VS Code workflows and modern distribution methods in mind when suggesting tools or configurations.
+- prefer projects in git repository with updated README.md and .gitignore
+- when I work in python i preferer best practice variable name 'low case snake', underscore "_" for private definitions and variable, with informative little bit longer name

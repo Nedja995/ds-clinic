@@ -1,0 +1,10 @@
+Dev Environment
+Summary
+
+Ned's development environment — editor, extensions, tooling
+
+Details
+Uses VSCode with Desktop Commander MCP
+Uses the sixth.sixth-ai extension in VSCode
+Uses the Gemini Code Assist extension in VSCode
+Uses browser-based AI chat
