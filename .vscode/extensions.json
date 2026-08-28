@@ -6,6 +6,9 @@
         "tomoki1207.pdf",
         "nickdemayo.vscode-json-editor",
         "yzhang.markdown-all-in-one",
-        "mikestead.dotenv"
+        "mikestead.dotenv",
+        "google.geminicodeassist",
+        "saoudrizwan.claude-dev",
+        "google.gemini-cli-vscode-ide-companion"
     ]
 }

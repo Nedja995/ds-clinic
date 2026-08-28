@@ -71,3 +71,10 @@ pyinstaller --noconfirm --onefile --windowed --name "DSClinicGUI" --paths "src" 
 ```cmd
 pybabel compile -d resources/locale -D app
 ```
+
+### Use Gemini CLI
+
+1. `npm install -g @google/gemini-cli`
+2. Windows: `[System.Environment]::SetEnvironmentVariable("GEMINI_API_KEY", "AIzaSy_YOUR_DSCLINIC_DEV_KEY_HERE", "User")`
+3. Macos / Linux (in ~/.zshrc or ~/.bashrc): `export GEMINI_API_KEY="AIzaSy_YOUR_DSCLINIC_DEV_KEY_HERE"`
+
