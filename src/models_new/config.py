@@ -30,6 +30,11 @@ class AppSettings(BaseSettings):
   # Theme
   theme_name: str = "dark"
 
+  # User preferences
+  language_code: str = "sr"
+  anonymization_on: bool = False
+  anonymization_custom_texts_on: bool = False
+
   # Debug
   debug_log_max_lines: int = Field(default=200, ge=50, le=1000)
 

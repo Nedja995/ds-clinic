@@ -37,7 +37,9 @@ Read these on demand to check policies or designs, not upfront:
 
 1. **Strict MVVM:** ViewModels (`*_view_models.py`) must contain **zero** tkinter widget imports and must **never** trigger dialogues or file selectors directly (use callback handlers). Views (`*_view.py`) handle layouts using native `ttk` styled widgets.
 2. **Threading Isolation:** Background operations (AI calls, PDF compilation, local OCR) must run on a separate daemon thread. They write progress updates into a `queue.Queue`. The GUI thread polling loop reads this queue via `root.after()`. Worker threads must **never** touch UI widgets or call `event_generate()`.
-3. **White-Label Design:** Decouple all branding, clinic names, contact footers, logos, and custom strings from the core code, routing them through `config.json` and asset paths to support easy clinic re-branding.
+3. **Decoupled Config & White-Label Design (No Backward-Compatibility):**
+   * **App Config (`config.json`):** Static, read-only app defaults (supported languages dictionary, fallback language, default model lists, baseline prompt templates). Overwritten upon app updates.
+   * **User Preferences (`settings.json`):** Writeable runtime overrides (active language_code, active model, custom doctor names, custom clinic branding, subscription licenses, and custom prompt templates added/edited by the clinician). Left completely untouched during app updates.
 4. **Local Database:** All local clinic records, settings, and histories are stored in generic `JsonCollection[T]` documents under `app_data/` with local JSON indices.
 5. **Localization:** Serbian (`sr`) translations are compiled using:
    ```cmd
@@ -49,5 +51,6 @@ Read these on demand to check policies or designs, not upfront:
 ## Immediate Development Roadmaps & Challenges
 
 * **Gemini API Congestion:** Gemini servers frequently return rate limits or become busy during client business hours. We need to implement a resilient retry mechanism with exponential backoff and support automatic fallbacks to Anthropic Claude.
+* **Full Decoupled Configuration:** Continue separating settings, enabling clinicians to add custom Prompt templates saved directly in their writeable `settings.json` to extend the baseline templates in `config.json`.
 * **Chat Session View Integration:** The `ChatSessionViewModel` is implemented, but `chat_session_view.py` needs to be completed, styled via `styles.py`, and wired up to `main_container.py`.
 * **Legacy MVVM violations:** Audit existing views and ViewModels to resolve lingering MVC couplings or direct messagebox/dialogue invocations in ViewModel files.

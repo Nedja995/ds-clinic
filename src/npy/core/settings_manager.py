@@ -24,16 +24,23 @@ _APP_NAME = "medai_vitec"
 
 
 def _get_config_dir() -> Path:
-    """Get the platform-appropriate config directory."""
-    # system = platform.system()
-    # if system == "Windows":
-    #     base = Path.home() / "AppData" / "Local"
-    # elif system == "Darwin":
-    #     base = Path.home() / "Library" / "Application Support"
-    # else:
-    #     base = Path.home() / ".config"
+    """Get the platform-appropriate config directory with local portable fallback."""
     base_dir_str = get_base_dir_path()
-    base = Path(base_dir_str) / ".config"
+    local_config_dir = Path(base_dir_str) / ".config" / _APP_NAME
+    
+    # If the local development .config directory exists, use it (Portable/Dev mode)
+    if local_config_dir.exists():
+        return local_config_dir
+        
+    # Otherwise, fallback to the standard platform-specific directories for production distribution
+    system = platform.system()
+    if system == "Windows":
+        base = Path.home() / "AppData" / "Local"
+    elif system == "Darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path.home() / ".config"
+        
     config_dir = base / _APP_NAME
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir

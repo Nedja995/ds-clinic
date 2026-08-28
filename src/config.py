@@ -65,11 +65,13 @@ GOOGLE_API_KEY: str    = ini_config['GOOGLE']['GOOGLE_API_KEY'].replace('"', '')
 ANTHROPIC_API_KEY: str = ini_config['ANTHROPIC']['ANTHROPIC_API_KEY'].replace('"', '').replace("'", "") # ANTHROPIC API (Claude)
 
 ########### APP SETTINGS ###########
-LANGUAGE_CODE: str = json_config.get("app", {}).get("language_code", "en")  # Default language code for localization
+from models_new.config import app_settings
+
+LANGUAGE_CODE: str = app_settings.language_code  # Loaded from new pydantic-settings (settings.json)
 
 ## PATIENT DATA
-ANONYMIZATION_ON: bool = json_config.get("anonymization_on", False)  # Enable/Disable automatic anonymization of patient data
-ANONYMIZATION_CUSTOM_TEXTS_ON: bool = json_config.get("anonymization_custom_texts_on", False)  # Enable/Disable anonymization of custom texts
+ANONYMIZATION_ON: bool = app_settings.anonymization_on  # Loaded from new pydantic-settings
+ANONYMIZATION_CUSTOM_TEXTS_ON: bool = app_settings.anonymization_custom_texts_on  # Loaded from new pydantic-settings
 
 ###########  AI CONFIG  ##########
 AI_TASK_KEY: str                                      = json_config.get("ai_initial_task_key", "")          # Initial Task Key (TODO: check is neccessery)
@@ -178,5 +180,17 @@ def save_config():
 
     with open(json_config_path, 'w', encoding='utf-8') as f:
         json.dump(json_config, f, indent=4)
+
+    # ── SYNCHRONIZE USER PREFERENCES TO SETTINGS.JSON ──
+    from npy.core.settings_manager import load_saved_settings, save_settings
+    try:
+        current_saved = load_saved_settings()
+        current_saved["language_code"] = LANGUAGE_CODE
+        current_saved["anonymization_on"] = ANONYMIZATION_ON
+        current_saved["anonymization_custom_texts_on"] = ANONYMIZATION_CUSTOM_TEXTS_ON
+        save_settings(current_saved)
+        logger.info("Successfully synchronized user preferences to settings.json")
+    except Exception as exc:
+        logger.error(f"Failed to synchronize user preferences to settings.json: {exc}")
         
         

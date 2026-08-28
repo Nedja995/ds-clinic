@@ -1,6 +1,6 @@
 # Architecture Decisions Record — DSClinic
 
-This document tracks the key architectural decisions made for **DSClinic** and the rationale behind each. Because this application has been co-developed across multiple manual and AI sessions, some components may require refactoring in future sprints to fully align with these decisions.
+This document tracks the key architectural decisions made for **DSClinic** and the rationale behind each. Because this application is evolving toward an enterprise-ready product, we prioritize long-term maintainability and structural cleanliness over legacy backward-compatibility.
 
 ---
 
@@ -29,9 +29,12 @@ This document tracks the key architectural decisions made for **DSClinic** and t
 
 ---
 
-## AD-04: Multi-Client White-Labeling (Branding)
+## AD-04: Multi-Client White-Labeling (Branding) & SaaS Flexibility
 * **Decision:** Decouple all brand-specific configurations, report logos, clinic headers, and document styles from core app code.
-* **Rationale:** To enable selling DSClinic to different medical/holistic clinics under their own unique brand (white-labeling), the app must load its layout titles, PDF logos, fonts, and contact footers dynamically from `config.json` and local assets. This allows creating custom-branded builds easily via simple asset swaps.
+* **Rationale:** To support multiple monetization and distribution business models:
+  1. **White-Labeled Client Builds:** Direct customized builds for specific clinics with assets compiled into the directory.
+  2. **Standardized SaaS / Subscription App:** A single distributed application where users pay a subscription and dynamically configure their own clinic headers, report appearances, and doctor names.
+* Storing branding properties, customized layout definitions, and license keys in the writeable local `settings.json` supports both strategies seamlessly.
 
 ---
 
@@ -55,3 +58,19 @@ This document tracks the key architectural decisions made for **DSClinic** and t
 ## AD-07: Monolithic Desktop Distribution (PyInstaller)
 * **Decision:** Distribute the application as a standalone, zero-dependency Windows executable (`.exe`) compiled via PyInstaller.
 * **Rationale:** Medical and holistic clinic computers are often locked-down or lack Python environments. Distributing a single, self-extracting executable with embedded resources (Serbian translations, Arial Unicode TTF fonts, and custom window icons) ensures a simple, double-click install experience.
+
+---
+
+## AD-08: Complete Decoupling of Static App Config and Dynamic User Preferences
+* **Decision:** Maintain a strict, decoupled boundary between read-only application configurations and writeable user preferences. Legacy backward-compatibility is **not required**.
+* **Configuration Specifications:**
+  * **App Config (`config.json`):** Read-only developer/distributor configuration. Contains static definitions that define core application rules:
+    * Supported languages map: `{"English": "en", "Srpski": "sr", "Español": "es"}`.
+    * Default/fallback application language (e.g. `"sr"` or `"en"`) set on development.
+    * Lists of supported AI models.
+    * Base default Task prompt templates.
+  * **User Preferences (`settings.json`):** Writeable configuration stored in user AppData. Contains settings that are specific to the client instance:
+    * Currently active `language_code` (which must match a code defined in the App Config's supported languages).
+    * Custom user-defined Task prompts (clinicians can create, modify, or extend default prompts, saved dynamically to `settings.json` so updates to `config.json` don't overwrite them).
+    * User variables: active model selection, clinic names, custom report headers, doctor credentials, and billing/license parameters.
+* **The "Clean Update" Principle:** When updating the software, the developer only distributes the new executable and the default `config.json` (allowing prompt upgrades or supported model expansions). The user's custom preferences inside `settings.json` remain completely untouched, ensuring zero clinical data or configuration loss!
