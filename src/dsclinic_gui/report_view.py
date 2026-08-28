@@ -265,7 +265,7 @@ class MedicalReportView(ttk.Frame):
         strip = ttk.Frame(outer, style="Strip.TFrame", height=30)
         strip.pack(fill="x")
         strip.pack_propagate(False)
-        ttk.Label(strip, text=title, style="CardTitle.TLabel").pack(fill="both", expand=True)
+        ttk.Label(strip, text=title, style="CardTitle.TLabel", anchor="center").pack(fill="both", expand=True)
         return outer
 
     def _scrolled_text(self, parent, height=5, bg=PANEL) -> scrolledtext.ScrolledText:
