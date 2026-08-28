@@ -59,7 +59,9 @@ class SettingsViewModel:
         
     def save_to_config(self) -> None:
         # Save current settings back to config (useful if you want to persist changes)
-        config.LANGUAGE_CODE = self.var_app_language.get()
+        lang_val = self.var_app_language.get()
+        lang_mapping = {"English": "en", "Srpski": "sr", "Español": "es"}
+        config.LANGUAGE_CODE = lang_mapping.get(lang_val, lang_val)
         # Patient Data
         config.ANONYMIZATION_ON = self.var_anonymization_on.get()
         config.ANONYMIZATION_CUSTOM_TEXTS_ON = self.var_anonymization_custom_texts_on.get()

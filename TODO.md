@@ -19,4 +19,5 @@ Recent UX and layout polishing in the main panel and settings panel.
 
 ### Remaining
 - [ ] Implement full Chat Session View (`chat_session_view.py` rewrite, `styles.py` additions, and `main_container.py` wiring).
+- [ ] Support hot-swapping/re-applying application language instantly upon settings save without requiring an application restart.
 - [ ] Migrate the codebase to a fully standardized "Good Practice" workspace structure step-by-step.

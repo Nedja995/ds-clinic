@@ -59,14 +59,18 @@ class SettingsWindow(tk.Toplevel):
         # UI initialization
         self._setup_ui()
         
+        # Load initial values from config into ViewModel
+        self.view_model.update_from_config()
+        
+        # Register and synchronize translated text elements
+        self.translator.register_ui(self.refresh_text)
+        self.refresh_text()
+        
         self._bind_events()
 
         # Make the settings window modal
         self.transient(master)
-        self.grab_set()
-        
-        # Load initial values from config into ViewModel
-        self.view_model.update_from_config()  
+        self.grab_set()  
 
     def destroy(self) -> None:
         self._unbind_all()
@@ -90,6 +94,7 @@ class SettingsWindow(tk.Toplevel):
         self._build_patient_data_section()
         self._build_ai_section()
         self._build_general_section()
+        self._build_support_section()
         self._finalize_scroll()
 
     def _build_toolbar(self) -> None:
@@ -261,33 +266,17 @@ class SettingsWindow(tk.Toplevel):
     def _build_general_section(self) -> None:
         gen = self._card("General")
         
-
-        
-        # UI Elements Setup
+        # Language Selection row (horizontal alignment)
         self.view_model.var_app_language = tk.StringVar()
+        lang_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 4, 0, 10))
+        lang_row.pack(fill="x")
+        ttk.Label(lang_row, text="Languages:", style="FormLabel.TLabel").pack(side="left")
+        
         self.dropdown = ttk.Combobox(
-            gen, textvariable=self.view_model.var_app_language, values=list(self.languages.keys()), state="readonly"
+            lang_row, textvariable=self.view_model.var_app_language, values=list(self.languages.keys()), state="readonly", width=15
         )
-        self.dropdown.pack(pady=20)
+        self.dropdown.pack(side="left", padx=(10, 0))
         self.dropdown.bind("<<ComboboxSelected>>", self.on_language_change)
-
-        btn_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 0, 0, 10))
-        btn_row.pack(fill="x")
-        ttk.Button(btn_row, text="Send Logs", style="Accent.TButton",
-                   command=self.view_model.on_send_logs).pack(side="left", padx=(0, 8))
-        ttk.Button(btn_row, text="Show Logs Folder", style="Accent.TButton",
-                   command=self.view_model.on_show_logs_folder).pack(side="left")
-
-        # Support email + inline validation error
-        email_frame = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 0, 0, 6))
-        email_frame.pack(fill="x")
-        ttk.Label(email_frame, text="Support Email", style="FormLabel.TLabel").pack(anchor="w")
-        self._email_entry = ttk.Entry(email_frame, textvariable=self.view_model.var_support_email)
-        self._email_entry.pack(fill="x", pady=(2, 0))
-        self._email_error_lbl = ttk.Label(
-            email_frame, text="✕  Invalid email format",
-            background=PANEL, foreground=DANGER, font=FS,
-        )
 
         # App version (read-only label pair)
         ver_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 4, 0, 2))
@@ -295,6 +284,34 @@ class SettingsWindow(tk.Toplevel):
         ttk.Label(ver_row, text="App Version", style="FormLabel.TLabel").pack(side="left")
         ttk.Label(ver_row, textvariable=self.view_model.var_app_version,
                   background=PANEL, foreground=SUBTLE, font=FI).pack(side="left", padx=(8, 0))
+
+    def _build_support_section(self) -> None:
+        sup = self._card("Support")
+
+        # Support email frame with horizontal entry alignment
+        email_frame = ttk.Frame(sup, style="Panel.TFrame", padding=(0, 0, 0, 10))
+        email_frame.pack(fill="x")
+        
+        email_row = ttk.Frame(email_frame, style="Panel.TFrame")
+        email_row.pack(fill="x")
+        
+        ttk.Label(email_row, text="Support Email", style="FormLabel.TLabel").pack(side="left")
+        self._email_entry = ttk.Entry(email_row, textvariable=self.view_model.var_support_email)
+        self._email_entry.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        
+        # Error label is packed under the email row inside email_frame dynamically
+        self._email_error_lbl = ttk.Label(
+            email_frame, text="✕  Invalid email format",
+            background=PANEL, foreground=DANGER, font=FS,
+        )
+
+        # Send and Show logs buttons row
+        btn_row = ttk.Frame(sup, style="Panel.TFrame", padding=(0, 4, 0, 0))
+        btn_row.pack(fill="x")
+        ttk.Button(btn_row, text="Send Logs", style="Accent.TButton",
+                   command=self.view_model.on_send_logs).pack(side="left", padx=(0, 8))
+        ttk.Button(btn_row, text="Show Logs Folder", style="Accent.TButton",
+                   command=self.view_model.on_show_logs_folder).pack(side="left")
 
     # ─────────────────────────────────────────────────────────────────────────
     # Widget / Layout helpers
