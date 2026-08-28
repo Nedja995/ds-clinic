@@ -17,6 +17,9 @@ Recent UX and layout polishing in the main panel and settings panel.
   - Move the "Send Logs" and "Show Logs Folder" buttons neatly onto their own row inside the Support section.
   - Auto-synchronize the active language dropdown selection on load by registering `refresh_text` on the translator inside `SettingsWindow.__init__`.
 
+- [x] Resolved nested-tuple serialization bug on multiple settings saves: Added list-to-string checks and joins inside `__init__` and `update_from_config()` in `src/dsclinic_gui/settings/settings_view_model.py` so multi-line text input fields load as clean, plain strings without parentheses and quote corruptions.
+- [x] Token-optimized prompt transmission: Added automatic newline/whitespace cleaning inside `src/dsclinic.py` before passing `config.AI_INITIAL_TASK_DESCRIPTION` to the Gemini API. This keeps local files and UI highly readable (as multiline strings), while transmitting them as minimized, token-efficient single-line strings.
+
 ### Remaining
 - [ ] Implement full Chat Session View (`chat_session_view.py` rewrite, `styles.py` additions, and `main_container.py` wiring).
 - [ ] Support hot-swapping/re-applying application language instantly upon settings save without requiring an application restart.

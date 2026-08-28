@@ -70,6 +70,8 @@ To maintain high maintainability and prevent regressions, all code must follow t
 * **Edits Prefer Pattern-Matching:** Targeted, surgical edits that match local code style are strongly preferred over large-scale, unprompted visual/logical refactorings.
 * **Warnings & Strict Typing:** Never bypass the type system or disable warnings. Use explicit type hints. `mypy --strict` compliance is expected.
 * **Language/Locale:** Standard application labels, diagnostics, and reports are rendered in Serbian (`sr`). 
+* **Token-Optimized Prompts:** Whenever passing multiline or user-edited prompts (such as `config.AI_INITIAL_TASK_DESCRIPTION`) to the Gemini/Claude APIs, always normalize whitespace and strip out newlines (`\n`) and duplicate consecutive spaces on-the-fly. This keeps local configuration files and the Settings UI highly readable as multiline text, while keeping remote model API completion calls compact, fast, and token-efficient.
+* **Tracking Development Progress:** Always record and document every feature change or bug fix inside the project's developer docs (`TODO.md`, `CHANGELOG.md`, `docs/architecture.md`, `docs/session_handoff.md`, and `GEMINI.md`) so that subsequent chat sessions can immediately pick up progress without losing context or wasting tokens.
 * **Localization Updates:** After modifying strings, compile them using:
   ```cmd
   pybabel compile -d resources/locale -D app

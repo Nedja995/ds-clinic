@@ -101,10 +101,16 @@ class DSClinic:
             part = api_gemini_utils.load_document_from_file(target_filepath)
             if part: input_documents_parts.append(part)
 
+        # Clean up question to be a single-line string without newlines and unnecessary spaces to spare tokens
+        raw_question = config.AI_INITIAL_TASK_DESCRIPTION
+        if isinstance(raw_question, list):
+            raw_question = " ".join(raw_question)
+        cleaned_question = " ".join(raw_question.split())
+
         # Run Analyzis
         report_content: MedicalReportModel = self.gemini_client.initial_analysis_report_from_chat_stream(
             documents=input_documents_parts,
-            question=config.AI_INITIAL_TASK_DESCRIPTION
+            question=cleaned_question
         )
         
         self.report = MedicalReport(content=report_content)
