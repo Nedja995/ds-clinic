@@ -74,3 +74,13 @@ This document tracks the key architectural decisions made for **DSClinic** and t
     * Custom user-defined Task prompts (clinicians can create, modify, or extend default prompts, saved dynamically to `settings.json` so updates to `config.json` don't overwrite them).
     * User variables: active model selection, clinic names, custom report headers, doctor credentials, and billing/license parameters.
 * **The "Clean Update" Principle:** When updating the software, the developer only distributes the new executable and the default `config.json` (allowing prompt upgrades or supported model expansions). The user's custom preferences inside `settings.json` remain completely untouched, ensuring zero clinical data or configuration loss!
+
+---
+
+## AD-09: Portable Application Layout & Local Configuration Directory
+* **Decision:** Keep all application resources, static configuration (`config.json`), user preferences (`settings.json`), database files, and session histories **fully local and adjacent to the application entry point (the executable's directory)**. They must be structured inside a dedicated subfolder (e.g., `.config/` or `app_data/` adjacent to the `.exe` file) instead of utilizing global, hidden OS user data directories (like `%LOCALAPPDATA%` on Windows or `~/Library/Application Support` on macOS).
+* **Rationale:**
+  1. **Default Portability:** Enforcing a local layout enables a "portable mode" by default. Users can copy the entire application directory to a USB flash drive or another partition, and run it with all settings, database records, and session history intact.
+  2. **Transparency and Ease of Backup:** Clinical users can easily locate, backup, clone, or migrate their files, configurations, and logs. They do not need to navigate hidden system paths.
+  3. **Multi-Instance and Version Coexistence:** Clinicians can run multiple distinct instances of the application (e.g., with different prompt configurations or separate patient databases) side-by-side on the same machine without file collisions or registry contamination.
+  4. **Extensibility and Upgradability:** Placing configurations in a structured subfolder adjacent to the executable simplifies adding future features (e.g., prompt plugins, custom templates, multiple patient database files, or different preferences versions) under a single easily-managed folder hierarchy.

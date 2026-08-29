@@ -16,7 +16,7 @@ The app uses Gemini or Claude models to extract structured parameters (Findings 
 * Core Findings and Therapies grids are fully editable and sync with ViewModels.
 * Offline Privacy Anonymization pipeline (`redaction_worker.py`) is fully functional.
 
-**Next Immediate Goal:** Complete the **Chat Session View** (`src/dsclinic_gui/chat_session_view.py` rewrite, styling, and `main_container.py` integration) to allow streaming chat with models.
+**Next Immediate Goal:** Complete the **Decoupled Configuration & User Preferences Splitting** (implementing the GASSI-style clean loader, portable adjacent subfolder settings.json/config.json layout, and dynamic runtime save/load reload_settings pipeline) before resuming work on secondary features like Chat Session View.
 
 **Repo:** `D:\__STORAGE\__DEV\__PROJECTS\DSKlinika\ds-clinic_03_04_2026`
 **Stack:** Python 3.x, tkinter/ttk, fpdf2, pydantic, google-genai, anthropic, easyocr, spacy, pymupdf (fitz), presidio-analyzer
@@ -40,6 +40,7 @@ Read these on demand to check policies or designs, not upfront:
 3. **Decoupled Config & White-Label Design (No Backward-Compatibility):**
    * **App Config (`config.json`):** Static, read-only app defaults (supported languages dictionary, fallback language, default model lists, baseline prompt templates). Overwritten upon app updates.
    * **User Preferences (`settings.json`):** Writeable runtime overrides (active language_code, active model, custom doctor names, custom clinic branding, subscription licenses, and custom prompt templates added/edited by the clinician). Left completely untouched during app updates.
+   * **Local Portable Placement:** Both files must be stored fully local and adjacent to the application entry point (the executable's directory) inside a structured subfolder (e.g., `.config/` or `app_data/`). This enforces "portable mode" by default, allowing clinical users to easily backup their entire settings, database, and histories, and run multiple concurrent profiles/versions side-by-side without OS file pollution.
 4. **Local Database:** All local clinic records, settings, and histories are stored in generic `JsonCollection[T]` documents under `app_data/` with local JSON indices.
 5. **Localization:** Serbian (`sr`) translations are compiled using:
    ```cmd

@@ -1,5 +1,8 @@
 # DSClinic Development Guidelines & Project Context (GEMINI.md)
 
+> [!IMPORTANT]
+> **Mandatory New Session Protocol:** Every new chat/development session must begin by reading `/docs/session_handoff.md` to capture the current state, progress, and immediate development goals.
+
 Welcome to the **DSClinic** project workspace. This file serves as the definitive reference for team-shared architecture, conventions, workflows, and guidelines for developer and AI-driven contributions. 
 
 All development must rigorously adhere to the specifications and patterns described below.
