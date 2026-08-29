@@ -10,13 +10,18 @@ A Windows-first, cross-platform Python desktop application (`tkinter/ttk`) used 
 
 The app uses Gemini or Claude models to extract structured parameters (Findings and Therapies), displays them in a rich editable form, allows interactive chat with the AI model for refinement, and compiles the final report into a styled PDF.
 
-**Current State:** `v2.1.10` UI refinement complete. 
-* Centered report card section headers responsively.
-* Restructured the Settings Window (split General and Support, side-by-side Support Email alignment, and auto-synced languages on load).
-* Core Findings and Therapies grids are fully editable and sync with ViewModels.
-* Offline Privacy Anonymization pipeline (`redaction_worker.py`) is fully functional.
+**Current State:** `v2.3.0` Unified Configuration and Models Package completed successfully!
+* Deprecated all legacy config modules (`config.py`, `settings_manager.py`, and `models_new/`).
+* Consolidated schemas and variables into a single unified `src/models/` package, split into:
+  - `patient.py`: patient, therapies, findings, and complete medical reports.
+  - `ai.py`: chat history, chat sessions, and model configurations for Gemini and Claude.
+  - `diagnostics.py`: task status enums, progress event structures, and the observable list.
+  - `settings.py`: The single source of truth for all configurations (`AppSettings`).
+* Built a hybrid, self-contained loading pipeline in `AppSettings.load_unified()` that layers defaults from `config.json`, fallback parameters from `settings.ini`, and custom clinician overrides from `settings.json`.
+* Atomic writes back to `.config/medai_vitec/settings.json` are fully supported via `AppSettings.save_unified()`.
+* Portability-by-default is fully enforced with adjacent subfolders.
 
-**Next Immediate Goal:** Complete the **Decoupled Configuration & User Preferences Splitting** (implementing the GASSI-style clean loader, portable adjacent subfolder settings.json/config.json layout, and dynamic runtime save/load reload_settings pipeline) before resuming work on secondary features like Chat Session View.
+**Next Immediate Goal:** Complete the **Chat Session View** (`src/dsclinic_gui/chat_session_view.py` rewrite, styling, and `main_container.py` integration) to allow interactive streaming chats with the AI models.
 
 **Repo:** `D:\__STORAGE\__DEV\__PROJECTS\DSKlinika\ds-clinic_03_04_2026`
 **Stack:** Python 3.x, tkinter/ttk, fpdf2, pydantic, google-genai, anthropic, easyocr, spacy, pymupdf (fitz), presidio-analyzer
@@ -38,9 +43,11 @@ Read these on demand to check policies or designs, not upfront:
 1. **Strict MVVM:** ViewModels (`*_view_models.py`) must contain **zero** tkinter widget imports and must **never** trigger dialogues or file selectors directly (use callback handlers). Views (`*_view.py`) handle layouts using native `ttk` styled widgets.
 2. **Threading Isolation:** Background operations (AI calls, PDF compilation, local OCR) must run on a separate daemon thread. They write progress updates into a `queue.Queue`. The GUI thread polling loop reads this queue via `root.after()`. Worker threads must **never** touch UI widgets or call `event_generate()`.
 3. **Decoupled Config & White-Label Design (No Backward-Compatibility):**
-   * **App Config (`config.json`):** Static, read-only app defaults (supported languages dictionary, fallback language, default model lists, baseline prompt templates). Overwritten upon app updates.
-   * **User Preferences (`settings.json`):** Writeable runtime overrides (active language_code, active model, custom doctor names, custom clinic branding, subscription licenses, and custom prompt templates added/edited by the clinician). Left completely untouched during app updates.
-   * **Local Portable Placement:** Both files must be stored fully local and adjacent to the application entry point (the executable's directory) inside a structured subfolder (e.g., `.config/` or `app_data/`). This enforces "portable mode" by default, allowing clinical users to easily backup their entire settings, database, and histories, and run multiple concurrent profiles/versions side-by-side without OS file pollution.
+   * **Base Defaults (`config.json`):** Static, read-only defaults (supported model definitions, system prompts, initial task template).
+   * **Credentials Fallback (`settings.ini`):** Holds app base name, version, and global API keys.
+   * **Clinician Overrides (`settings.json`):** Holds writeable runtime overrides (active language code, chosen model, customized templates, doctor details, and keys). 
+   * **Local Portable Placement:** Both files are kept in `.config/medai_vitec` adjacent to the executable directory to enforce dynamic "portable mode" out of the box.
+   * **Unified `AppSettings` Interface:** Any system file accesses configuration properties purely via `from models import app_settings`. Saving updates is as simple as `app_settings.save_unified()`.
 4. **Local Database:** All local clinic records, settings, and histories are stored in generic `JsonCollection[T]` documents under `app_data/` with local JSON indices.
 5. **Localization:** Serbian (`sr`) translations are compiled using:
    ```cmd
@@ -51,7 +58,7 @@ Read these on demand to check policies or designs, not upfront:
 
 ## Immediate Development Roadmaps & Challenges
 
-* **Gemini API Congestion:** Gemini servers frequently return rate limits or become busy during client business hours. We need to implement a resilient retry mechanism with exponential backoff and support automatic fallbacks to Anthropic Claude.
-* **Full Decoupled Configuration:** Continue separating settings, enabling clinicians to add custom Prompt templates saved directly in their writeable `settings.json` to extend the baseline templates in `config.json`.
-* **Chat Session View Integration:** The `ChatSessionViewModel` is implemented, but `chat_session_view.py` needs to be completed, styled via `styles.py`, and wired up to `main_container.py`.
+* **Chat Session View Integration:** The `ChatSessionViewModel` is implemented, but `chat_session_view.py` needs to be completed, styled via `styles.py`, and wired up to `main_container.py` to allow live-streaming interactive dialogues.
+* **Gemini API Congestion & Fallbacks:** Gemini servers frequently return rate limits or become busy during client business hours. We need to implement a resilient retry mechanism with exponential backoff and support automatic failover to Anthropic Claude models.
+* **Support Language Hot-Swapping:** Support dynamic hot-swapping and re-applying of active application languages instantly upon settings save without requiring an application restart.
 * **Legacy MVVM violations:** Audit existing views and ViewModels to resolve lingering MVC couplings or direct messagebox/dialogue invocations in ViewModel files.

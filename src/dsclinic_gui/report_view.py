@@ -11,10 +11,8 @@ Jedini izuzeci su:
 import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog, messagebox
 
-from npy.core.settings_manager import load_saved_settings, save_settings
-from models_new.config import AppSettings
+from models import app_settings, MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
 from npy.core.logger import setup_logger
-from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
 
 from dsclinic_gui.styles import *
 from dsclinic_gui.report_view_models import DSClinicViewModel
@@ -22,7 +20,6 @@ from dsclinic_gui.chat_session_view import ChatSessionView
 from dsclinic_gui.settings.window import open_settings
 from npy.core.event_emitter import ErrorMessageEvent
 from dsclinic_gui.report_view_models import ExportRequest
-from npy.core.settings_manager import load_saved_settings
 
 
 ## App Logger
@@ -301,10 +298,8 @@ class MedicalReportView(ttk.Frame):
             entry_folder.insert(0, self.selected_directory)
             
             self.entry_folder = entry_folder
-            saved = load_saved_settings()
-            appSettings = AppSettings(**{k: v for k, v in saved.items() if not k.startswith("_")})
-            appSettings.input_dir = self.selected_directory
-            save_settings(appSettings.dict())
+            app_settings.input_dir = self.selected_directory
+            app_settings.save_unified()
             self.view_model.var_input_dir.set(self.selected_directory)
             self.view_model._update_model_from_viewmodel()
 

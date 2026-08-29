@@ -1,5 +1,12 @@
 {
-  "gemini_model": "gemini-2.5-flash",
+  "app_name": "MedAI Assistant - ViTec",
+  "app_version": "2.1.9",
+  "app_log_level": "DEBUG",
+  "app_debug_export_response": true,
+  "app_debug_response": false,
+  "language_code": "en",
+  "anonymization_on": false,
+  "anonymization_custom_texts_on": false,
   "cooldown_seconds": 15.0,
   "ocr_confidence_threshold": 0.6,
   "api_max_retries": 3,
@@ -7,8 +14,22 @@
   "api_cooldown_seconds": 30.0,
   "theme_name": "dark",
   "debug_log_max_lines": 200,
-  "input_dir": "D:/__STORAGE/__DEV/__PROJECTS/DSKlinika/ds-clinic_03_04_2026/ULAZ/Louis Prakash RAI",
-  "language_code": "sr",
-  "anonymization_on": false,
-  "anonymization_custom_texts_on": false
+  "google_api_key": "AIzaSyC-ALY3ERr-L8e3kh5oEVv879MaLqkwQ7w",
+  "anthropic_api_key": "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",
+  "ai_model_name": "gemini-2.5-flash",
+  "ai_model_temperature": 0.6990291262135923,
+  "ai_model_top_p": 0.6017699115044248,
+  "ai_model_max_output_tokens": 65535,
+  "ai_model_top_k": 64,
+  "ai_thinking_level": "HIGH",
+  "claude_model_name": "claude-3-5-sonnet-20241022",
+  "ai_initial_task_description": "Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. \nHighlight severe abnormalities. \nProvide accurate and concise information. \nIf you dont know the answer, state that you dont know. \nAlways respond in Serbian lanugage. \nIMPORTANT PRIVACY NOTICE: \n- Parts of these documents have been automatically blacked out using a local PII (Personally Identifiable Information) redactor to protect patient privacy. \n- Solid black rectangles hide administrative data such as patient names, precise residential addresses, or government identification numbers (JMBG/LBO). - Do not attempt to guess or reconstruct the redacted personal info. \n- Ignore these black blocks completely and focus 100% of your clinical attention on the visible diagnostic data, laboratory metrics, structural values, and reference ranges to form your medical analysis report.",
+  "ai_system_instructions": [
+    "You are an expert medical data analyst using medical data (tradicional, holistic, western, eastern, etc..) from input documents. "
+  ],
+  "ai_response_recommended_therapy_and_advice": "Comprehensive summary including: root cause analysis, diagnosis summary, recommended therapy, lifestyle advice, and next steps.",
+  "ai_response_critical_findings": "List of all critical or notable medical findings with expert opinions and raw parameter values.",
+  "ai_response_critical_finding_experts_opinion": "Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable.",
+  "ai_response_critical_finding_param_and_value": "The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004').",
+  "input_dir": "D:/__STORAGE/__DEV/__PROJECTS/DSKlinika/ds-clinic_03_04_2026/ULAZ/Louis Prakash RAI"
 }

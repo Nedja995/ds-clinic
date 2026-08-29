@@ -36,7 +36,7 @@ A complete architectural separation of concerns between static, read-only system
 - [ ] **Define Schema Models (Pydantic v2):**
   - Establish a clear `AppConfig` Pydantic model for static system settings loaded from `config.json` (supported languages, default model lists, baseline system prompts).
   - Establish a clear `UserPreferences` Pydantic model for persistent, writable clinician customizations loaded from `settings.json` (active language_code, chosen model, doctor/clinic metadata, subscription/license details, and custom prompt templates).
-- [ ] **Refactor Configuration Loader (`src/config.py`):**
+- [x] **Refactor Configuration Loader (`src/config.py`):**
   - Implement a two-tiered loader that reads `config.json` as a read-only baseline.
   - Load `settings.json` for customizable values, layered on top of the default baseline.
   - Automatically initialize a clean `settings.json` with user overrides defaults if the file is absent or malformed.
@@ -50,3 +50,29 @@ A complete architectural separation of concerns between static, read-only system
   - Update PyInstaller `.spec` build configuration files to bundle `config.json` as a read-only asset, while keeping `settings.json` isolated as runtime user-data.
 - [ ] **Verification & Validation:**
   - Add robust unit tests for configuration parsing, fallback logic, validation error handling of malformed `settings.json`, and proper overlaying of custom prompts.
+
+---
+
+## v2.3.0 — Unified Pydantic Models & Configuration Consolidation 🚀 Planned
+
+A major structural cleanup to migrate configuration, file settings, and data structures to a unified, future-proof Pydantic v2 package and eliminate legacy file clutter. Designed to fully support multi-doctor profiles, canned preference presets, and dynamic session-isolated parameters.
+
+### Tasks
+
+- [x] **Consolidate Models into `src/models/` Package:**
+  - Create the unified `src/models/` package folder.
+  - Migrate and split patient schemas into `src/models/patient.py` and diagnostic structures into `src/models/diagnostics.py`.
+  - Delete legacy flat `src/models.py` and `src/models_new/` folders completely.
+- [x] **Implement Future-Proof Unified `src/models/settings.py`:**
+  - Build the Pydantic-Settings `AppSettings` class to serve as the single, clean source of truth for both static configurations and user customizations.
+  - Design a flexible loading signature: `load_unified(profile_id="default", session_dir=None)`:
+    - **Predefined Preference Presets:** Support dynamic layering of preset configuration profiles (e.g., standard clinical presets, holistic presets) stored in an adjacent `config/presets/` directory.
+    - **Session Isolation:** Allow optional redirection to a session-specific config file/folder to keep patient sessions fully sandboxed if required.
+  - Add atomic `save_unified(profile_id="default")` to persist only mutable preferences to a specific profile file (e.g. `settings_profile_id.json`) to cleanly isolate multi-doctor preference settings under `.config/medai_vitec/`.
+  - Delete legacy files: `src/config.py` and `src/npy/core/settings_manager.py` completely.
+- [x] **Codebase-Wide Import Refactoring:**
+  - Safely refactor all system files to replace legacy `import config` module-global properties with clean, type-safe references to `from models.settings import app_settings`.
+- [x] **Settings UI Migration:**
+  - Update `SettingsViewModel` and `SettingsWindow` to bind directly to and save from the unified, profile-aware `app_settings` instance.
+- [ ] **Testing & Robust Verification:**
+  - Write test cases verifying correct fallback layering (Default Base → Selected Preset Preset → Active Writable Preferences Override) and safe profile hot-swapping at runtime.

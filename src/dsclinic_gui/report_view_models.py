@@ -11,8 +11,7 @@ from dataclasses import dataclass
 from dsclinic_gui.settings.settings_view_model import SettingsViewModel
 from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
-import config
-from models import MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
+from models import app_settings, MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
 from dsclinic import DSClinic
 from pdf_maker import generate_report_pdf_at_filepath
 from npy.core.event_emitter import EventEmitter, ErrorMessageEvent
@@ -84,7 +83,7 @@ class DSClinicViewModel:
         self.on_export_succeeded:   EventEmitter   = EventEmitter()  # emits output_filepath: str
         
         # Main DSClinic App Logic Handler
-        self.dsclinicapp = DSClinic(model_name=config.AI_MODEL_NAME)
+        self.dsclinicapp = DSClinic(model_name=app_settings.ai_model_name)
 
 
     def _update_viewmodel_from_model(self):
@@ -196,7 +195,7 @@ class DSClinicViewModel:
             # from npy.core.settings_manager import load_saved_settings
             # saved_settings = load_saved_settings()
             #anonymization_enabled = saved_settings.get("ANONYMIZATION_ON", True)
-            anonymization_enabled = config.ANONYMIZATION_ON
+            anonymization_enabled = app_settings.anonymization_on
             # ──────────────────────────────────────────────────────────────────
             
             if documents_filepaths and anonymization_enabled:

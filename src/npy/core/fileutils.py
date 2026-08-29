@@ -5,7 +5,7 @@ import datetime
 
 from npy.core.logger import setup_logger
 from npy.core.utils import get_resource_filepath, get_output_data_dirpath
-import config
+from models import app_settings
 
 logger = setup_logger()
 
@@ -51,7 +51,7 @@ def find_input_documents(input_dir: str) -> list[str]:
         return []
         
     supported_documents = []
-    supported_exts = tuple(f".{ext.lstrip('.')}" for ext, filetype in config.AI_SUPPORTED_INPUT_FILETYPES.items())
+    supported_exts = tuple(f".{ext.lstrip('.')}" for ext, filetype in app_settings.ai_supported_input_filetypes.items())
     
     # Use os.walk to search files while ignoring our subfolder
     for root, dirs, files in os.walk(input_dir):

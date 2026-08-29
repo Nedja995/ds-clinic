@@ -84,3 +84,13 @@ This document tracks the key architectural decisions made for **DSClinic** and t
   2. **Transparency and Ease of Backup:** Clinical users can easily locate, backup, clone, or migrate their files, configurations, and logs. They do not need to navigate hidden system paths.
   3. **Multi-Instance and Version Coexistence:** Clinicians can run multiple distinct instances of the application (e.g., with different prompt configurations or separate patient databases) side-by-side on the same machine without file collisions or registry contamination.
   4. **Extensibility and Upgradability:** Placing configurations in a structured subfolder adjacent to the executable simplifies adding future features (e.g., prompt plugins, custom templates, multiple patient database files, or different preferences versions) under a single easily-managed folder hierarchy.
+
+---
+
+## AD-10: Unified Hybrid Configuration Model (AppSettings)
+* **Decision:** Replace the scattered configuration variables and duplicate managers (`config.py`, `models_new/config.py`, `settings_manager.py`) with a single, unified Pydantic-based `AppSettings` model inside `src/models/settings.py` that utilizes a **Hybrid Pattern** (serving as both data validation schema and file-system I/O loader/saver).
+* **Rationale:**
+  1. **Zero File Clutter:** Eliminating auxiliary manager files (like `settings_manager.py` and module-globals `config.py`) means that if a configuration field is added, modified, or deprecated, it only needs to be updated in a single file: `src/models/settings.py`.
+  2. **Cohesive Loading Pipeline:** The model class itself exposes a cohesive loader: `load_unified(profile_id="default", preset_name=None)` which handles layering and merging (Static config.json Defaults → Predefined Preset Presets → Active Clinician settings_profile.json Override) in a highly readable, deterministic order.
+  3. **Atomic Multi-Profile Persistence:** The model instance exposes a `save_unified(profile_id="default")` method that dynamically filters writable fields from static defaults and executes an atomic .tmp file swap write-back to protect against database/preference corruption.
+  4. **Multi-Doctor and Session Readiness:** The load/save signature natively supports session isolation and profile switching out of the box, allowing clinic workspaces to seamlessly hot-swap doctor credentials or prompt configurations without global variable re-assignment side-effects.

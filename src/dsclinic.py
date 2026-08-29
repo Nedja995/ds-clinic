@@ -2,13 +2,16 @@ import os
 import datetime
 import json
 from google.genai import types as genai_types
-import config
-from npy.core.settings_manager import load_saved_settings, save_settings
-from models_new.config import AppSettings
 from npy.core.utils import get_output_data_dirpath, get_input_data_dirpath
 from npy.core.fileutils import find_input_documents, make_output_filepath, open_file_from_filepath
 import pdf_maker
-from models import MedicalReportModel, GeminiModelConfig, AIServiceConfig, MedicalReport
+from models import (
+    app_settings,
+    MedicalReportModel,
+    GeminiModelConfig,
+    AIServiceConfig,
+    MedicalReport,
+)
 from api_gemini import client as api_gemini_client
 from api_gemini import utils as api_gemini_utils
 
@@ -19,42 +22,39 @@ logger = setup_logger()
 class DSClinic:
     """Glavna logika za DSClinic aplikaciju."""
     
-    def __init__(self, model_name: str = config.AI_MODEL_NAME):
+    def __init__(self, model_name: str | None = None):
         # ── settings ──────────────────────────────────────────────────────
-        # from npy.core.settings_manager import load_saved_settings, save_settings
-        saved = load_saved_settings()
-        appSettings = AppSettings(**{k: v for k, v in saved.items() if not k.startswith("_")})
-        self.input_dir = appSettings.input_dir
+        self.input_dir = app_settings.input_dir
         self.output_dir = get_output_data_dirpath()
-        self.model_name = model_name
+        self.model_name = model_name or app_settings.ai_model_name
         logger.info(f"Initializing DSClinic with model: {self.model_name}, input_dir: {self.input_dir}, output_dir: {self.output_dir}")
         
-        # AI Client
-        self.client_config = AIServiceConfig(api_key=config.GOOGLE_API_KEY, model_settings=GeminiModelConfig(
-            model_name=model_name, 
-            system_instruction=config.AI_SYSTEM_INSTRUCTIONS,
-            thinking_level=config.AI_THINKING_LEVEL,
-            temperature=config.AI_MODEL_TEMPERATURE,
-            top_p=config.AI_MODEL_TOP_P,
-            max_output_tokens=config.AI_MODEL_MAX_OUTPUT_TOKENS
-        ))
+        # AI Client Config
+        self.client_config = AIServiceConfig(
+            api_key=app_settings.google_api_key,
+            model_settings=GeminiModelConfig(
+                model_name=self.model_name, 
+                system_instruction=tuple(app_settings.ai_system_instructions),
+                thinking_level=app_settings.ai_thinking_level,
+                temperature=app_settings.ai_model_temperature,
+                top_p=app_settings.ai_model_top_p,
+                max_output_tokens=app_settings.ai_model_max_output_tokens
+            )
+        )
         self.gemini_client = api_gemini_client.MedicalAnalyzerClient(config=self.client_config)
-        
         self.report: MedicalReport | None = None
     
     def get_initial_analysis_report(self, scrubbed_files_map: dict[str, str] | None = None) -> MedicalReport:
-        """Glavna funkcija"""
+        """Glavna funkcija za analizu nalaza."""
         logger.info("Starting initial analysis report generation...")
         if not os.path.exists(self.input_dir):
             raise FileNotFoundError(f"Input directory not found: {self.input_dir}")
         
-        # Get input dir
-        saved = load_saved_settings()
-        appSettings = AppSettings(**{k: v for k, v in saved.items() if not k.startswith("_")})
-        self.input_dir = appSettings.input_dir
+        # Sync input directory in case settings were updated
+        self.input_dir = app_settings.input_dir
         
         # ── CHECK: VERIFY IF ANONYMIZATION TOGGLE IS ACTIVE ──────────────────
-        anonymization_enabled = config.ANONYMIZATION_ON
+        anonymization_enabled = app_settings.anonymization_on
         # ──────────────────────────────────────────────────────────────────────
         
         # Find documents
@@ -102,35 +102,23 @@ class DSClinic:
             if part: input_documents_parts.append(part)
 
         # Clean up question to be a single-line string without newlines and unnecessary spaces to spare tokens
-        raw_question = config.AI_INITIAL_TASK_DESCRIPTION
-        if isinstance(raw_question, list):
-            raw_question = " ".join(raw_question)
+        raw_question = app_settings.ai_initial_task_description
         cleaned_question = " ".join(raw_question.split())
 
-        # Run Analyzis
+        # Run Analysis
         report_content: MedicalReportModel = self.gemini_client.initial_analysis_report_from_chat_stream(
             documents=input_documents_parts,
             question=cleaned_question
         )
         
         self.report = MedicalReport(content=report_content)
-            
         return self.report
 
-
-    
-    
     def ask_followup_question(self, question: str) -> str:
         if not self.report:
             raise ValueError("No initial report available. Please run analysis first.")
         
-        # Placeholder for actual AI interaction
-        # In a real scenario, this would involve sending the question and report context to the AI model
-        # followup_response = self.gemini_client.ask_followup_stream(
-        #     report_content=self.report.content, question=question
-        # )
         followup_response = self.gemini_client.ask_followup_question(question)
-        
         return followup_response
 
 
