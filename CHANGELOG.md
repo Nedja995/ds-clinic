@@ -9,12 +9,26 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 See [TODO.md](TODO.md) for planned sub-versions.
 
+## [2.6.6] - 2026-08-30
+
+### Fixed
+- **`api_gemini/client.py` — startup guard for missing key:** Replaced `raise ValueError("GOOGLE_API_KEY environment variable is missing.")` with a `logger.warning` + early `return`. App now starts without a key; analysis raises a clear `RuntimeError` at call time instead of crashing at import.
+- **`api_claude/client.py` — startup guard for missing key:** Same pattern — replaced `raise ValueError` with `logger.warning` + early `return`. `RuntimeError` raised at `initial_analysis_report_from_chat_stream` / `ask_followup_stream` call time if client was not initialized.
+- **`dsclinic.py` — Claude client wired to keyring:** `ClaudeAnalyzerClient` now instantiated using `get_credential("anthropic")`. Wrapped in startup guard — `self.claude_client = None` if key absent.
+- **Both clients — guard on `client`/`chat_session` before use:** `initial_analysis_report_from_chat_stream` and `ask_followup_question` check `self.client` is not `None` before proceeding, raising a clear `RuntimeError` with Settings navigation hint.
+
+### Audit
+- `src/api_gemini/client.py`: zero `app_settings.*` references — key via `config.api_key` only.
+- `src/api_claude/client.py`: zero `app_settings.*` references — key via `config.api_key` only.
+
+---
+
 ## [2.6.5] - 2026-08-30
 
 ### Changed
-- **`SettingsWindow._build_analyze_instructions_panel`:** Replaced single plain `_entry_field("Google API Key", ...)` with three `_credential_field(...)` calls — Google API Key, Anthropic API Key, Google Project ID.
-- **New `_credential_field` helper:** Renders a masked `ttk.Entry` (`show="*"`) plus a `SUBTLE`-coloured hint label `"Stored securely in OS keyring — never written to disk."` Extracted as a dedicated method to keep credential rendering consistent and DRY.
-- **`_HEIGHT` bumped from 760 to 860px** to accommodate the two additional credential fields.
+- New `_credential_field` helper: masked `ttk.Entry` (`show="*"`) + `SUBTLE`-coloured hint label.
+- Three credential fields in Settings UI: Google API Key, Anthropic API Key, Google Project ID.
+- `_HEIGHT` bumped from 760 to 860px.
 
 ---
 
@@ -61,7 +75,7 @@ See [TODO.md](TODO.md) for planned sub-versions.
 - v2.6.3 ✅ — `AppSettings` purged of secret fields + `configparser` block removed.
 - v2.6.4 ✅ — `SettingsViewModel` reads/writes via keyring.
 - v2.6.5 ✅ — Settings UI masked credential fields + hint labels.
-- v2.6.6 — Full audit: `api_gemini/`, `api_claude/`.
+- v2.6.6 ✅ — Both clients startup-guarded; Claude wired to keyring; full audit.
 - v2.6.7 — Rotate keys, `git rm settings.ini`, final audit.
 
 ---

@@ -11,24 +11,20 @@ from npy.core.logger import setup_logger
 logger = setup_logger()
 
 
-# ---------------------------------------------------------------------------
-# Model name constants  (mirrors api_gemini/client.py::Models)
-# ---------------------------------------------------------------------------
 class Models(StrEnum):
     """Claude model identifiers — see https://docs.anthropic.com/en/docs/models-overview"""
-    CLAUDE_OPUS_4_5          = "claude-opus-4-5"
-    CLAUDE_SONNET_4_5        = "claude-sonnet-4-5"
-    CLAUDE_HAIKU_4_5         = "claude-haiku-4-5-20251001"
-    CLAUDE_3_5_SONNET        = "claude-3-5-sonnet-20241022"
-    CLAUDE_3_5_HAIKU         = "claude-3-5-haiku-20241022"
-    CLAUDE_3_OPUS            = "claude-3-opus-20240229"
+    CLAUDE_OPUS_4_5   = "claude-opus-4-5"
+    CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
+    CLAUDE_HAIKU_4_5  = "claude-haiku-4-5-20251001"
+    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20241022"
+    CLAUDE_3_5_HAIKU  = "claude-3-5-haiku-20241022"
+    CLAUDE_3_OPUS     = "claude-3-opus-20240229"
 
 
-# ---------------------------------------------------------------------------
-# System prompt helper — embeds MedicalReportModel JSON schema so Claude
-# always returns valid structured JSON.  Mirrors Gemini's response_schema=.
-# ---------------------------------------------------------------------------
-def _build_system_prompt(base_instructions: tuple | list[str] | str, response_schema_model) -> str:
+def _build_system_prompt(
+    base_instructions: tuple | list[str] | str,
+    response_schema_model,
+) -> str:
     """
     Combine system instructions with JSON schema enforcement.
     Claude has no native response_schema param, so we embed the schema in the
@@ -49,26 +45,14 @@ def _build_system_prompt(base_instructions: tuple | list[str] | str, response_sc
     )
 
 
-# ---------------------------------------------------------------------------
-# ClaudeAnalyzerClient
-# ---------------------------------------------------------------------------
 class ClaudeAnalyzerClient:
     """
     Client for interacting with the Anthropic Claude API for medical report analysis.
-    
-    API surface mirrors api_gemini/client.py::MedicalAnalyzerClient so both clients
-    are interchangeable in dsclinic.py.
-    
-    Key difference from Gemini:
-      - Anthropic API is stateless: chat context is maintained manually as
-        self.chat_history (list of role/content dicts) and sent on every call.
-      - Documents are Anthropic content block dicts (from api_claude/utils.py)
-        instead of genai_types.Part objects.
-      - Structured JSON output is enforced via system prompt (no response_schema param).
+    Mirrors api_gemini/client.py::MedicalAnalyzerClient surface.
     """
 
     client: anthropic.Anthropic = None
-    chat_history: list[dict] = []   # Manually maintained — Anthropic is stateless
+    chat_history: list[dict] = []
     system_prompt: str = ""
 
     def __init__(self, config: ClaudeAIServiceConfig = None):
@@ -76,19 +60,21 @@ class ClaudeAnalyzerClient:
         self.config = config or ClaudeAIServiceConfig()
 
         if not self.config.api_key:
-            logger.error("[api_claude] ANTHROPIC_API_KEY is missing")
-            raise ValueError("ANTHROPIC_API_KEY is missing.")
+            logger.warning(
+                "[api_claude] Anthropic API key is not set. "
+                "Open Settings → AI → Anthropic API Key and save your key. "
+                "Claude analysis will fail until a valid key is provided."
+            )
+            # Do not raise — allow app to start so user can enter key via Settings
+            return
 
         logger.debug(f"[api_claude] Using model: {self.config.model_settings.model_name}")
-
         self._initialise_client()
         self._build_system_prompt_internal()
         self.initialize_chat_session()
-
         logger.info("[api_claude] ClaudeAnalyzerClient initialized successfully")
 
-    # ------------------------------------------------------------------
-    def _initialise_client(self):
+    def _initialise_client(self) -> None:
         logger.debug("[api_claude]   Initializing Anthropic Client...")
         try:
             self.client = anthropic.Anthropic(api_key=self.config.api_key)
@@ -97,52 +83,42 @@ class ClaudeAnalyzerClient:
             logger.error(f"[api_claude] Failed to initialize Anthropic Client: {e}", exc_info=True)
             raise
 
-    def _build_system_prompt_internal(self):
-        """Build system prompt with embedded JSON schema for structured output."""
+    def _build_system_prompt_internal(self) -> None:
         self.system_prompt = _build_system_prompt(
             self.config.model_settings.system_instruction,
-            MedicalReportModel
+            MedicalReportModel,
         )
         logger.debug("[api_claude]     System prompt built with MedicalReportModel JSON schema")
 
-    def close(self):
+    def close(self) -> None:
         logger.debug("[api_claude] Closing ClaudeAnalyzerClient...")
         try:
-            if hasattr(self.client, 'close'):
+            if self.client and hasattr(self.client, 'close'):
                 self.client.close()
             logger.debug("[api_claude] ClaudeAnalyzerClient closed successfully")
         except Exception as e:
             logger.warning(f"[api_claude] Error while closing client: {e}", exc_info=True)
 
-    def initialize_chat_session(self):
-        """Reset chat history — equivalent to creating a new Gemini chat session."""
+    def initialize_chat_session(self) -> None:
         logger.debug(f"[api_claude] Resetting chat history for model: {self.config.model_settings.model_name}")
         self.chat_history = []
         logger.debug("[api_claude] Chat session (history) initialized")
 
-    # ------------------------------------------------------------------
-    # Public API — mirrors MedicalAnalyzerClient exactly
-    # ------------------------------------------------------------------
-
     def initial_analysis_report_from_chat_stream(
         self,
         documents: list[dict],
-        question: str
+        question: str,
     ) -> MedicalReportModel:
-        """
-        Run initial medical analysis. Streams JSON chunks, accumulates, parses.
-        Mirrors api_gemini/client.py::initial_analysis_report_from_chat_stream().
-        
-        Args:
-            documents: List of Anthropic content block dicts (from api_claude/utils.py)
-            question:  Initial task/question string
-        Returns:
-            Parsed MedicalReportModel or None on parse failure
-        """
+        if not self.client:
+            raise RuntimeError(
+                "[api_claude] Claude client is not initialized. "
+                "Set your Anthropic API Key in Settings → AI → Anthropic API Key."
+            )
+
         logger.info("[api_claude] Run initial medical analysis from chat stream (Streaming JSON).")
         start_time = time.time()
-        parsed_report: MedicalReportModel = None
         accumulated_json: str = ""
+        parsed_report: MedicalReportModel = None
 
         for chunk in self._initial_analysis_run_chat_stream(documents, question):
             accumulated_json += chunk
@@ -151,17 +127,10 @@ class ClaudeAnalyzerClient:
         logger.info(f"[api_claude]   Completed in {elapsed_time:.2f}s.")
         logger.info(f"[api_claude]   Accumulated response size: {len(accumulated_json)} characters.")
 
-        # Store exchange in history so follow-up questions have full context
-        # (We store the full initial user message without document blobs to keep history lean)
-        self.chat_history.append({
-            "role": "assistant",
-            "content": accumulated_json
-        })
+        self.chat_history.append({"role": "assistant", "content": accumulated_json})
 
         logger.debug("[api_claude]   Formatting and validating structured data...")
-        elapsed_time = time.time() - start_time
         try:
-            # Strip possible markdown fences if model ignored the instruction
             clean_json = accumulated_json.strip()
             if clean_json.startswith("```"):
                 clean_json = clean_json.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
@@ -180,32 +149,21 @@ class ClaudeAnalyzerClient:
     def _initial_analysis_run_chat_stream(
         self,
         documents: list[dict],
-        predefined_question: str
+        predefined_question: str,
     ) -> Iterator[str]:
-        """
-        Build the initial user message with document blocks + question, stream response.
-        Mirrors api_gemini/client.py::_initial_analysis_run_chat_stream().
-        
-        The user message content list follows Anthropic's multimodal format:
-          [text_block, ...document_blocks, text_block(question)]
-        """
         logger.debug("[api_claude] Run initial analysis chat stream")
 
-        # Build content list: text intro + all document blocks + question
         user_content: list[dict] = [{"type": "text", "text": "Here are the input medical/lab documents:"}]
         user_content.extend(documents)
         user_content.append({"type": "text", "text": f"Question/Task: {predefined_question}"})
 
-        # Initial user message — stored in history WITHOUT document blobs to keep tokens lean
         self.chat_history.append({
             "role": "user",
-            "content": f"[Initial analysis with {len(documents)} document(s)] Question/Task: {predefined_question}"
+            "content": f"[Initial analysis with {len(documents)} document(s)] Question/Task: {predefined_question}",
         })
 
         logger.debug(f"[api_claude]   Sending {len(documents)} document(s) to Claude API...")
         try:
-            # Use a one-shot messages list for the initial call (not chat_history) because
-            # document blobs must only be in this first request for efficiency.
             with self.client.messages.stream(
                 model=self.config.model_settings.model_name,
                 max_tokens=self.config.model_settings.max_output_tokens,
@@ -229,14 +187,13 @@ class ClaudeAnalyzerClient:
             raise
 
     def ask_followup_stream(self, follow_up_question: str) -> Iterator[str]:
-        """
-        Send a follow-up question using accumulated chat history for context.
-        Mirrors api_gemini/client.py::ask_followup_stream().
-        
-        Chat history includes all prior exchanges so Claude has full context.
-        """
-        logger.debug(f"[api_claude] Sending follow-up question: {follow_up_question[:100]}...")
+        if not self.client:
+            raise RuntimeError(
+                "[api_claude] Claude client is not initialized. "
+                "Set your Anthropic API Key in Settings → AI → Anthropic API Key."
+            )
 
+        logger.debug(f"[api_claude] Sending follow-up question: {follow_up_question[:100]}...")
         self.chat_history.append({"role": "user", "content": follow_up_question})
 
         accumulated_response = ""
@@ -264,5 +221,4 @@ class ClaudeAnalyzerClient:
             logger.error(f"[api_claude] Error during follow-up: {e}", exc_info=True)
             raise
 
-        # Append assistant response to history for next follow-up
         self.chat_history.append({"role": "assistant", "content": accumulated_response})
