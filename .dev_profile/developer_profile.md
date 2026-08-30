@@ -64,6 +64,9 @@ The AI assistant must check and update **every applicable file** from this list 
 | `GEMINI.md` | Update architectural guidelines or project-wide workflow rules | Any time project-wide rules change |
 | `.dev_profile/developer_profile.md` | Update workflow rules, constraints, or standing conventions | Any time a standing rule is added or changed |
 
+### File Edit Discipline
+**When updating any dev doc, the AI assistant must only change the sections relevant to the current task.** The AI must never reformat, restructure, rewrite, or remove content written by the developer. If the file needs a status update, update only that section. Leave all other content exactly as the developer wrote it — including phrasing, structure, and ordering.
+
 ### TODO Archiving Rule
 **Completed versions are never collapsed or summarised.** Every completed sub-version and its full task list remains fully expanded with `[x]` checkboxes in `TODO.md` indefinitely. The only change on completion is marking tasks `[x]` and adding a ✅ to the section heading. Never remove task detail, never replace a completed section with a one-liner stub.
 
@@ -76,3 +79,4 @@ The AI assistant must check and update **every applicable file** from this list 
 - Never skip `docs/architecture.md` when a design decision was made — add an AD entry.
 - Never skip `.dev_profile/developer_profile.md` when a standing workflow rule changes.
 - Never collapse or stub out completed TODO sections — keep all task detail fully visible.
+- **Never remove or rewrite content the developer wrote in any dev doc — only add or update the specific section the task requires.**
