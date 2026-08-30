@@ -48,7 +48,7 @@ Every AI assistant (Claude/Gemini) handling a programming task for DSClinic must
 
 2. **Absolute Privacy Enforcement (GDPR Alignment):**
    - **PII Leakage Prevention:** Any new service or backend module processing patient inputs must pass raw text through the Presidio/spaCy anonymization layer *prior* to external transmission.
-   - **Key Protection:** Under no circumstances should an AI assistant write code containing hardcoded API keys or fall back to checking text files for credentials. Only use `keyring_manager.py`.
+   - **Key Protection:** Under no circumstances should an AI assistant write code containing hardcoded API keys or fall back to checking text files for credentials. Only use `keyring_manager.py`. `settings.ini` no longer exists.
 
 3. **MVVM Integrity & Typing Rules:**
    - **Zero UI Imports in Logic:** No `tkinter` or `ttk` imports inside `src/models/`, `src/db/`, or any ViewModel.
@@ -87,47 +87,31 @@ The AI assistant provides the exact `git add` command with real filenames **at t
 ### TODO Archiving Rule
 **Completed versions are never collapsed or summarised.** Every completed sub-version and its full task list remains fully expanded with `[x]` checkboxes in `TODO.md` indefinitely. Never remove task detail, never replace a completed section with a one-liner stub.
 
+### File Edit Discipline
+Never use `str_replace` on dev docs. Always use `write_file` with the complete file content.
+
 Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## Current Status: v2.6.0 Active — Next sub-version: v2.6.7 (manual)
+## Current Status: v2.5.0 Active 🚀
 
-**v2.6.6 complete:** Both `MedicalAnalyzerClient` and `ClaudeAnalyzerClient` now use startup guards — log warning + early return when key absent, raise `RuntimeError` at call time. `ClaudeAnalyzerClient` wired to keyring in `dsclinic.py`. Full audit: zero `app_settings.*_api_key` accesses anywhere in `src/`.
+**v2.6.0 fully complete:** All credentials migrated to OS keyring. Both clients startup-guarded. `settings.ini` permanently deleted. Keys rotated and verified working. `GEMINI.md` updated.
 
-**`docs/architecture.md` updated by developer:** AD-12 through AD-17 added covering Split-Horizon Hybrid Inference, 16GB VRAM Edge Optimization, Multimodal Preprocessing, Zero-Trust PII Scrubbing, Defensive Desktop Error Isolation, and Continuous Quality Verification via pytest.
-
-**Active milestone:** v2.6.0 — Secure Credential Management & `settings.ini` Elimination.
-**Blocked milestone:** v2.5.0 (Chat Session View) — blocked until v2.6.7 is complete.
+**Active milestone:** v2.5.0 — Chat Session View & Pluggable Multi-Provider Pipeline.
 
 ---
 
-## Sub-version Execution Order
+## v2.5.0 Implementation Context
 
-| Sub-version | Scope | Status |
-|---|---|---|
-| v2.6.1 | `importlib.metadata` → `app_name`/`app_version` | ✅ Done |
-| v2.6.2 | New `src/models/keyring_manager.py` | ✅ Done |
-| v2.6.3 | Purge secret fields from `AppSettings` + `load_unified()` | ✅ Done |
-| v2.6.4 | `SettingsViewModel` reads/writes via keyring | ✅ Done |
-| v2.6.5 | Settings UI masked credential fields + hint labels | ✅ Done |
-| v2.6.6 | Both clients startup-guarded; Claude wired to keyring; full audit | ✅ Done |
-| v2.6.7 | Rotate keys, `git rm settings.ini`, final audit | ▶ Next (manual) |
+Key files to read before starting:
+- `src/dsclinic_gui/chat_session_view.py` — current state of the chat view
+- `src/dsclinic_gui/report_view_models.py` — `DSClinicViewModel` owns `var_response`, `var_is_analyzing`, `followup_question_submit()`
+- `src/dsclinic_gui/styles.py` — `ChatUser.TFrame`, `ChatBot.TFrame`, `ACCENT`, `ACCENT_LT`, `WHITE`
+- `src/dsclinic_gui/main_container.py` — where `ChatSessionView` is wired
 
----
+**Streaming bug summary:** Trace on `var_response` in `ChatSessionView.__init__` calls `add_message()` on every write — each chunk spawns a new bubble. Fix: track `self._current_bot_bubble: Optional[MarkdownLabel]`; on first chunk create one bubble and hold the reference; on subsequent chunks call `_current_bot_bubble.update_text(full_text)` in-place; clear reference when `var_is_analyzing` transitions to `False`.
 
-## v2.6.7 Steps (manual + code)
+**`MarkdownLabel` needs:** new `update_text(new_text: str)` method — enable widget, clear, re-insert markdown, disable, recalculate height.
 
-1. Revoke and regenerate `GOOGLE_API_KEY` in Google AI Studio.
-2. Revoke and regenerate `ANTHROPIC_API_KEY` in Anthropic Console.
-3. Launch app → Settings → AI → enter new keys → Save (writes to keyring).
-4. Verify app starts and Gemini analysis runs correctly with keyring-sourced key.
-5. Run: `git rm settings.ini`
-6. Update `GEMINI.md` architecture section (credentials keyring-only, `settings.ini` deleted).
-7. Commit as v2.6.7, then advance handoff to v2.5.0 active.
-
----
-
-## Previously Active Milestone (blocked): v2.5.0 Chat Session View
-
-**Streaming bug summary:** Trace on `var_response` calls `add_message()` on every write. Fix: track `self._current_bot_bubble: Optional[MarkdownLabel]`; on first chunk create one bubble; on subsequent chunks call `_current_bot_bubble.update_text(full_text)` in-place; clear reference when `var_is_analyzing` → `False`.
+**Style fix needed:** `ChatUser.TFrame/TLabel` uses `ACCENT_LT` (pale blue) — should be solid `ACCENT` blue with `WHITE` text.

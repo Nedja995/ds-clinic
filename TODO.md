@@ -9,19 +9,31 @@
 
 ---
 
-## v2.6.0 — Secure Credential Management & `settings.ini` Elimination 🔐 Active
+## v2.5.0 — Chat Session View & Pluggable Multi-Provider Pipeline 🚀 Active
 
-**Priority blocker.** `settings.ini` committed two live API keys and a Google Project ID to the public GitHub repository. This milestone fully eliminates `settings.ini` by migrating every field to its correct permanent home.
+### Tasks
 
-| Field | From | To | Status |
-|---|---|---|---|
-| `NAME` / `VERSION` | `settings.ini [APP]` | `pyproject.toml` via `importlib.metadata` | ✅ v2.6.1 |
-| `GOOGLE_API_KEY` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
-| `ANTHROPIC_API_KEY` | `settings.ini [ANTHROPIC]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
-| `GOOGLE_PROJECT_ID` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
-| `GOOGLE_PROJECT_LOCATION` | `settings.ini [GOOGLE]` | `config.json` (non-secret) | ✅ v2.6.3 |
+- [ ] **Implement full Chat Session View (`chat_session_view.py` rewrite, `styles.py` additions, and `main_container.py` wiring):**
+  - [ ] Fix streaming bubble bug: track `_current_bot_bubble: Optional[MarkdownLabel]`; update in-place via `update_text()`.
+  - [ ] Add `update_text(new_text: str)` to `MarkdownLabel`.
+  - [ ] Fix `ChatUser.TFrame/TLabel` colors (`ACCENT` blue + `WHITE` text).
+  - [ ] Non-blocking streaming via `queue.Queue` + `root.after` polling.
+  - [ ] Auto-scroll on each chunk. Disable input while in-flight.
+  - [ ] Wire `ChatSessionView` and `ChatSessionViewModel` inside `main_container.py`.
+- [ ] **Build Unified `LLMProvider` Abstraction & Hybrid Pipeline:**
+  - [ ] Design a generic, decoupled `LLMProvider` interface.
+  - [ ] Integrate Gemini, Claude, Groq, Together, HuggingFace, Ollama under this interface.
+- [ ] **Establish PII Anonymization Layer & Local Preprocessors:**
+  - [ ] Presidio-based local PII scrubbing.
+  - [ ] MONAI stubs for MRI slice selection; YOLOv8/ViT hooks for microscopy blood smears.
+- [ ] **Rigorous Unit Testing (`pytest`):**
+  - [ ] Tests for parsing, anonymization, provider fallback logic.
 
 ---
+
+## v2.6.0 — Secure Credential Management & `settings.ini` Elimination ✅ Completed
+
+**All credentials migrated to OS keyring. `settings.ini` permanently deleted. Keys rotated. App verified working.**
 
 ### v2.6.1 — `pyproject.toml`: App Name & Version as Single Source of Truth ✅ Completed
 
@@ -91,42 +103,16 @@
 
 ---
 
-### v2.6.7 — Rotate Keys, Delete `settings.ini`, Final Cleanup
+### v2.6.7 — Rotate Keys, Delete `settings.ini`, Final Cleanup ✅ Completed
 
-- [ ] Revoke and regenerate `GOOGLE_API_KEY` in Google AI Studio.
-- [ ] Revoke and regenerate `ANTHROPIC_API_KEY` in Anthropic Console.
-- [ ] Enter new keys via Settings → AI → credential fields (writes to keyring).
-- [ ] Verify app starts and Gemini analysis works with keyring-sourced key.
-- [ ] `git rm settings.ini` and commit.
-- [ ] Verify `.gitignore` has `settings.ini` (already present).
-- [ ] Search codebase for any remaining `configparser` / `settings.ini` references — must be zero.
-- [ ] Update `GEMINI.md` architecture section to reflect keyring-only credentials and `settings.ini` deletion.
-- [ ] Update `CHANGELOG.md` with full v2.6.0 release entry.
-- [ ] Update `docs/session_handoff.md` to v2.6.0 complete / v2.5.0 active.
-
----
-
-## v2.5.0 — Chat Session View & Pluggable Multi-Provider Pipeline 🚀 Next
-
-**Blocked on v2.6.0.**
-
-### Tasks
-
-- [ ] **Implement full Chat Session View (`chat_session_view.py` rewrite, `styles.py` additions, and `main_container.py` wiring):**
-  - [ ] Fix streaming bubble bug: track `_current_bot_bubble: Optional[MarkdownLabel]`; update in-place via `update_text()`.
-  - [ ] Add `update_text(new_text: str)` to `MarkdownLabel`.
-  - [ ] Fix `ChatUser.TFrame/TLabel` colors (`ACCENT` blue + `WHITE` text).
-  - [ ] Non-blocking streaming via `queue.Queue` + `root.after` polling.
-  - [ ] Auto-scroll on each chunk. Disable input while in-flight.
-  - [ ] Wire `ChatSessionView` and `ChatSessionViewModel` inside `main_container.py`.
-- [ ] **Build Unified `LLMProvider` Abstraction & Hybrid Pipeline:**
-  - [ ] Design a generic, decoupled `LLMProvider` interface.
-  - [ ] Integrate Gemini, Claude, Groq, Together, HuggingFace, Ollama under this interface.
-- [ ] **Establish PII Anonymization Layer & Local Preprocessors:**
-  - [ ] Presidio-based local PII scrubbing.
-  - [ ] MONAI stubs for MRI slice selection; YOLOv8/ViT hooks for microscopy blood smears.
-- [ ] **Rigorous Unit Testing (`pytest`):**
-  - [ ] Tests for parsing, anonymization, provider fallback logic.
+- [x] Revoked and regenerated `GOOGLE_API_KEY` in Google AI Studio.
+- [x] Revoked and regenerated `ANTHROPIC_API_KEY` in Anthropic Console.
+- [x] New keys entered via Settings → AI → credential fields — written to OS keyring.
+- [x] App verified working end-to-end with keyring-sourced Gemini key.
+- [x] `git rm settings.ini` — file permanently deleted from repository.
+- [x] `GEMINI.md` updated: credential management rule added to § 3.D, `keyring` added to § 2 Technical Stack.
+- [x] `CHANGELOG.md` updated with full v2.6.0 release entry.
+- [x] `docs/session_handoff.md` advanced to v2.5.0 active.
 
 ---
 

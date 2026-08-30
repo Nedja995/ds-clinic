@@ -9,17 +9,26 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 See [TODO.md](TODO.md) for planned sub-versions.
 
+## [2.6.7] - 2026-08-30
+
+### Security
+- **`settings.ini` permanently deleted from the repository** (`git rm settings.ini`). All credentials were already migrated to the OS keyring in v2.6.2–v2.6.6. The file no longer exists in the project.
+- **New keys rotated:** Both `GOOGLE_API_KEY` and `ANTHROPIC_API_KEY` regenerated and entered via Settings UI → written to OS keyring. Old compromised keys deactivated.
+- **Verified end-to-end:** App starts, Settings UI reads keys from keyring, Gemini analysis confirmed working with keyring-sourced credentials.
+
+### Changed
+- **`GEMINI.md` § 2 Technical Stack:** Added `keyring` / `keyring_manager.py` as the credential storage layer.
+- **`GEMINI.md` § 3.D Coding Conventions:** Added credential management rule (AD-11 reference), `settings.ini` deletion notice, and client startup guard pattern.
+
+---
+
 ## [2.6.6] - 2026-08-30
 
 ### Fixed
-- **`api_gemini/client.py` — startup guard for missing key:** Replaced `raise ValueError("GOOGLE_API_KEY environment variable is missing.")` with a `logger.warning` + early `return`. App now starts without a key; analysis raises a clear `RuntimeError` at call time instead of crashing at import.
-- **`api_claude/client.py` — startup guard for missing key:** Same pattern — replaced `raise ValueError` with `logger.warning` + early `return`. `RuntimeError` raised at `initial_analysis_report_from_chat_stream` / `ask_followup_stream` call time if client was not initialized.
-- **`dsclinic.py` — Claude client wired to keyring:** `ClaudeAnalyzerClient` now instantiated using `get_credential("anthropic")`. Wrapped in startup guard — `self.claude_client = None` if key absent.
-- **Both clients — guard on `client`/`chat_session` before use:** `initial_analysis_report_from_chat_stream` and `ask_followup_question` check `self.client` is not `None` before proceeding, raising a clear `RuntimeError` with Settings navigation hint.
-
-### Audit
-- `src/api_gemini/client.py`: zero `app_settings.*` references — key via `config.api_key` only.
-- `src/api_claude/client.py`: zero `app_settings.*` references — key via `config.api_key` only.
+- `api_gemini/client.py` — replaced `raise ValueError` on missing key with `logger.warning` + early `return`. `RuntimeError` raised at call time.
+- `api_claude/client.py` — same startup guard pattern applied.
+- `dsclinic.py` — `ClaudeAnalyzerClient` wired to keyring; startup guard added.
+- Both clients guard `self.client` before use — `RuntimeError` with Settings navigation hint if called without a key.
 
 ---
 
@@ -67,16 +76,27 @@ See [TODO.md](TODO.md) for planned sub-versions.
 
 ---
 
-## [2.6.0] - Planned — Secure Credential Management & `settings.ini` Elimination
+## [2.6.0] - 2026-08-30 — Secure Credential Management & `settings.ini` Elimination ✅ Released
+
+### Security
+- All API keys and sensitive identifiers moved from `settings.ini` (plain-text, committed to public repo) to OS-native credential store via `keyring` library.
+- `settings.ini` permanently deleted from repository.
+- Settings UI credential fields masked (`show="*"`) with keyring hint labels.
+- `AppSettings` purged of all secret fields.
+
+### Changed
+- `app_name`/`app_version` sourced exclusively from `pyproject.toml` via `importlib.metadata`.
+- `GOOGLE_PROJECT_LOCATION` moved to `config.json` (non-secret).
+- `GEMINI.md` updated with credential management rules and startup guard pattern.
 
 ### Sub-versions
 - v2.6.1 ✅ — `app_name`/`app_version` from `pyproject.toml`.
 - v2.6.2 ✅ — `keyring_manager.py`.
-- v2.6.3 ✅ — `AppSettings` purged of secret fields + `configparser` block removed.
+- v2.6.3 ✅ — `AppSettings` purged; `configparser` block removed.
 - v2.6.4 ✅ — `SettingsViewModel` reads/writes via keyring.
-- v2.6.5 ✅ — Settings UI masked credential fields + hint labels.
-- v2.6.6 ✅ — Both clients startup-guarded; Claude wired to keyring; full audit.
-- v2.6.7 — Rotate keys, `git rm settings.ini`, final audit.
+- v2.6.5 ✅ — Settings UI masked credential fields.
+- v2.6.6 ✅ — Both clients startup-guarded; Claude wired to keyring.
+- v2.6.7 ✅ — Keys rotated, `settings.ini` deleted, `GEMINI.md` updated.
 
 ---
 

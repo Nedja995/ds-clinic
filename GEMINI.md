@@ -28,6 +28,7 @@ All development must rigorously adhere to the specifications and patterns descri
 * **PDF Engine:** `FPDF2` for high-quality, structured document rendering.
 * **Data Validation:** `Pydantic v2` for all core models, app state, settings, and structured JSON serialization.
 * **Storage:** Local file-based JSON collection engine (`src/db/`) acting as a structured document database under `app_data/`.
+* **Credential Storage:** OS-native keyring (`keyring` library) via `src/models/keyring_manager.py`. API keys are never written to any file on disk. See AD-11 in `docs/architecture.md`.
 * **Packaging & Builds:** Virtual environment managed by standard `venv` or `poetry`, linting/formatting via `ruff`, type-checking via `mypy --strict`, testing via `pytest`, and desktop distribution using `PyInstaller`.
 
 ---
@@ -79,6 +80,8 @@ To maintain high maintainability and prevent regressions, all code must follow t
   ```cmd
   pybabel compile -d resources/locale -D app
   ```
+* **Credential Management (AD-11):** API keys (`GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`) and sensitive identifiers (`GOOGLE_PROJECT_ID`) are stored exclusively in the OS-native credential store via `src/models/keyring_manager.py`. No AI assistant may ever write, stub, or generate code that reads credentials from any file on disk or hardcodes them. `settings.ini` has been permanently deleted from the project as of v2.6.7. Only `get_credential()` / `set_credential()` / `delete_credential()` from `keyring_manager.py` may be used.
+* **Client Startup Guard:** `MedicalAnalyzerClient` and `ClaudeAnalyzerClient` log a warning and return early when their API key is absent — they never raise at `__init__` time. A `RuntimeError` with a Settings navigation hint is raised only at the point of actual API call.
 
 ### E. Split-Horizon Hybrid Inference Architecture (GDPR/Compliance)
 * **Privacy Layer First (Local/Open-Weights APIs):** To guarantee GDPR and HIPAA compliance, raw medical records and images must be processed locally or via dedicated high-speed, GDPR-compliant APIs using open-weights models (Groq, Together AI, HuggingFace).
