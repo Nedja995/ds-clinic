@@ -9,6 +9,7 @@
         "mikestead.dotenv",
         "google.geminicodeassist",
         "saoudrizwan.claude-dev",
-        "google.gemini-cli-vscode-ide-companion"
+        "google.gemini-cli-vscode-ide-companion",
+        "liangqin.quick-notes"
     ]
 }

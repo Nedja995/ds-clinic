@@ -1,0 +1,1 @@
+exclude from search: .venv, *.log, *.json, *.md, docs, *.log*, app.po, toolbar.py, src/test_guis/
