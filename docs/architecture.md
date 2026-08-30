@@ -7,7 +7,7 @@ This document tracks the key architectural decisions made for **DSClinic** and t
 ## AD-01: MVVM (Model-View-ViewModel) Architecture
 * **Decision:** Rebuild the GUI in a strict Model-View-ViewModel (MVVM) pattern, migrating away from the legacy MVC patterns.
 * **Rationale:** ViewModels own the application state (exposed via `tk.StringVar`/`IntVar`/`BooleanVar` properties for reactive binding) and background task lifecycles. Views (`src/dsclinic_gui/*_view.py`) handle layout, themed styling (`ttk`), and event bindings.
-* **Strict Separation:** 
+* **Strict Separation:**
   * ViewModels must **never** import Tkinter widgets or directly call UI dialogues/message boxes (e.g., `filedialog` or `messagebox`). ViewModels must use callback delegates passed from the View or two-step prepare/execute sequences to keep the business logic 100% independent of the UI layer.
   * *Current State:* Some parts of the codebase may still have lingering MVC/MVVM coupling. Auditing and refactoring these areas is high priority.
 
@@ -73,7 +73,7 @@ This document tracks the key architectural decisions made for **DSClinic** and t
     * Currently active `language_code` (which must match a code defined in the App Config's supported languages).
     * Custom user-defined Task prompts (clinicians can create, modify, or extend default prompts, saved dynamically to `settings.json` so updates to `config.json` don't overwrite them).
     * User variables: active model selection, clinic names, custom report headers, doctor credentials, and billing/license parameters.
-* **The "Clean Update" Principle:** When updating the software, the developer only distributes the new executable and the default `config.json` (allowing prompt upgrades or supported model expansions). The user's custom preferences inside `settings.json` remain completely untouched, ensuring zero clinical data or configuration loss!
+* **The "Clean Update" Principle:** When updating the software, the developer only distributes the new executable and the default `config.json` (allowing prompt upgrades or supported model expansions). The user's custom preferences inside `settings.json` remain completely untouched, ensuring zero clinical data or configuration loss.
 
 ---
 
@@ -94,3 +94,18 @@ This document tracks the key architectural decisions made for **DSClinic** and t
   2. **Cohesive Loading Pipeline:** The model class itself exposes a cohesive loader: `load_unified(profile_id="default", preset_name=None)` which handles layering and merging (Static config.json Defaults → Predefined Preset Presets → Active Clinician settings_profile.json Override) in a highly readable, deterministic order.
   3. **Atomic Multi-Profile Persistence:** The model instance exposes a `save_unified(profile_id="default")` method that dynamically filters writable fields from static defaults and executes an atomic .tmp file swap write-back to protect against database/preference corruption.
   4. **Multi-Doctor and Session Readiness:** The load/save signature natively supports session isolation and profile switching out of the box, allowing clinic workspaces to seamlessly hot-swap doctor credentials or prompt configurations without global variable re-assignment side-effects.
+
+---
+
+## AD-11: OS Keyring for API Credentials & `pyproject.toml` as Version Source of Truth
+* **Decision:** All API keys (`GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`) and sensitive project identifiers (`GOOGLE_PROJECT_ID`) are stored exclusively in the OS-native credential store via the `keyring` library. They are never written to any file on disk (`settings.ini`, `settings.json`, `config.json`, or any other). `app_name` and `app_version` are sourced exclusively from `pyproject.toml`, read at runtime via `importlib.metadata.metadata("dsclinic")`.
+* **Rationale:**
+  1. **Security:** Plain-text API keys committed to a public git repository are immediately compromised. The OS keyring (Windows Credential Manager, macOS Keychain, libsecret on Linux) is the correct, platform-native secret store — it is encrypted, access-controlled, and never appears in version history.
+  2. **Single Source of Truth for Version:** Before this decision, `app_name` and `app_version` were duplicated across `settings.ini` and `pyproject.toml`. Any release required updating both files, risking drift. `pyproject.toml` is already the authoritative packaging manifest; `importlib.metadata` reads it at runtime with zero duplication.
+  3. **`settings.ini` Elimination:** With API keys in keyring and version in `pyproject.toml`, `settings.ini` has no remaining purpose and is deleted entirely (v2.6.7), removing the risk of accidentally committing secrets.
+* **Implementation (`src/models/keyring_manager.py`):**
+  * `_KEYRING_SERVICE = "dsclinic"` — service name for all keyring entries.
+  * `get_credential(name)` / `set_credential(name, value)` / `delete_credential(name)` — the only three functions that touch the keyring. All other modules call these; nothing calls `keyring` directly.
+  * `_CREDENTIAL_KEYS` dict maps logical names (`"gemini"`, `"anthropic"`, `"google_project_id"`) to keyring usernames (`"gemini_api_key"`, etc.).
+* **`AppSettings` impact:** `google_api_key` and `anthropic_api_key` fields removed in v2.6.3. `load_unified()` no longer reads `settings.ini`. `save_unified()` never writes secrets.
+* **Frozen build fallback:** When running as a PyInstaller executable, `importlib.metadata` raises `PackageNotFoundError`. `load_unified()` catches this silently and falls back to `AppSettings` field defaults (`app_name = "DSClinic"`, `app_version = "2.6.x"`).

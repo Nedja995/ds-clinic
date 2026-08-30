@@ -52,15 +52,17 @@ Examples:
 - `v2.6.7: delete settings.ini, rotate keys, final security audit`
 
 ### Mandatory Doc Updates Per Sub-version
-Every commit **must** include updates to all of these that apply:
+The AI assistant must check and update **every applicable file** from this list without being reminded. Skipping any applicable file is an error.
 
-| File | Update |
-|---|---|
-| `CHANGELOG.md` | New `## [X.Y.Z]` entry (Added / Fixed / Changed) |
-| `TODO.md` | Mark completed tasks `[x]` |
-| `pyproject.toml` | Bump `version = "X.Y.Z"` |
-| `docs/session_handoff.md` | Update current status to next sub-version |
-| `GEMINI.md` | Only if architectural rules changed |
+| File | Update | When |
+|---|---|---|
+| `CHANGELOG.md` | New `## [X.Y.Z]` entry (Added / Fixed / Changed) | Every sub-version |
+| `TODO.md` | Mark completed tasks `[x]` | Every sub-version |
+| `pyproject.toml` | Bump `version = "X.Y.Z"` | Every sub-version |
+| `docs/session_handoff.md` | Update current status to next sub-version | Every sub-version |
+| `docs/architecture.md` | Add `AD-XX` for any non-obvious design or structural decision | Any time a design choice is made |
+| `GEMINI.md` | Update architectural guidelines or project-wide workflow rules | Any time project-wide rules change |
+| `.dev_profile/developer_profile.md` | Update workflow rules, constraints, or standing conventions | Any time a standing rule is added or changed |
 
 ### What NOT to Do
 - Never use `git add .` — always stage specific files only.
@@ -68,3 +70,5 @@ Every commit **must** include updates to all of these that apply:
 - Never bump `pyproject.toml` version without a matching `CHANGELOG.md` entry.
 - Never leave `docs/session_handoff.md` pointing at a completed sub-version.
 - Never pre-write commit commands for future sub-versions — generate them at task completion only.
+- Never skip `docs/architecture.md` when a design decision was made — add an AD entry.
+- Never skip `.dev_profile/developer_profile.md` when a standing workflow rule changes.
