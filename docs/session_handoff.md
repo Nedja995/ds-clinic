@@ -31,6 +31,9 @@ The AI assistant provides the exact `git add` command with real filenames **at t
 | `GEMINI.md` | Update project-wide architectural or workflow rules | Any time project-wide rules change |
 | `.dev_profile/developer_profile.md` | Update standing workflow conventions | Any time a standing rule is added or changed |
 
+### TODO Archiving Rule
+**Completed versions are never collapsed or summarised.** Every completed sub-version and its full task list remains fully expanded with `[x]` checkboxes in `TODO.md` indefinitely. The only change on completion is marking tasks `[x]` and adding ✅ to the section heading. Never remove task detail, never replace a completed section with a one-liner stub.
+
 Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
@@ -60,10 +63,9 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ## v2.6.6 Implementation Notes
 
-Grep the entire codebase for `app_settings.google_api_key` and `app_settings.anthropic_api_key` — both must be zero hits after this sub-version. Files most likely to contain them:
+Grep the entire `src/` for `app_settings.google_api_key` and `app_settings.anthropic_api_key` — both must be zero hits after this sub-version. Files most likely to contain them:
 - `src/api_gemini/client.py`
 - `src/api_claude/client.py`
-- Any other file under `src/` that imports `app_settings`
 
 ---
 

@@ -64,6 +64,9 @@ The AI assistant must check and update **every applicable file** from this list 
 | `GEMINI.md` | Update architectural guidelines or project-wide workflow rules | Any time project-wide rules change |
 | `.dev_profile/developer_profile.md` | Update workflow rules, constraints, or standing conventions | Any time a standing rule is added or changed |
 
+### TODO Archiving Rule
+**Completed versions are never collapsed or summarised.** Every completed sub-version and its full task list remains fully expanded with `[x]` checkboxes in `TODO.md` indefinitely. The only change on completion is marking tasks `[x]` and adding a ✅ to the section heading. Never remove task detail, never replace a completed section with a one-liner stub.
+
 ### What NOT to Do
 - Never use `git add .` — always stage specific files only.
 - Never commit without updating `CHANGELOG.md` and `TODO.md`.
@@ -72,3 +75,4 @@ The AI assistant must check and update **every applicable file** from this list 
 - Never pre-write commit commands for future sub-versions — generate them at task completion only.
 - Never skip `docs/architecture.md` when a design decision was made — add an AD entry.
 - Never skip `.dev_profile/developer_profile.md` when a standing workflow rule changes.
+- Never collapse or stub out completed TODO sections — keep all task detail fully visible.
