@@ -24,53 +24,39 @@ from npy.core import utils
 class SettingsWindow(tk.Toplevel):
 
     _WIDTH  = 640
-    _HEIGHT = 760
+    _HEIGHT = 860  # increased to accommodate three credential fields
     _MIN_WIDTH = 400
     _MIN_HEIGHT = 400
 
 
     def __init__(self, master: tk.Misc, **kwargs) -> None:
         super().__init__(master, **kwargs)
-        # Window setup
         self.title("Settings")
         self.geometry(f"{self._WIDTH}x{self._HEIGHT}")
         self.resizable(True, True)
         self.minsize(self._MIN_WIDTH, self._MIN_HEIGHT)
         self.configure(bg=BG)
-        #
         self._center_window(self._WIDTH, self._HEIGHT)
-        
-        # 
 
-        
         self.view_model = SettingsViewModel()
-                         # Dropdown translation mappings
         self.languages = {"English": "en", "Srpski": "sr", "Español": "es"}
-    # App Language
-        initial_lang = self.view_model.var_app_language.get()  # Load from ViewModel (which loads from config)
+
+        initial_lang = self.view_model.var_app_language.get()
         locale_dir = utils.get_resource_dirpath('locale')
-        # Initialize the global translator and pass our save method into it
         self.translator = TranslationManager(
             locale_dir=locale_dir,
             default_lang=initial_lang,
             save_config_callback=self.save_config_language
         )
-        
-        # UI initialization
+
         self._setup_ui()
-        
-        # Load initial values from config into ViewModel
         self.view_model.update_from_config()
-        
-        # Register and synchronize translated text elements
         self.translator.register_ui(self.refresh_text)
         self.refresh_text()
-        
         self._bind_events()
 
-        # Make the settings window modal
         self.transient(master)
-        self.grab_set()  
+        self.grab_set()
 
     def destroy(self) -> None:
         self._unbind_all()
@@ -83,7 +69,7 @@ class SettingsWindow(tk.Toplevel):
         x = (sw - w) // 2
         y = (sh - h) // 2
         self.geometry(f"{w}x{h}+{x}+{y}")
-        
+
     # ─────────────────────────────────────────────────────────────────────────
     # Setup
     # ─────────────────────────────────────────────────────────────────────────
@@ -109,14 +95,12 @@ class SettingsWindow(tk.Toplevel):
             style="Toolbar.TButton",
             command=self._on_save,
         ).pack(side="right")
-        # Separator
         ttk.Frame(self, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
     def _build_scroll_area(self) -> None:
         host = ttk.Frame(self)
         host.pack(fill="both", expand=True)
 
-        # tk.Canvas: no ttk equivalent
         self._canvas = tk.Canvas(host, bg=BG, highlightthickness=0, bd=0)
         sb = ttk.Scrollbar(host, orient="vertical", command=self._canvas.yview)
         self._canvas.configure(yscrollcommand=sb.set)
@@ -136,35 +120,20 @@ class SettingsWindow(tk.Toplevel):
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
 
     def _build_row(self, parent) -> ttk.Frame:
-        # Create a frame to hold the elements of the row
         frame = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 0, 0, 0))
         frame.pack(fill="x", pady=(0, 0))
-        
         return frame
-        
+
     # ─────────────────────────────────────────────────────────────────────────
     # Patient Data Section
     # ─────────────────────────────────────────────────────────────────────────
 
     def _build_patient_data_section(self) -> None:
         gen = self._card("Patient Data")
-        
         row = self._build_row(gen)
-
-        # Add anonimization checkbox
         ttk.Checkbutton(row, text="Auto Anonymization", variable=self.view_model.var_anonymization_on).pack(side="left", padx=(4, 0))
-        
         if not self.view_model.var_anonymization_on.get():
             ttk.Checkbutton(row, text="Anonymize Custom Texts", variable=self.view_model.var_anonymization_custom_texts_on).pack(side="left", padx=(4, 0))
-        
-        # # Add entry field
-        # self.entry_folder = ttk.Entry(frame, width=20, font=FI)
-        # self.entry_folder.insert(0, "")
-        # self.entry_folder.pack(side="left", padx=(0, 0), ipady=2)
-        
-        # # Add the button to the frame
-        # browse_button = ttk.Button(frame, text="placeholder", command=lambda: print("Browse button clicked"))
-        # browse_button.pack(side="left", padx=(0, 0), ipady=0)
 
     # ─────────────────────────────────────────────────────────────────────────
     # AI Section
@@ -181,7 +150,6 @@ class SettingsWindow(tk.Toplevel):
         row.pack(fill="x")
         row.columnconfigure((0, 1, 2), weight=1, uniform="col")
 
-        # Model name
         c0 = ttk.Frame(row, style="Panel.TFrame")
         c0.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         ttk.Label(c0, text="Model Name", style="FormLabel.TLabel").pack(anchor="w")
@@ -191,12 +159,10 @@ class SettingsWindow(tk.Toplevel):
             state="readonly", font=FI,
         ).pack(fill="x", pady=(2, 0))
 
-        # Temperature slider
         c1 = ttk.Frame(row, style="Panel.TFrame")
         c1.grid(row=0, column=1, sticky="ew", padx=(0, 10))
         self._slider_field(c1, "Temperature", self.view_model.var_temperature, 0.0, 2.0)
 
-        # Top P slider
         c2 = ttk.Frame(row, style="Panel.TFrame")
         c2.grid(row=0, column=2, sticky="ew")
         self._slider_field(c2, "Top P", self.view_model.var_top_p, 0.0, 1.0)
@@ -209,7 +175,6 @@ class SettingsWindow(tk.Toplevel):
         self._entry_field(panel, "Critical Findings",
                           self.view_model.var_critical_findings_prompt)
 
-        # Nested sub-panel: column label customization for Critical Findings table
         nested = self._nested_card(panel, "Critical Findings")
         self._entry_field(nested, "Expertsko Mišljenje", self.view_model.var_expert_opinion_label)
         self._entry_field(nested, "Parameter and Value", self.view_model.var_parameter_value_label)
@@ -217,95 +182,80 @@ class SettingsWindow(tk.Toplevel):
         self._text_field(panel, "Initial Task Description",
                          self.view_model.var_initial_task_text, height=4)
 
-        # System Instructions – wrapped in a named frame so it can be replaced later
-        self.system_instructions_frame = ttk.Frame(panel, style="Panel.TFrame",
-                                                    padding=(0, 0, 0, 6))
+        self.system_instructions_frame = ttk.Frame(panel, style="Panel.TFrame", padding=(0, 0, 0, 6))
         self.system_instructions_frame.pack(fill="x")
         ttk.Label(self.system_instructions_frame,
                   text="System Instructions", style="FormLabel.TLabel").pack(anchor="w")
         self._sys_instr_text = self._make_text_widget(self.system_instructions_frame, height=5)
         self._sync_text_widget(self._sys_instr_text, self.view_model.var_system_instructions_text)
 
-        self._entry_field(panel, "Google API Key",
-                          self.view_model.var_google_api_key)
+        # ── API Credentials (OS keyring — never written to disk) ──────────────
+        self._credential_field(panel, "Google API Key",    self.view_model.var_google_api_key)
+        self._credential_field(panel, "Anthropic API Key", self.view_model.var_anthropic_api_key)
+        self._credential_field(panel, "Google Project ID", self.view_model.var_google_project_id)
 
     # ─────────────────────────────────────────────────────────────────────────
     # General Section
     # ─────────────────────────────────────────────────────────────────────────
 
-    # ---- Events / Callbacks ---- #
-    
     def save_config_language(self, lang_code):
-        """Automatically updates the JSON config file when a selection changes."""
         self.view_model.var_app_language.set(lang_code)
         self.view_model.save_to_config()
-        print(f"[Config] Saved updated language preference: {lang_code}")
-            
+
     def refresh_text(self):
-        """Updates text elements sitting on the dashboard workspace."""
-        # Synchronize selection marker inside the combobox widget
         current_code = self.translator.current_lang
         for display_name, code in self.languages.items():
             if code == current_code:
                 self.view_model.var_app_language.set(display_name)
                 break
-            
-    # --- JSON CONFIG OPERATIONS ---
+
     def load_config_language(self):
-        """Loads preference from JSON. Falls back to English if file is missing."""
         return self.view_model.var_app_language.get()
-    
-    
-    # --- UI & DIALOG MANAGEMENT ---
+
     def on_language_change(self, event):
         selected_display = self.view_model.var_app_language.get()
         target_lang_code = self.languages[selected_display]
-        # This triggers save_config_language automatically, then redraws the layout text
         self.translator.apply_language(target_lang_code)
 
     def _build_general_section(self) -> None:
         gen = self._card("General")
-        
-        # Language Selection row (horizontal alignment)
+
         self.view_model.var_app_language = tk.StringVar()
         lang_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 4, 0, 10))
         lang_row.pack(fill="x")
         ttk.Label(lang_row, text="Languages:", style="FormLabel.TLabel").pack(side="left")
-        
         self.dropdown = ttk.Combobox(
-            lang_row, textvariable=self.view_model.var_app_language, values=list(self.languages.keys()), state="readonly", width=15
+            lang_row, textvariable=self.view_model.var_app_language,
+            values=list(self.languages.keys()), state="readonly", width=15,
         )
         self.dropdown.pack(side="left", padx=(10, 0))
         self.dropdown.bind("<<ComboboxSelected>>", self.on_language_change)
 
-        # App version (read-only label pair)
         ver_row = ttk.Frame(gen, style="Panel.TFrame", padding=(0, 4, 0, 2))
         ver_row.pack(fill="x")
         ttk.Label(ver_row, text="App Version", style="FormLabel.TLabel").pack(side="left")
         ttk.Label(ver_row, textvariable=self.view_model.var_app_version,
                   background=PANEL, foreground=SUBTLE, font=FI).pack(side="left", padx=(8, 0))
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Support Section
+    # ─────────────────────────────────────────────────────────────────────────
+
     def _build_support_section(self) -> None:
         sup = self._card("Support")
 
-        # Support email frame with horizontal entry alignment
         email_frame = ttk.Frame(sup, style="Panel.TFrame", padding=(0, 0, 0, 10))
         email_frame.pack(fill="x")
-        
         email_row = ttk.Frame(email_frame, style="Panel.TFrame")
         email_row.pack(fill="x")
-        
         ttk.Label(email_row, text="Support Email", style="FormLabel.TLabel").pack(side="left")
         self._email_entry = ttk.Entry(email_row, textvariable=self.view_model.var_support_email)
         self._email_entry.pack(side="left", fill="x", expand=True, padx=(10, 0))
-        
-        # Error label is packed under the email row inside email_frame dynamically
         self._email_error_lbl = ttk.Label(
             email_frame, text="✕  Invalid email format",
             background=PANEL, foreground=DANGER, font=FS,
         )
 
-        # Send and Show logs buttons row
         btn_row = ttk.Frame(sup, style="Panel.TFrame", padding=(0, 4, 0, 0))
         btn_row.pack(fill="x")
         ttk.Button(btn_row, text="Send Logs", style="Accent.TButton",
@@ -318,15 +268,12 @@ class SettingsWindow(tk.Toplevel):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _card(self, title: str) -> ttk.Frame:
-        """Full-width card with ACCENT header bar. Returns content frame."""
         outer = ttk.Frame(self._inner, padding=(0, 0, 0, 14))
         outer.pack(fill="x")
-        # tk.Frame: border-color trick (1-px SHADOW outline)
         border = tk.Frame(outer, bg=SHADOW, padx=1, pady=1)
         border.pack(fill="x")
         card = ttk.Frame(border, style="Panel.TFrame")
         card.pack(fill="both", expand=True)
-        # CardTitle.TLabel already has ACCENT background
         ttk.Label(card, text=title.upper(),
                   style="CardTitle.TLabel", anchor="w").pack(fill="x", ipady=6)
         content = ttk.Frame(card, style="Panel.TFrame", padding=(14, 10, 14, 10))
@@ -334,7 +281,6 @@ class SettingsWindow(tk.Toplevel):
         return content
 
     def _sub_panel(self, parent: ttk.Frame, title: str) -> ttk.Frame:
-        """Named sub-section inside a card (ACCENT title label, no extra bg)."""
         wrapper = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 0, 0, 10))
         wrapper.pack(fill="x")
         ttk.Label(wrapper, text=title,
@@ -344,12 +290,10 @@ class SettingsWindow(tk.Toplevel):
         return content
 
     def _nested_card(self, parent: ttk.Frame, title: str) -> ttk.Frame:
-        """Indented nested panel with BORDER-color outline."""
         wrapper = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 2, 0, 8))
         wrapper.pack(fill="x")
         ttk.Label(wrapper, text=title,
                   background=PANEL, foreground=SUBTLE, font=FSB).pack(anchor="w", pady=(0, 4))
-        # tk.Frame: 1-px BORDER-colored inset
         border = tk.Frame(wrapper, bg=BORDER, padx=1, pady=1)
         border.pack(fill="x")
         content = ttk.Frame(border, style="Panel.TFrame", padding=(10, 6))
@@ -363,6 +307,21 @@ class SettingsWindow(tk.Toplevel):
         ttk.Label(frame, text=label, style="FormLabel.TLabel").pack(anchor="w")
         entry = ttk.Entry(frame, textvariable=var, show=show)
         entry.pack(fill="x", pady=(2, 0))
+        return entry
+
+    def _credential_field(self, parent: ttk.Frame, label: str,
+                          var: tk.StringVar) -> ttk.Entry:
+        """Masked entry for OS keyring credentials with a security hint label."""
+        frame = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 0, 0, 6))
+        frame.pack(fill="x")
+        ttk.Label(frame, text=label, style="FormLabel.TLabel").pack(anchor="w")
+        entry = ttk.Entry(frame, textvariable=var, show="*")
+        entry.pack(fill="x", pady=(2, 0))
+        ttk.Label(
+            frame,
+            text="Stored securely in OS keyring — never written to disk.",
+            background=PANEL, foreground=SUBTLE, font=FS,
+        ).pack(anchor="w", pady=(2, 0))
         return entry
 
     def _slider_field(self, parent: ttk.Frame, label: str,
@@ -381,7 +340,6 @@ class SettingsWindow(tk.Toplevel):
 
     def _make_text_widget(self, parent: ttk.Frame,
                           height: int = 4) -> scrolledtext.ScrolledText:
-        """scrolledtext.ScrolledText: internal tk.Text, intentional tk.* exception."""
         w = scrolledtext.ScrolledText(
             parent, height=height, wrap="word",
             font=FI, bg=PANEL, fg=TEXT,
@@ -393,9 +351,9 @@ class SettingsWindow(tk.Toplevel):
         w.pack(fill="x", pady=(2, 0))
         return w
 
-    def _text_field(self, parent: ttk.Frame, 
-                    label: str, 
-                    var: tk.StringVar, 
+    def _text_field(self, parent: ttk.Frame,
+                    label: str,
+                    var: tk.StringVar,
                     height: int = 4) -> scrolledtext.ScrolledText:
         frame = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 0, 0, 6))
         frame.pack(fill="x")
@@ -406,7 +364,6 @@ class SettingsWindow(tk.Toplevel):
 
     def _sync_text_widget(self, widget: scrolledtext.ScrolledText,
                           var: tk.StringVar) -> None:
-        """Bidirectional sync: StringVar ↔ ScrolledText."""
         def _var_to_widget(*_: object) -> None:
             new_val = var.get()
             if widget.get("1.0", "end-1c") != new_val:
@@ -425,17 +382,13 @@ class SettingsWindow(tk.Toplevel):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _bind_events(self) -> None:
-        # email validation
         self.view_model.var_support_email.trace_add("write", lambda *_: self.view_model.validate_email())
         self.view_model.var_email_valid.trace_add("write", self._on_email_validity_changed)
-        # Linux scroll support
         self._canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self._canvas.bind_all("<Button-4>",   self._on_mousewheel)
         self._canvas.bind_all("<Button-5>",   self._on_mousewheel)
-        
+
     def _unbind_all(self) -> None:
-        # self.view_model.var_support_email.trace_remove("write", self.view_model.validate_email)
-        # self.view_model.var_email_valid.trace_remove("write", self._on_email_validity_changed)
         self._canvas.unbind_all("<MouseWheel>")
         self._canvas.unbind_all("<Button-4>")
         self._canvas.unbind_all("<Button-5>")

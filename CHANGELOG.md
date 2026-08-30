@@ -9,25 +9,31 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 See [TODO.md](TODO.md) for planned sub-versions.
 
+## [2.6.5] - 2026-08-30
+
+### Changed
+- **`SettingsWindow._build_analyze_instructions_panel`:** Replaced single plain `_entry_field("Google API Key", ...)` with three `_credential_field(...)` calls — Google API Key, Anthropic API Key, Google Project ID.
+- **New `_credential_field` helper:** Renders a masked `ttk.Entry` (`show="*"`) plus a `SUBTLE`-coloured hint label `"Stored securely in OS keyring — never written to disk."` Extracted as a dedicated method to keep credential rendering consistent and DRY.
+- **`_HEIGHT` bumped from 760 to 860px** to accommodate the two additional credential fields.
+
+---
+
 ## [2.6.4] - 2026-08-30
 
 ### Changed
-- **`SettingsViewModel.__init__`:** `var_google_api_key` now reads from `get_credential("gemini")` instead of `app_settings.google_api_key`. Two new vars added: `var_anthropic_api_key` (`get_credential("anthropic")`) and `var_google_project_id` (`get_credential("google_project_id")`).
-- **`SettingsViewModel.update_from_config()`:** All three credential vars refreshed from keyring. No `app_settings.*_api_key` reads anywhere in the method.
-- **`SettingsViewModel.save_to_config()`:** Credentials written via `set_credential(...)` after `save_unified()`. `app_settings.google_api_key` assignment removed entirely.
-- **Import:** `get_credential`, `set_credential` imported from `models`.
+- `SettingsViewModel` reads all three credentials from keyring on init and `update_from_config()`.
+- Writes all three via `set_credential()` in `save_to_config()`.
+- `app_settings.google_api_key` assignment removed entirely.
 
 ---
 
 ## [2.6.3] - 2026-08-30
 
 ### Changed
-- `google_api_key` and `anthropic_api_key` fields removed from `AppSettings`.
-- Entire `configparser` / `settings.ini` INI block removed from `load_unified()`.
-- `google_project_location: str = "us-central1"` added to `AppSettings`, read from `config.json ["google"]["project_location"]`.
-- `config.json`: `"google": {"project_location": "us-central1"}` block added.
-- `save_unified()` exclude list updated with defensive entries for removed secret fields.
-- **Hotfix:** `dsclinic.py` patched to use `get_credential("gemini")` — unblocks app startup.
+- `google_api_key`/`anthropic_api_key` removed from `AppSettings`.
+- `configparser`/`settings.ini` block removed from `load_unified()`.
+- `google_project_location` field added; read from `config.json`.
+- Hotfix: `dsclinic.py` uses `get_credential("gemini")`.
 
 ---
 
@@ -42,7 +48,7 @@ See [TODO.md](TODO.md) for planned sub-versions.
 ## [2.6.1] - 2026-08-30
 
 ### Changed
-- `app_name`/`app_version` sourced from `pyproject.toml` via `importlib.metadata` in `load_unified()`.
+- `app_name`/`app_version` sourced from `pyproject.toml` via `importlib.metadata`.
 - `[APP]` INI block removed. Both fields excluded from `save_unified()`.
 
 ---
@@ -54,7 +60,7 @@ See [TODO.md](TODO.md) for planned sub-versions.
 - v2.6.2 ✅ — `keyring_manager.py`.
 - v2.6.3 ✅ — `AppSettings` purged of secret fields + `configparser` block removed.
 - v2.6.4 ✅ — `SettingsViewModel` reads/writes via keyring.
-- v2.6.5 — Settings UI masked key fields + hint labels.
+- v2.6.5 ✅ — Settings UI masked credential fields + hint labels.
 - v2.6.6 — Full audit: `api_gemini/`, `api_claude/`.
 - v2.6.7 — Rotate keys, `git rm settings.ini`, final audit.
 

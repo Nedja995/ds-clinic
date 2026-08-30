@@ -35,9 +35,9 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## Current Status: v2.6.0 Active — Next sub-version: v2.6.5
+## Current Status: v2.6.0 Active — Next sub-version: v2.6.6
 
-**v2.6.4 complete:** `SettingsViewModel` reads all three credentials from keyring on init and `update_from_config()`. Writes all three via `set_credential()` in `save_to_config()`. No `app_settings.*_api_key` access anywhere in the file.
+**v2.6.5 complete:** New `_credential_field` helper renders masked `ttk.Entry` + keyring hint label. Three credential fields added to Settings UI: Google API Key, Anthropic API Key, Google Project ID. `_HEIGHT` bumped to 860px.
 
 **Active milestone:** v2.6.0 — Secure Credential Management & `settings.ini` Elimination.
 **Blocked milestone:** v2.5.0 (Chat Session View) — blocked until v2.6.7 is complete.
@@ -52,20 +52,18 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 | v2.6.2 | New `src/models/keyring_manager.py` | ✅ Done |
 | v2.6.3 | Purge secret fields from `AppSettings` + `load_unified()` | ✅ Done |
 | v2.6.4 | `SettingsViewModel` reads/writes via keyring | ✅ Done |
-| v2.6.5 | Settings UI masked entry fields + hint labels | ▶ Next |
-| v2.6.6 | Full audit: `api_gemini/`, `api_claude/` | — |
+| v2.6.5 | Settings UI masked credential fields + hint labels | ✅ Done |
+| v2.6.6 | Full audit: `api_gemini/`, `api_claude/` | ▶ Next |
 | v2.6.7 | Rotate keys, `git rm settings.ini`, final audit | — |
 
 ---
 
-## v2.6.5 Implementation Notes
+## v2.6.6 Implementation Notes
 
-File to touch: `src/dsclinic_gui/settings/settings_view.py`
-
-- `_entry_field` helper needs `show` kwarg passed to `ttk.Entry` — check if it already accepts `**kwargs` or needs explicit `show` param.
-- Add `show="*"` to existing Google API Key field.
-- Add two new `_entry_field` calls for Anthropic API Key and Google Project ID.
-- Add `ttk.Label` hint under each: `"Stored securely in OS keyring — never written to disk."` using `SUBTLE` fg and `FS` font.
+Grep the entire codebase for `app_settings.google_api_key` and `app_settings.anthropic_api_key` — both must be zero hits after this sub-version. Files most likely to contain them:
+- `src/api_gemini/client.py`
+- `src/api_claude/client.py`
+- Any other file under `src/` that imports `app_settings`
 
 ---
 

@@ -28,8 +28,8 @@
 - [x] Exported from `src/models/__init__.py`.
 
 ### v2.6.3 ✅ Completed
-- [x] `google_api_key` and `anthropic_api_key` removed from `AppSettings`.
-- [x] `configparser` / `settings.ini` block removed from `load_unified()`.
+- [x] `google_api_key`/`anthropic_api_key` removed from `AppSettings`.
+- [x] `configparser`/`settings.ini` block removed from `load_unified()`.
 - [x] `google_project_location` field added; read from `config.json`.
 - [x] `config.json` updated with `"google"` block.
 - [x] `save_unified()` exclude list updated.
@@ -37,21 +37,14 @@
 
 ### v2.6.4 ✅ Completed
 - [x] `var_google_api_key` reads from `get_credential("gemini")`.
-- [x] `var_anthropic_api_key` added — reads from `get_credential("anthropic")`.
-- [x] `var_google_project_id` added — reads from `get_credential("google_project_id")`.
+- [x] `var_anthropic_api_key` and `var_google_project_id` added.
 - [x] `update_from_config()` refreshes all three from keyring.
 - [x] `save_to_config()` writes all three via `set_credential(...)`.
-- [x] `app_settings.google_api_key` assignment removed from `save_to_config()`.
 
----
-
-### v2.6.5 — Settings UI: Masked Key Entry Fields
-
-- [ ] Change `_entry_field("Google API Key", ...)` to pass `show="*"`.
-- [ ] Add `_entry_field("Anthropic API Key", self.view_model.var_anthropic_api_key, show="*")`.
-- [ ] Add `_entry_field("Google Project ID", self.view_model.var_google_project_id, show="*")`.
-- [ ] Add hint `ttk.Label` under each field: `"Stored securely in OS keyring — never written to disk."` (`SUBTLE` fg, `FS` font).
-- [ ] Verify `_entry_field` helper accepts and passes `show` kwarg through to `ttk.Entry`.
+### v2.6.5 ✅ Completed
+- [x] New `_credential_field` helper: masked `ttk.Entry` (`show="*"`) + `SUBTLE` hint label.
+- [x] Three credential fields rendered: Google API Key, Anthropic API Key, Google Project ID.
+- [x] `_HEIGHT` bumped to 860px.
 
 ---
 
@@ -67,7 +60,7 @@
 
 - [ ] Revoke and regenerate `GOOGLE_API_KEY` in Google AI Studio.
 - [ ] Revoke and regenerate `ANTHROPIC_API_KEY` in Anthropic Console.
-- [ ] Enter new keys via Settings → AI key fields (writes to keyring).
+- [ ] Enter new keys via Settings → AI → credential fields (writes to keyring).
 - [ ] `git rm settings.ini` and commit.
 - [ ] Verify `.gitignore` has `settings.ini`.
 - [ ] Search codebase for any remaining `configparser` / `settings.ini` references — must be zero.
