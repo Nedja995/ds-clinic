@@ -35,9 +35,9 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## Current Status: v2.6.0 Active — Next sub-version: v2.6.4
+## Current Status: v2.6.0 Active — Next sub-version: v2.6.5
 
-**v2.6.3 + hotfix complete:** `google_api_key`/`anthropic_api_key` removed from `AppSettings`. `configparser` block removed. `google_project_location` added. `dsclinic.py` patched to use `get_credential("gemini")` to unblock app startup — full audit of all API clients still done in v2.6.6.
+**v2.6.4 complete:** `SettingsViewModel` reads all three credentials from keyring on init and `update_from_config()`. Writes all three via `set_credential()` in `save_to_config()`. No `app_settings.*_api_key` access anywhere in the file.
 
 **Active milestone:** v2.6.0 — Secure Credential Management & `settings.ini` Elimination.
 **Blocked milestone:** v2.5.0 (Chat Session View) — blocked until v2.6.7 is complete.
@@ -51,22 +51,21 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 | v2.6.1 | `importlib.metadata` → `app_name`/`app_version` | ✅ Done |
 | v2.6.2 | New `src/models/keyring_manager.py` | ✅ Done |
 | v2.6.3 | Purge secret fields from `AppSettings` + `load_unified()` | ✅ Done |
-| v2.6.4 | `SettingsViewModel` reads/writes via keyring | ▶ Next |
-| v2.6.5 | Settings UI masked entry fields + hint labels | — |
-| v2.6.6 | Full audit: `dsclinic.py`, `api_gemini/`, `api_claude/` | — |
+| v2.6.4 | `SettingsViewModel` reads/writes via keyring | ✅ Done |
+| v2.6.5 | Settings UI masked entry fields + hint labels | ▶ Next |
+| v2.6.6 | Full audit: `api_gemini/`, `api_claude/` | — |
 | v2.6.7 | Rotate keys, `git rm settings.ini`, final audit | — |
 
 ---
 
-## v2.6.4 Implementation Notes
+## v2.6.5 Implementation Notes
 
-File to touch: `src/dsclinic_gui/settings/settings_view_model.py`
+File to touch: `src/dsclinic_gui/settings/settings_view.py`
 
-- Replace `tk.StringVar(value=app_settings.google_api_key)` with `tk.StringVar(value=get_credential("gemini") or "")`.
-- Add `var_anthropic_api_key = tk.StringVar(value=get_credential("anthropic") or "")`.
-- Add `var_google_project_id = tk.StringVar(value=get_credential("google_project_id") or "")`.
-- Update `update_from_config()` and `save_to_config()` accordingly.
-- Import: `from models import get_credential, set_credential`
+- `_entry_field` helper needs `show` kwarg passed to `ttk.Entry` — check if it already accepts `**kwargs` or needs explicit `show` param.
+- Add `show="*"` to existing Google API Key field.
+- Add two new `_entry_field` calls for Anthropic API Key and Google Project ID.
+- Add `ttk.Label` hint under each: `"Stored securely in OS keyring — never written to disk."` using `SUBTLE` fg and `FS` font.
 
 ---
 

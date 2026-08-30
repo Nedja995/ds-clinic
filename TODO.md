@@ -24,27 +24,24 @@
 - [x] `[APP]` INI block removed. Both fields excluded from `save_unified()`.
 
 ### v2.6.2 ✅ Completed
-- [x] `src/models/keyring_manager.py` created with `get_credential`, `set_credential`, `delete_credential`.
-- [x] All three exported from `src/models/__init__.py`.
+- [x] `src/models/keyring_manager.py` with `get_credential`, `set_credential`, `delete_credential`.
+- [x] Exported from `src/models/__init__.py`.
 
 ### v2.6.3 ✅ Completed
-- [x] `google_api_key` and `anthropic_api_key` fields removed from `AppSettings`.
-- [x] Entire `configparser` / `settings.ini` INI block removed from `load_unified()`.
-- [x] `configparser` import removed.
-- [x] `"google": {"project_location": "us-central1"}` block added to `config.json`.
-- [x] `google_project_location: str = "us-central1"` field added to `AppSettings`.
-- [x] `google_project_location` read from `config.json` in `load_unified()`.
-- [x] `"google_api_key"` and `"anthropic_api_key"` added to `exclude_fields` in `save_unified()`.
+- [x] `google_api_key` and `anthropic_api_key` removed from `AppSettings`.
+- [x] `configparser` / `settings.ini` block removed from `load_unified()`.
+- [x] `google_project_location` field added; read from `config.json`.
+- [x] `config.json` updated with `"google"` block.
+- [x] `save_unified()` exclude list updated.
+- [x] Hotfix: `dsclinic.py` uses `get_credential("gemini")`.
 
----
-
-### v2.6.4 — `SettingsViewModel`: Read & Write Credentials via Keyring
-
-- [ ] Replace `tk.StringVar(value=app_settings.google_api_key)` with `tk.StringVar(value=get_credential("gemini") or "")`.
-- [ ] Add `var_anthropic_api_key = tk.StringVar(value=get_credential("anthropic") or "")`.
-- [ ] Add `var_google_project_id = tk.StringVar(value=get_credential("google_project_id") or "")`.
-- [ ] In `update_from_config()`: mirror same keyring reads for all three vars.
-- [ ] In `save_to_config()`: call `set_credential(...)` for all three; do **not** write via `save_unified()`.
+### v2.6.4 ✅ Completed
+- [x] `var_google_api_key` reads from `get_credential("gemini")`.
+- [x] `var_anthropic_api_key` added — reads from `get_credential("anthropic")`.
+- [x] `var_google_project_id` added — reads from `get_credential("google_project_id")`.
+- [x] `update_from_config()` refreshes all three from keyring.
+- [x] `save_to_config()` writes all three via `set_credential(...)`.
+- [x] `app_settings.google_api_key` assignment removed from `save_to_config()`.
 
 ---
 
@@ -53,17 +50,16 @@
 - [ ] Change `_entry_field("Google API Key", ...)` to pass `show="*"`.
 - [ ] Add `_entry_field("Anthropic API Key", self.view_model.var_anthropic_api_key, show="*")`.
 - [ ] Add `_entry_field("Google Project ID", self.view_model.var_google_project_id, show="*")`.
-- [ ] Add hint `ttk.Label` under each: `"Stored securely in OS keyring — never written to disk."` (`SUBTLE` fg, `FS` font).
+- [ ] Add hint `ttk.Label` under each field: `"Stored securely in OS keyring — never written to disk."` (`SUBTLE` fg, `FS` font).
 - [ ] Verify `_entry_field` helper accepts and passes `show` kwarg through to `ttk.Entry`.
 
 ---
 
-### v2.6.6 — Runtime Key Consumption: `dsclinic.py` & API Clients
+### v2.6.6 — Full Audit: `api_gemini/` & `api_claude/` Clients
 
-- [ ] In `src/dsclinic.py → DSClinic.__init__`: replace `api_key=app_settings.google_api_key` with `api_key=get_credential("gemini") or ""`.
-- [ ] Add startup guard: if `get_credential("gemini")` is `None` or empty, log `WARNING` and surface message via status vars.
-- [ ] In `src/api_gemini/client.py`: replace any `app_settings.google_api_key` reads with `get_credential("gemini")`.
-- [ ] In `src/api_claude/client.py`: replace any `app_settings.anthropic_api_key` reads with `get_credential("anthropic")`.
+- [ ] `src/api_gemini/client.py`: verify no `app_settings.google_api_key` references remain.
+- [ ] `src/api_claude/client.py`: verify no `app_settings.anthropic_api_key` references remain.
+- [ ] Search entire codebase for `app_settings.google_api_key` and `app_settings.anthropic_api_key` — must be zero.
 
 ---
 
@@ -73,9 +69,8 @@
 - [ ] Revoke and regenerate `ANTHROPIC_API_KEY` in Anthropic Console.
 - [ ] Enter new keys via Settings → AI key fields (writes to keyring).
 - [ ] `git rm settings.ini` and commit.
-- [ ] Verify `.gitignore` has `settings.ini` (already present).
+- [ ] Verify `.gitignore` has `settings.ini`.
 - [ ] Search codebase for any remaining `configparser` / `settings.ini` references — must be zero.
-- [ ] Search for any remaining `app_settings.google_api_key` / `app_settings.anthropic_api_key` — must be zero.
 - [ ] Update `GEMINI.md` architecture section.
 - [ ] Update `CHANGELOG.md` with full v2.6.0 release entry.
 - [ ] Update `docs/session_handoff.md` to v2.6.0 complete / v2.5.0 active.
