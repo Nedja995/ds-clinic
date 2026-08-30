@@ -1,78 +1,67 @@
 # TODO — DSClinic Roadmap
 
+> [!NOTE]
+> **Task Management Rule (GASSI Standard):** This document is maintained in **strict descending version order**. The current active focus and upcoming planned versions must always be placed at the top, while completed releases move down into the historical archive at the bottom. Always update this list and session handoffs on every single code change.
+
 ---
 
-## v2.1.10 — UI & Layout Refinement ✅ Complete
+## v2.5.0 — Chat Session View & Pluggable Multi-Provider Pipeline 🚀 Active
+
+Our current active engineering milestone. Establishes the interactive chat experience and a completely decoupled, flexible multi-provider AI backend supporting Gemini, Claude, Groq, Together, HuggingFace, and Local Ollama, along with testing coverage.
+
+### Tasks
+
+- [ ] **Implement full Chat Session View (`chat_session_view.py` rewrite, `styles.py` additions, and `main_container.py` wiring):**
+  - [ ] Complete the Tkinter widget layout inside `src/dsclinic_gui/chat_session_view.py` using standard `ttk` styled components.
+  - [ ] Support non-blocking, asynchronous text streaming from background worker threads using the `queue.Queue` and main-thread polling (`root.after`).
+  - [ ] Style the user messages and AI response bubbles/boxes beautifully using the centralized definitions in `src/dsclinic_gui/styles.py`.
+  - [ ] Wire the `ChatSessionView` and `ChatSessionViewModel` together inside `src/dsclinic_gui/main_container.py` to allow live-streaming interactive dialogues.
+  - [ ] Prevent user input or show a loading indicator in the input area when an AI request is in-flight.
+  - [ ] Handle auto-scrolling of the chat transcript as new text chunks are streamed into the view.
+- [ ] **Build Unified `LLMProvider` Abstraction & Hybrid Pipeline:**
+  - [ ] Design a generic, decoupled `LLMProvider` interface to prevent vendor lock-in.
+  - [ ] Integrate Google Gemini API (`google-genai`) and Anthropic Claude API (`anthropic`) under this unified interface.
+  - [ ] Add support for hosted open-weights providers (Groq API, Together AI, HuggingFace API) to allow ultra-fast open-weights inference.
+  - [ ] Implement local Ollama support with 4-bit and 8-bit quantization for absolute on-premises data sovereignty.
+- [ ] **Establish PII Anonymization Layer & Local Preprocessors:**
+  - [ ] Build a robust local PII scrubbing mechanism (using RegEx and Presidio) to strip patient names and JMBG before data hits the cloud.
+  - [ ] Incorporate local preprocessor stubs (MONAI for MRI slice selection; YOLOv8/Vision Transformer hooks for microscopy blood smears).
+- [ ] **Rigorous Unit Testing (`pytest`):**
+  - [ ] Install `pytest` and build robust automated test suites verifying medical data parsing, PII anonymization, and extraction fallback logic.
+
+---
+
+## v2.4.0 — Unified Configuration, MVVM Schema & High-Privacy Alignment ✅ Completed
+
+A major structural consolidation migrating all models, settings, and dynamic preference files into a unified Pydantic v2 package under `src/models/`, completely eliminating legacy file clutter.
+
+### Completed
+
+- [x] **Consolidate Models into `src/models/` Package:**
+  - [x] Created unified package folder.
+  - [x] Migrated and split patient schemas into `src/models/patient.py` and diagnostic structures into `src/models/diagnostics.py`.
+  - [x] Deleted legacy flat `src/models.py` and `src/models_new/` folders completely.
+- [x] **Implement Future-Proof Unified `src/models/settings.py`:**
+  - [x] Built the Pydantic-Settings `AppSettings` class to serve as the single, clean source of truth for both static configurations and user customizations.
+  - [x] Merged layered loading (`load_unified`) from default baselines and clinician overrides under `.config/medai_vitec/settings.json`.
+  - [x] Supported atomic `save_unified` writes back to local folders.
+  - [x] Deleted legacy `src/config.py` and `src/npy/core/settings_manager.py` completely.
+- [x] **Codebase-Wide Import Refactoring:**
+  - [x] Safely refacted all system files to import config settings cleanly via `from models.settings import app_settings`.
+- [x] **Settings UI Migration:**
+  - [x] Updated `SettingsViewModel` and `SettingsWindow` to bind directly to `app_settings`.
+- [x] **Refactor Configuration Loader (`src/config.py`):**
+  - [x] Implemented a two-tiered loader that reads `config.json` as a read-only baseline and layered `settings.json` on top.
+
+---
+
+## v2.1.10 — UI & Layout Refinement ✅ Completed
 
 Recent UX and layout polishing in the main panel and settings panel.
 
 ### Completed
 
-- [x] Centered section headers in main panel: Set `anchor="center"` on card titles inside the `_card` factory in `src/dsclinic_gui/report_view.py` so they dynamically and responsively center themselves across window and split pane resizes.
-- [x] Settings window layout restructuring: Reworked `_build_general_section` and created `_build_support_section` in `src/dsclinic_gui/settings/settings_view.py` to:
-  - Separate General application parameters from Support features.
-  - Align Language dropdown and its label horizontally on a single line in the General section.
-  - Create a dedicated "SUPPORT" card section.
-  - Align Support Email label and its input entry horizontally on a single line, with the validation error label rendering cleanly underneath.
-  - Move the "Send Logs" and "Show Logs Folder" buttons neatly onto their own row inside the Support section.
-  - Auto-synchronize the active language dropdown selection on load by registering `refresh_text` on the translator inside `SettingsWindow.__init__`.
-
-- [x] Resolved nested-tuple serialization bug on multiple settings saves: Added list-to-string checks and joins inside `__init__` and `update_from_config()` in `src/dsclinic_gui/settings/settings_view_model.py` so multi-line text input fields load as clean, plain strings without parentheses and quote corruptions.
-- [x] Token-optimized prompt transmission: Added automatic newline/whitespace cleaning inside `src/dsclinic.py` before passing `config.AI_INITIAL_TASK_DESCRIPTION` to the Gemini API. This keeps local files and UI highly readable (as multiline strings), while transmitting them as minimized, token-efficient single-line strings.
-
-### Remaining
-- [ ] Implement full Chat Session View (`chat_session_view.py` rewrite, `styles.py` additions, and `main_container.py` wiring).
-- [ ] Support hot-swapping/re-applying application language instantly upon settings save without requiring an application restart.
-- [ ] Migrate the codebase to a fully standardized "Good Practice" workspace structure step-by-step.
-
----
-
-## v2.2.0 — Decoupled Configuration & Preferences Splitting 🚀 Planned
-
-A complete architectural separation of concerns between static, read-only system configurations and writable, upgrade-resilient user preferences.
-
-### Tasks
-
-- [ ] **Define Schema Models (Pydantic v2):**
-  - Establish a clear `AppConfig` Pydantic model for static system settings loaded from `config.json` (supported languages, default model lists, baseline system prompts).
-  - Establish a clear `UserPreferences` Pydantic model for persistent, writable clinician customizations loaded from `settings.json` (active language_code, chosen model, doctor/clinic metadata, subscription/license details, and custom prompt templates).
-- [x] **Refactor Configuration Loader (`src/config.py`):**
-  - Implement a two-tiered loader that reads `config.json` as a read-only baseline.
-  - Load `settings.json` for customizable values, layered on top of the default baseline.
-  - Automatically initialize a clean `settings.json` with user overrides defaults if the file is absent or malformed.
-- [ ] **Rework Settings View & ViewModel (`src/dsclinic_gui/settings/`):**
-  - Modify `SettingsViewModel` and `SettingsWindow` to only bind to and edit properties from `UserPreferences`.
-  - Ensure that saving settings writes *exclusively* to `settings.json`, leaving `config.json` completely untouched.
-- [ ] **Support Custom Prompt Templates in Preferences:**
-  - Update `UserPreferences` schema to allow clinicians to add, edit, or override baseline prompt templates.
-  - Retain automatic on-the-fly whitespace and newline normalization when these customized prompts are saved or transmitted to Gemini/Claude APIs to preserve token-efficiency.
-- [ ] **Verify Packaging Isolation:**
-  - Update PyInstaller `.spec` build configuration files to bundle `config.json` as a read-only asset, while keeping `settings.json` isolated as runtime user-data.
-- [ ] **Verification & Validation:**
-  - Add robust unit tests for configuration parsing, fallback logic, validation error handling of malformed `settings.json`, and proper overlaying of custom prompts.
-
----
-
-## v2.3.0 — Unified Pydantic Models & Configuration Consolidation 🚀 Planned
-
-A major structural cleanup to migrate configuration, file settings, and data structures to a unified, future-proof Pydantic v2 package and eliminate legacy file clutter. Designed to fully support multi-doctor profiles, canned preference presets, and dynamic session-isolated parameters.
-
-### Tasks
-
-- [x] **Consolidate Models into `src/models/` Package:**
-  - Create the unified `src/models/` package folder.
-  - Migrate and split patient schemas into `src/models/patient.py` and diagnostic structures into `src/models/diagnostics.py`.
-  - Delete legacy flat `src/models.py` and `src/models_new/` folders completely.
-- [x] **Implement Future-Proof Unified `src/models/settings.py`:**
-  - Build the Pydantic-Settings `AppSettings` class to serve as the single, clean source of truth for both static configurations and user customizations.
-  - Design a flexible loading signature: `load_unified(profile_id="default", session_dir=None)`:
-    - **Predefined Preference Presets:** Support dynamic layering of preset configuration profiles (e.g., standard clinical presets, holistic presets) stored in an adjacent `config/presets/` directory.
-    - **Session Isolation:** Allow optional redirection to a session-specific config file/folder to keep patient sessions fully sandboxed if required.
-  - Add atomic `save_unified(profile_id="default")` to persist only mutable preferences to a specific profile file (e.g. `settings_profile_id.json`) to cleanly isolate multi-doctor preference settings under `.config/medai_vitec/`.
-  - Delete legacy files: `src/config.py` and `src/npy/core/settings_manager.py` completely.
-- [x] **Codebase-Wide Import Refactoring:**
-  - Safely refactor all system files to replace legacy `import config` module-global properties with clean, type-safe references to `from models.settings import app_settings`.
-- [x] **Settings UI Migration:**
-  - Update `SettingsViewModel` and `SettingsWindow` to bind directly to and save from the unified, profile-aware `app_settings` instance.
-- [ ] **Testing & Robust Verification:**
-  - Write test cases verifying correct fallback layering (Default Base → Selected Preset Preset → Active Writable Preferences Override) and safe profile hot-swapping at runtime.
+- [x] Centered section headers in main panel: Set `anchor="center"` on card titles inside the `_card` factory in `src/dsclinic_gui/report_view.py` so they dynamically and responsively center themselves.
+- [x] Settings window layout restructuring: Reworked `_build_general_section` and created `_build_support_section` in `src/dsclinic_gui/settings/settings_view.py` to separate General and Support.
+- [x] Resolved nested-tuple serialization bug on multiple settings saves in `src/dsclinic_gui/settings/settings_view_model.py`.
+- [x] Token-optimized prompt transmission: Added automatic newline/whitespace cleaning inside `src/dsclinic.py` before passing templates to the Gemini API.

@@ -80,6 +80,23 @@ To maintain high maintainability and prevent regressions, all code must follow t
   pybabel compile -d resources/locale -D app
   ```
 
+### E. Split-Horizon Hybrid Inference Architecture (GDPR/Compliance)
+* **Privacy Layer First (Local/Open-Weights APIs):** To guarantee GDPR and HIPAA compliance, raw medical records and images must be processed locally or via dedicated high-speed, GDPR-compliant APIs using open-weights models (Groq, Together AI, HuggingFace).
+  - Use **Local Ollama** (Llama-3, Mistral, Qwen-2.5-VL) as the primary offline parsing and PII anonymization layer.
+  - Use **Groq, Together AI, or HuggingFace API** as high-performance, cost-effective open-weights fallbacks when local VRAM is constrained.
+  - Implement a rigorous **PII Anonymization/Scrubber** that strips patient names, phone numbers, and identifying metrics *before* passing any data to the cloud.
+* **Specialized Preprocessing & Imaging:**
+  - **MRIs (3D DICOM):** Use **MONAI** locally on CPU/GPU to extract critical 2D slices. Never pass raw 3D volumes to general LLMs.
+  - **Blood Smears & Microscopy:** Do not use LLMs for cell counts (high hallucination rates). Instead, train or fine-tune small computer vision models (e.g., **YOLOv8** or **Vision Transformers**) on open datasets to extract exact parameters and output structured JSON.
+* **Cloud Reasoning Layer (Gemini/Claude):** Heavy cloud models (Gemini Pro, Claude Sonnet/Opus) are reserved strictly as a **Reasoning and Document Synthesis layer**. They only receive *anonymized, structured clinical data* from the preprocessing layer to generate final summaries, second opinions, and styled reports.
+* **Pluggable Abstraction:** All model integrations must be completely decoupled from concrete clients. Build a generic `LLMProvider` or `AIService` interface to allow seamless, runtime hot-swapping or automatic failover between Gemini, Claude, Groq, Together, HuggingFace, and Local Ollama.
+
+### F. Dual-Assistant Developer Workflow
+* **Developer AI Assistants vs. In-App Providers:**
+  - **Developer Assistants:** The developer uses both **Claude AI** and **Gemini CLI/Studio** concurrently as coding and architectural mentors.
+  - **In-App Providers:** The application integrates multiple APIs (Gemini, Claude, Groq, Together, HuggingFace, local Ollama) as part of the production pipeline.
+  - Do not confuse the two; code guidelines are meant to enforce clean interfaces so the developer can switch coding assistants easily, and the app can swap active runtimes dynamically based on performance/costs.
+
 ---
 
 ## 4. MVVM Implementation Template (Reference)
