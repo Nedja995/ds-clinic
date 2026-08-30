@@ -9,13 +9,23 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 See [TODO.md](TODO.md) for planned sub-versions.
 
+## [2.6.2] - 2026-08-30
+
+### Added
+- **`src/models/keyring_manager.py`:** New module — single point of access for the OS-native credential store. Exposes `get_credential(name)`, `set_credential(name, value)`, `delete_credential(name)`. Nothing outside this module imports `keyring` directly.
+- **`_KEYRING_SERVICE = "dsclinic"`** — service name for all keyring entries.
+- **`_CREDENTIAL_KEYS` mapping:** `"gemini"` → `"gemini_api_key"`, `"anthropic"` → `"anthropic_api_key"`, `"google_project_id"` → `"google_project_id"`.
+- **Exported from `src/models/__init__.py`:** `get_credential`, `set_credential`, `delete_credential` available via `from models import get_credential`.
+
+---
+
 ## [2.6.1] - 2026-08-30
 
 ### Changed
-- **`app_name` and `app_version` sourced from `pyproject.toml`:** `AppSettings.load_unified()` now reads both values at runtime via `importlib.metadata.metadata("dsclinic")` as step A0, before any other source. Falls back silently to `AppSettings` field defaults when running from a frozen/non-installed build.
-- **`[APP]` block removed from `settings.ini` parsing:** NAME and VERSION are no longer read from `settings.ini`. Only `[GOOGLE]` and `[ANTHROPIC]` key blocks remain in the INI reader (temporary — removed in v2.6.3).
-- **`app_name` and `app_version` excluded from `save_unified()`:** Both fields added to `exclude_fields` so they are never written back to `settings.json`.
-- **`pyproject.toml` is now the single source of truth** for `app_name` and `app_version`.
+- **`app_name` and `app_version` sourced from `pyproject.toml`:** `AppSettings.load_unified()` reads both values at runtime via `importlib.metadata.metadata("dsclinic")` as step A0. Falls back to `AppSettings` field defaults in frozen/non-installed builds.
+- **`[APP]` block removed from `settings.ini` parsing:** NAME and VERSION no longer read from `settings.ini`.
+- **`app_name` and `app_version` excluded from `save_unified()`:** Never written back to `settings.json`.
+- **`pyproject.toml` is the single source of truth** for `app_name` and `app_version`.
 
 ---
 
@@ -36,7 +46,7 @@ See [TODO.md](TODO.md) for planned sub-versions.
 
 ### Sub-versions
 - v2.6.1 ✅ — `app_name`/`app_version` from `pyproject.toml` via `importlib.metadata`.
-- v2.6.2 — New `src/models/keyring_manager.py` module.
+- v2.6.2 ✅ — New `src/models/keyring_manager.py` module.
 - v2.6.3 — `AppSettings` purged of secret fields + `configparser` block removed.
 - v2.6.4 — `SettingsViewModel` reads/writes via keyring.
 - v2.6.5 — Settings UI masked key fields + hint labels.
@@ -59,8 +69,8 @@ See [TODO.md](TODO.md) for planned sub-versions.
 
 ### Added
 - Unified `src/models/` Package.
-- Hybrid `AppSettings` Model (`src/models/settings.py`) with `load_unified` and atomic `save_unified`.
-- Portability-by-Default Layout (`.config/medai_vitec` adjacent to executable).
+- Hybrid `AppSettings` Model with `load_unified` and atomic `save_unified`.
+- Portability-by-Default Layout.
 - `settings.ini` fallback integration (superseded by v2.6.x).
 
 ### Changed
@@ -76,7 +86,7 @@ See [TODO.md](TODO.md) for planned sub-versions.
 
 ### Added
 - Brand-new "SUPPORT" card section inside the Settings window.
-- Horizontal alignment for Support Email and its input Entry in the Support section.
+- Horizontal alignment for Support Email and its input Entry.
 - Auto-synchronization of active language selection display in Settings combobox.
 - Token-optimization filters inside `src/dsclinic.py`.
 

@@ -9,15 +9,13 @@
 
 ## v2.6.0 — Secure Credential Management & `settings.ini` Elimination 🔐 Active
 
-**Priority blocker.** `settings.ini` currently commits two live API keys and a Google Project ID to the public GitHub repository. This milestone fully eliminates `settings.ini` by migrating every field to its correct permanent home.
-
-| Field | From | To |
-|---|---|---|
-| `NAME` / `VERSION` | `settings.ini [APP]` | `pyproject.toml` via `importlib.metadata` ✅ |
-| `GOOGLE_API_KEY` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` |
-| `ANTHROPIC_API_KEY` | `settings.ini [ANTHROPIC]` | OS keyring via `keyring_manager.py` |
-| `GOOGLE_PROJECT_ID` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` |
-| `GOOGLE_PROJECT_LOCATION` | `settings.ini [GOOGLE]` | `config.json` (non-secret) |
+| Field | From | To | Status |
+|---|---|---|---|
+| `NAME` / `VERSION` | `settings.ini [APP]` | `pyproject.toml` via `importlib.metadata` | ✅ v2.6.1 |
+| `GOOGLE_API_KEY` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
+| `ANTHROPIC_API_KEY` | `settings.ini [ANTHROPIC]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
+| `GOOGLE_PROJECT_ID` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
+| `GOOGLE_PROJECT_LOCATION` | `settings.ini [GOOGLE]` | `config.json` (non-secret) | v2.6.3 |
 
 ---
 
@@ -30,21 +28,15 @@
 
 ---
 
-### v2.6.2 — `keyring_manager.py`: Secure Credential Store Module
+### v2.6.2 — `keyring_manager.py`: Secure Credential Store Module ✅ Completed
 
-Create the single module that owns all keyring access. Architecture mirrors `gassi/core/ai/factory.py → get_api_key()`.
-
-- [ ] Create `src/models/keyring_manager.py` with:
-  - [ ] `_KEYRING_SERVICE = "dsclinic"` constant.
-  - [ ] `_CREDENTIAL_KEYS: dict[str, str]` mapping:
-    - `"gemini"` → `"gemini_api_key"`
-    - `"anthropic"` → `"anthropic_api_key"`
-    - `"google_project_id"` → `"google_project_id"`
-  - [ ] `get_credential(name: str) -> str | None`
-  - [ ] `set_credential(name: str, value: str) -> None`
-  - [ ] `delete_credential(name: str) -> None`
-- [ ] Export all three functions from `src/models/__init__.py`.
-- [ ] Verify `keyring` is in `pyproject.toml` dependencies (already added).
+- [x] Created `src/models/keyring_manager.py` with `_KEYRING_SERVICE = "dsclinic"`.
+- [x] `_CREDENTIAL_KEYS` mapping: `"gemini"` → `"gemini_api_key"`, `"anthropic"` → `"anthropic_api_key"`, `"google_project_id"` → `"google_project_id"`.
+- [x] `get_credential(name: str) -> str | None` implemented.
+- [x] `set_credential(name: str, value: str) -> None` implemented.
+- [x] `delete_credential(name: str) -> None` implemented.
+- [x] All three exported from `src/models/__init__.py`.
+- [x] `keyring` in `pyproject.toml` dependencies (already present).
 
 ---
 

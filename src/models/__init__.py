@@ -22,3 +22,8 @@ from models.settings import (
     app_settings,
     reload_app_settings,
 )
+from models.keyring_manager import (
+    get_credential,
+    set_credential,
+    delete_credential,
+)
