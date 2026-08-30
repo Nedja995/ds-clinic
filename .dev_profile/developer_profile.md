@@ -12,7 +12,7 @@
 ## 3. Hardware Constraints
 * **GPU Setup:** 1x 16GB VRAM GPU passed through to a Proxmox/LXC Linux container.
 * **Limitations:** Experiences bottlenecks/crashes when running multiple or heavy vision models locally.
-* **Mitigation Strategy:** Emphasize 4-bit/8-bit quantization via Ollama and utilize third-party high-speed, GDPR-compliant APIs for open-weights models (Groq, Together AI, HuggingFace) as hybrid failovers.
+* **Mitigation Strategy:** Emphasize 4-bit/8-bit quantization via Ollama and utilize third-party high-speed, GDPR-compliant APIs for open-weights models (Groq, Together AI, HuggingFace) as hybrid fallbacks.
 
 ## 4. Key Portfolio Target
 * **Project Focus:** Transforming `ds-clinic` into an enterprise-ready, multi-brand B2B medical platform.
@@ -34,24 +34,18 @@ Every parent milestone (e.g. `v2.6.0`) is broken into discrete numbered sub-task
 ### One Commit Per Sub-version
 Each sub-version gets exactly **one git commit**. Code changes and all doc updates are staged and committed together in that single commit. Never split a sub-version across multiple commits; never bundle two sub-versions into one commit.
 
-### Commit Command Pattern
-```bash
-# Stage only the files changed in this sub-version — never `git add .`
-git add src/models/keyring_manager.py \
-        src/models/settings.py \
-        CHANGELOG.md \
-        TODO.md \
-        pyproject.toml \
-        docs/session_handoff.md
+### Commit Command — Generated After Each Completed Task
+The AI assistant provides the exact `git add` + `git commit` + `git push` command **at the end of every completed task**, listing only the files actually changed in that task. Commands are never pre-written in advance for future sub-versions.
 
-git commit -m "v2.6.2: add keyring_manager.py — secure OS credential store"
+**Format:**
+```bash
+git add <exact files changed in this task>
+git commit -m "vX.Y.Z: <imperative short description of what changed>"
 git push
 ```
 
-### Commit Message Format
-```
-v{MAJOR}.{MINOR}.{PATCH}: <imperative short description of what changed>
-```
+**Commit message format:** `v{MAJOR}.{MINOR}.{PATCH}: <what changed>`
+
 Examples:
 - `v2.6.1: read app_name/version from pyproject.toml via importlib.metadata`
 - `v2.6.3: purge secret fields from AppSettings and load_unified()`
@@ -60,16 +54,17 @@ Examples:
 ### Mandatory Doc Updates Per Sub-version
 Every commit **must** include updates to all of these that apply:
 
-| File | What to update |
+| File | Update |
 |---|---|
-| `CHANGELOG.md` | Add `## [X.Y.Z]` entry with Added/Fixed/Changed |
-| `TODO.md` | Mark completed sub-version tasks `[x]` |
+| `CHANGELOG.md` | New `## [X.Y.Z]` entry (Added / Fixed / Changed) |
+| `TODO.md` | Mark completed tasks `[x]` |
 | `pyproject.toml` | Bump `version = "X.Y.Z"` |
-| `docs/session_handoff.md` | Update current status and next sub-version |
-| `GEMINI.md` | Update if architectural rules or guidelines changed |
+| `docs/session_handoff.md` | Update current status to next sub-version |
+| `GEMINI.md` | Only if architectural rules changed |
 
 ### What NOT to Do
-- Never use `git add .` — always stage specific files.
+- Never use `git add .` — always stage specific files only.
 - Never commit without updating `CHANGELOG.md` and `TODO.md`.
 - Never bump `pyproject.toml` version without a matching `CHANGELOG.md` entry.
 - Never leave `docs/session_handoff.md` pointing at a completed sub-version.
+- Never pre-write commit commands for future sub-versions — generate them at task completion only.
