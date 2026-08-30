@@ -1,6 +1,4 @@
 {
-  "app_name": "MedAI Assistant - ViTec",
-  "app_version": "2.1.9",
   "app_log_level": "DEBUG",
   "app_debug_export_response": true,
   "app_debug_response": false,
