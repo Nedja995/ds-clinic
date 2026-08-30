@@ -109,3 +109,54 @@ This document tracks the key architectural decisions made for **DSClinic** and t
   * `_CREDENTIAL_KEYS` dict maps logical names (`"gemini"`, `"anthropic"`, `"google_project_id"`) to keyring usernames (`"gemini_api_key"`, etc.).
 * **`AppSettings` impact:** `google_api_key` and `anthropic_api_key` fields removed in v2.6.3. `load_unified()` no longer reads `settings.ini`. `save_unified()` never writes secrets.
 * **Frozen build fallback:** When running as a PyInstaller executable, `importlib.metadata` raises `PackageNotFoundError`. `load_unified()` catches this silently and falls back to `AppSettings` field defaults (`app_name = "DSClinic"`, `app_version = "2.6.x"`).
+
+---
+
+## AD-12: Split-Horizon Hybrid Inference Architecture
+* **Decision:** Implement a layered model routing framework that dynamically segments tasks between local Open-Weights models (via Ollama) and Cloud Reasoning Engines (Gemini Pro / Claude Sonnet).
+* **Rationale:** Maximizes enterprise cost-efficiency and performance while respecting severe data boundaries. Local models handle tasks where low-cost ingestion or high privacy is prioritized. Heavy cloud models are treated as deterministic data synthesis engines, receiving only pre-sanitized payloads.
+
+---
+
+## AD-13: Edge Hardware Optimization via Quantization (16GB VRAM Constraint)
+* **Decision:** Optimize all local deployment topologies (LXC/Proxmox) to run exclusively on a 16GB VRAM budget using 4-bit and 8-bit quantized weights via `vLLM` or `Ollama` engines.
+* **Architecture:** 
+  1. Text Extraction/OCR: Managed via `Llama 3.2 Vision (11B)` quantized to 4-bit (~8GB-12GB VRAM allocation).
+  2. Medical Vision: Managed via `MedGemma (7B)` or specialized vision classifiers.
+  3. Orchestration: The Python backend implements sequential processing ("Load on Demand") to ensure multiple models never contend for memory simultaneously, avoiding VRAM thrashing or CUDA out-of-memory errors.
+
+---
+
+## AD-14: Multi-Modal Preprocessing vs. Raw General Vision Ingestion
+* **Decision:** Prohibit passing raw, un-optimized multi-dimensional clinical files (like 3D DICOM MRI volumes) or raw cellular microscopy images directly into generic Vision-Language Models (VLMs).
+* **Execution Strategy:**
+  1. For MRIs: Use the **MONAI** framework locally on CPU/GPU to run algorithmic spatial slicing and isolate suspicious regions of interest (e.g., tumor/lesion boundaries) before passing flat 2D targets to an LLM.
+  2. For Lab Microscopy/Blood Smears: Bypass LLM vision layers completely to eliminate hallucinated cellular metrics. Utilize specialized object detection nodes (e.g., **YOLOv8** or fine-tuned **Vision Transformers**) trained on medical datasets to extract strict, immutable numerical parameters into a JSON schema.
+
+---
+
+## AD-15: Zero-Trust Local Privacy & PII Scrubbing Framework
+* **Decision:** Implement a multi-layered local data-masking pipeline that ensures no Personally Identifiable Information (PII) ever leaves the clinic machine.
+* **Execution Strategy:** 
+  1. Image & Document Scanning: The local `redaction_worker.py` utilizes a native pipeline to extract raw text layout coordinates before any network calls are dispatched.
+  2. Automated Anonymization: A local Microsoft Presidio Engine + `spaCy` text pipeline scans the layout strings to capture patient names, dates of birth, precise medical IDs, phone numbers, and the 13-digit Serbian National Identification Number (JMBG).
+  3. Geometric Blurring/Redaction: The application draws solid opaque black rectangles over the detected coordinate regions on the source image, creating a permanent, sanitized copy of the asset for secondary processing.
+
+---
+
+## AD-16: Defensive Desktop Error Isolation & UI Thread Resilience
+* **Decision:** Enforce a strict "no-crash, no-freeze" UI architecture by isolating all third-party integrations, OS keyrings, local disk I/O, and remote model completions into dedicated worker threads.
+* **Execution Strategy:**
+  1. Asynchronous Workflows: Every processing pipeline must derive from a non-blocking background thread (`threading.Thread`) and utilize a thread-safe synchronized `queue.Queue` to broadcast life-cycle mutations back to the UI.
+  2. Failure Packaging: Bare `except:` statements are strictly prohibited. All potential points of failure (e.g., rate limits, bad server returns, missing local dependencies, missing hardware allocations) must be wrapped in granular `try/except` blocks.
+  3. Graceful UI Failovers: When an exception triggers, the background worker must catch it, serialize a safe `{"status": "failed", "error": "User-friendly description + logs"}` payload into the communication queue, and allow the UI main loop to cleanly terminate processing states without locking up or crashing the execution environment.
+
+---
+
+## AD-17: Continuous Quality Verification via High-Coverage Unit Testing
+* **Decision:** Establish an automated testing pipeline using `pytest` to guarantee system regressions are caught instantly during architectural refactoring phases.
+* **Execution Strategy:**
+  1. Deterministic Parser Validation: Every script parsing medical JSON outputs, clinic layouts, or raw lab report strings must be accompanied by a dedicated test case verifying mock inputs yield precise target data types.
+  2. Service Decoupling via Mocking: Tests interacting with external resources (such as the Gemini API or local Ollama engines) must use `unittest.mock` to simulate real-world payloads, protecting local execution pipelines from environmental network drops during test execution.
+  3. Target Matrix: The test suite must actively evaluate the processing boundaries of the PII scrubbing pipeline, the abstract routing factory logic, and database index operations under standard and edge-case criteria.
+   
