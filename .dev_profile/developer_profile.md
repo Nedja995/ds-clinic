@@ -21,3 +21,55 @@
   - Split-Horizon Hybrid Inference Architecture (local/remote open models for extraction/PII scrubbing; heavy cloud LLMs for anonymized reasoning).
   - Custom local medical preprocessors (MONAI for 3D DICOM MRI slice selection; trained YOLOv8 or Vision Transformers on open datasets like DeepLesion or microscopy blood smears for hallucination-free metrics).
   - Full automated `pytest` coverage to prove senior production rigor.
+
+---
+
+## 5. Version & Commit Discipline (GASSI Standard)
+
+This is a project-wide rule that applies to **every sub-version, every session, every AI assistant**.
+
+### Sub-version Rule
+Every parent milestone (e.g. `v2.6.0`) is broken into discrete numbered sub-tasks (`v2.6.1`, `v2.6.2`, ...). Each sub-version is a **self-contained, committable unit of work**. Sub-versions are completed in order. The parent version is marked done only when all sub-versions are complete.
+
+### One Commit Per Sub-version
+Each sub-version gets exactly **one git commit**. Code changes and all doc updates are staged and committed together in that single commit. Never split a sub-version across multiple commits; never bundle two sub-versions into one commit.
+
+### Commit Command Pattern
+```bash
+# Stage only the files changed in this sub-version — never `git add .`
+git add src/models/keyring_manager.py \
+        src/models/settings.py \
+        CHANGELOG.md \
+        TODO.md \
+        pyproject.toml \
+        docs/session_handoff.md
+
+git commit -m "v2.6.2: add keyring_manager.py — secure OS credential store"
+git push
+```
+
+### Commit Message Format
+```
+v{MAJOR}.{MINOR}.{PATCH}: <imperative short description of what changed>
+```
+Examples:
+- `v2.6.1: read app_name/version from pyproject.toml via importlib.metadata`
+- `v2.6.3: purge secret fields from AppSettings and load_unified()`
+- `v2.6.7: delete settings.ini, rotate keys, final security audit`
+
+### Mandatory Doc Updates Per Sub-version
+Every commit **must** include updates to all of these that apply:
+
+| File | What to update |
+|---|---|
+| `CHANGELOG.md` | Add `## [X.Y.Z]` entry with Added/Fixed/Changed |
+| `TODO.md` | Mark completed sub-version tasks `[x]` |
+| `pyproject.toml` | Bump `version = "X.Y.Z"` |
+| `docs/session_handoff.md` | Update current status and next sub-version |
+| `GEMINI.md` | Update if architectural rules or guidelines changed |
+
+### What NOT to Do
+- Never use `git add .` — always stage specific files.
+- Never commit without updating `CHANGELOG.md` and `TODO.md`.
+- Never bump `pyproject.toml` version without a matching `CHANGELOG.md` entry.
+- Never leave `docs/session_handoff.md` pointing at a completed sub-version.

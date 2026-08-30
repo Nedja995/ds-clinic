@@ -4,12 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.1.9"
+version = "2.6.0"
 description = "MedAI Assistant - ViTec"
 dependencies = [
     "google-genai",
     "pydantic",
     "pydantic-settings>=2.6",
+    "keyring",
 ]
 
 [tool.setuptools.packages.find]
@@ -17,5 +18,3 @@ where = ["src"]
 
 [autopep8]
 max_line_length = 500
-
-
