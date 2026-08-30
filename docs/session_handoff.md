@@ -12,7 +12,6 @@ This handoff is prepared to allow any incoming development AI assistant (includi
 Every sub-version is one commit. Code + all applicable docs travel together.
 
 ```bash
-# Stage only files changed in this sub-version — NEVER `git add .`
 git add <exact files changed in this task>
 git commit -m "vX.Y.Z: <imperative short description>"
 git push
@@ -36,26 +35,12 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## Current Status: v2.6.0 Active — Next sub-version: v2.6.3
+## Current Status: v2.6.0 Active — Next sub-version: v2.6.4
 
-**v2.6.2 complete:** `src/models/keyring_manager.py` created with `get_credential`, `set_credential`, `delete_credential`. All three exported from `src/models/__init__.py`.
-
-**v2.6.1 complete:** `app_name`/`app_version` sourced from `pyproject.toml` via `importlib.metadata`. AD-11 added.
+**v2.6.3 + hotfix complete:** `google_api_key`/`anthropic_api_key` removed from `AppSettings`. `configparser` block removed. `google_project_location` added. `dsclinic.py` patched to use `get_credential("gemini")` to unblock app startup — full audit of all API clients still done in v2.6.6.
 
 **Active milestone:** v2.6.0 — Secure Credential Management & `settings.ini` Elimination.
 **Blocked milestone:** v2.5.0 (Chat Session View) — blocked until v2.6.7 is complete.
-
----
-
-## Field Migration Map
-
-| Field | From | To | Status |
-|---|---|---|---|
-| `NAME` / `VERSION` | `settings.ini [APP]` | `pyproject.toml` via `importlib.metadata` | ✅ v2.6.1 |
-| `GOOGLE_API_KEY` | `settings.ini [GOOGLE]` | `keyring("dsclinic", "gemini_api_key")` | ✅ v2.6.2 |
-| `ANTHROPIC_API_KEY` | `settings.ini [ANTHROPIC]` | `keyring("dsclinic", "anthropic_api_key")` | ✅ v2.6.2 |
-| `GOOGLE_PROJECT_ID` | `settings.ini [GOOGLE]` | `keyring("dsclinic", "google_project_id")` | ✅ v2.6.2 |
-| `GOOGLE_PROJECT_LOCATION` | `settings.ini [GOOGLE]` | `config.json ["google"]["project_location"]` | v2.6.3 |
 
 ---
 
@@ -65,26 +50,23 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 |---|---|---|
 | v2.6.1 | `importlib.metadata` → `app_name`/`app_version` | ✅ Done |
 | v2.6.2 | New `src/models/keyring_manager.py` | ✅ Done |
-| v2.6.3 | Purge secret fields from `AppSettings` + `load_unified()` | ▶ Next |
-| v2.6.4 | `SettingsViewModel` reads/writes via keyring | — |
+| v2.6.3 | Purge secret fields from `AppSettings` + `load_unified()` | ✅ Done |
+| v2.6.4 | `SettingsViewModel` reads/writes via keyring | ▶ Next |
 | v2.6.5 | Settings UI masked entry fields + hint labels | — |
-| v2.6.6 | Runtime key consumption in `dsclinic.py`, `api_gemini/`, `api_claude/` | — |
+| v2.6.6 | Full audit: `dsclinic.py`, `api_gemini/`, `api_claude/` | — |
 | v2.6.7 | Rotate keys, `git rm settings.ini`, final audit | — |
 
 ---
 
-## v2.6.3 Implementation Notes
+## v2.6.4 Implementation Notes
 
-Files to touch:
-- `src/models/settings.py` — remove `google_api_key`/`anthropic_api_key` fields; remove `configparser` block (step A1); add `google_project_location` field; read it from `config.json`.
-- `config.json` — add `"google": {"project_location": "us-central1"}` block.
+File to touch: `src/dsclinic_gui/settings/settings_view_model.py`
 
----
-
-## Reference Architecture: GASSI Keyring Pattern
-
-- `proj_gassi2/src/gassi/core/ai/factory.py` — `_KEYRING_SERVICE`, `_PROVIDER_KEYRING_USERNAME`, `get_api_key()`
-- `proj_gassi2/src/gassi/views/settings_dialog.py` — keyring read/write pattern
+- Replace `tk.StringVar(value=app_settings.google_api_key)` with `tk.StringVar(value=get_credential("gemini") or "")`.
+- Add `var_anthropic_api_key = tk.StringVar(value=get_credential("anthropic") or "")`.
+- Add `var_google_project_id = tk.StringVar(value=get_credential("google_project_id") or "")`.
+- Update `update_from_config()` and `save_to_config()` accordingly.
+- Import: `from models import get_credential, set_credential`
 
 ---
 

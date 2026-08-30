@@ -5,6 +5,9 @@
         "debug_response": false,
         "language_code": "sr"
     },
+    "google": {
+        "project_location": "us-central1"
+    },
     "ai_system_instructions": [
         "You are an expert medical data analyst using medical data (tradicional, holistic, western, eastern, etc..) from input documents. "
     ],

@@ -15,40 +15,26 @@
 | `GOOGLE_API_KEY` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
 | `ANTHROPIC_API_KEY` | `settings.ini [ANTHROPIC]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
 | `GOOGLE_PROJECT_ID` | `settings.ini [GOOGLE]` | OS keyring via `keyring_manager.py` | ✅ v2.6.2 |
-| `GOOGLE_PROJECT_LOCATION` | `settings.ini [GOOGLE]` | `config.json` (non-secret) | v2.6.3 |
+| `GOOGLE_PROJECT_LOCATION` | `settings.ini [GOOGLE]` | `config.json` (non-secret) | ✅ v2.6.3 |
 
 ---
 
-### v2.6.1 — `pyproject.toml`: App Name & Version as Single Source of Truth ✅ Completed
+### v2.6.1 ✅ Completed
+- [x] `importlib.metadata` reads `app_name`/`app_version` in `load_unified()`.
+- [x] `[APP]` INI block removed. Both fields excluded from `save_unified()`.
 
-- [x] `importlib.metadata.metadata("dsclinic")` reads `app_name` and `app_version` in `load_unified()` as step A0.
-- [x] `[APP]` NAME/VERSION block removed from `settings.ini` INI parsing.
-- [x] `app_name` and `app_version` added to `exclude_fields` in `save_unified()`.
-- [x] `pyproject.toml` is now the single source of truth for both fields.
-
----
-
-### v2.6.2 — `keyring_manager.py`: Secure Credential Store Module ✅ Completed
-
-- [x] Created `src/models/keyring_manager.py` with `_KEYRING_SERVICE = "dsclinic"`.
-- [x] `_CREDENTIAL_KEYS` mapping: `"gemini"` → `"gemini_api_key"`, `"anthropic"` → `"anthropic_api_key"`, `"google_project_id"` → `"google_project_id"`.
-- [x] `get_credential(name: str) -> str | None` implemented.
-- [x] `set_credential(name: str, value: str) -> None` implemented.
-- [x] `delete_credential(name: str) -> None` implemented.
+### v2.6.2 ✅ Completed
+- [x] `src/models/keyring_manager.py` created with `get_credential`, `set_credential`, `delete_credential`.
 - [x] All three exported from `src/models/__init__.py`.
-- [x] `keyring` in `pyproject.toml` dependencies (already present).
 
----
-
-### v2.6.3 — `AppSettings`: Remove All Secret Fields
-
-- [ ] Remove `google_api_key: str = ""` and `anthropic_api_key: str = ""` from `AppSettings`.
-- [ ] Remove the entire `configparser` / `settings.ini` INI block from `load_unified()` (step A1).
-- [ ] Remove `configparser` import.
-- [ ] Add `"google"` block to `config.json`: `{"project_location": "us-central1"}`.
-- [ ] Add `google_project_location: str = "us-central1"` field to `AppSettings`.
-- [ ] Read `google_project_location` from `config.json` in `load_unified()`.
-- [ ] Add `"google_api_key"` and `"anthropic_api_key"` to `exclude_fields` in `save_unified()` (defensive).
+### v2.6.3 ✅ Completed
+- [x] `google_api_key` and `anthropic_api_key` fields removed from `AppSettings`.
+- [x] Entire `configparser` / `settings.ini` INI block removed from `load_unified()`.
+- [x] `configparser` import removed.
+- [x] `"google": {"project_location": "us-central1"}` block added to `config.json`.
+- [x] `google_project_location: str = "us-central1"` field added to `AppSettings`.
+- [x] `google_project_location` read from `config.json` in `load_unified()`.
+- [x] `"google_api_key"` and `"anthropic_api_key"` added to `exclude_fields` in `save_unified()`.
 
 ---
 
@@ -76,7 +62,7 @@
 
 - [ ] In `src/dsclinic.py → DSClinic.__init__`: replace `api_key=app_settings.google_api_key` with `api_key=get_credential("gemini") or ""`.
 - [ ] Add startup guard: if `get_credential("gemini")` is `None` or empty, log `WARNING` and surface message via status vars.
-- [ ] In `src/api_gemini/client.py`: replace any remaining `app_settings.google_api_key` reads with `get_credential("gemini")`.
+- [ ] In `src/api_gemini/client.py`: replace any `app_settings.google_api_key` reads with `get_credential("gemini")`.
 - [ ] In `src/api_claude/client.py`: replace any `app_settings.anthropic_api_key` reads with `get_credential("anthropic")`.
 
 ---
@@ -100,33 +86,16 @@
 
 **Blocked on v2.6.0.**
 
-### Tasks
-
-- [ ] **Chat Session View (`chat_session_view.py` rewrite):**
-  - [ ] Fix streaming bubble bug: track `_current_bot_bubble: Optional[MarkdownLabel]`; update in-place via `update_text()`.
-  - [ ] Add `update_text(new_text: str)` to `MarkdownLabel`.
-  - [ ] Fix `ChatUser.TFrame/TLabel` colors (`ACCENT` blue + `WHITE` text).
-  - [ ] Non-blocking streaming via `queue.Queue` + `root.after` polling.
-  - [ ] Auto-scroll on each chunk. Disable input while in-flight.
-- [ ] **`LLMProvider` Abstraction:** Gemini, Claude, Groq, Together, HuggingFace, Ollama.
-- [ ] **PII Anonymization Layer:** Presidio-based local scrubbing.
-- [ ] **`pytest` Coverage:** Parsing, anonymization, provider fallback.
+- [ ] Fix streaming bubble bug: track `_current_bot_bubble: Optional[MarkdownLabel]`; update in-place via `update_text()`.
+- [ ] Add `update_text(new_text: str)` to `MarkdownLabel`.
+- [ ] Fix `ChatUser.TFrame/TLabel` colors (`ACCENT` blue + `WHITE` text).
+- [ ] Non-blocking streaming via `queue.Queue` + `root.after` polling.
+- [ ] Auto-scroll on each chunk. Disable input while in-flight.
+- [ ] `LLMProvider` abstraction: Gemini, Claude, Groq, Together, HuggingFace, Ollama.
+- [ ] PII Anonymization Layer: Presidio-based local scrubbing.
+- [ ] `pytest` coverage: parsing, anonymization, provider fallback.
 
 ---
 
-## v2.4.0 — Unified Configuration, MVVM Schema & High-Privacy Alignment ✅ Completed
-
-- [x] Consolidate Models into `src/models/` Package.
-- [x] Hybrid `AppSettings` with `load_unified` and atomic `save_unified`.
-- [x] Codebase-wide import refactoring to `from models import app_settings`.
-- [x] Settings UI migrated to `app_settings`.
-- [x] Deleted legacy `src/config.py` and `src/npy/core/settings_manager.py`.
-
----
-
-## v2.1.10 — UI & Layout Refinement ✅ Completed
-
-- [x] Centered section headers in main panel.
-- [x] Settings window layout restructuring.
-- [x] Resolved nested-tuple serialization bug on multiple settings saves.
-- [x] Token-optimized prompt transmission.
+## v2.4.0 ✅ Completed
+## v2.1.10 ✅ Completed

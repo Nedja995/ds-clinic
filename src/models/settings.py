@@ -19,7 +19,7 @@ class AppSettings(BaseSettings):
 
     # ── 1. STATIC SYSTEM DEFAULTS (bundled read-only config.json) ──
     app_name: str = "DSClinic"
-    app_version: str = "2.6.1"
+    app_version: str = "2.6.3"
     app_log_level: str = "INFO"
     app_debug_export_response: bool = True
     app_debug_response: bool = False
@@ -50,9 +50,9 @@ class AppSettings(BaseSettings):
     theme_name: str = "dark"
     debug_log_max_lines: int = Field(default=200, ge=50, le=1000)
 
-    # API Keys — kept temporarily; removed in v2.6.3 when keyring_manager is wired
-    google_api_key: str = ""
-    anthropic_api_key: str = ""
+    # Google Cloud — non-secret location config (see AD-11)
+    # API keys are in OS keyring via keyring_manager.py — never stored here
+    google_project_location: str = "us-central1"
 
     # Models & System Prompts
     ai_model_name: str = "gemini-2.5-flash"
@@ -91,8 +91,8 @@ class AppSettings(BaseSettings):
         base_dir = Path(get_base_dir_path())
         merged_data: Dict[str, Any] = {}
 
-        # A0. app_name / app_version — single source of truth is pyproject.toml,
-        #     read at runtime via importlib.metadata so no duplication with settings.ini.
+        # A0. app_name / app_version — single source of truth is pyproject.toml (AD-11).
+        #     Falls back to AppSettings field defaults in frozen/non-installed builds.
         try:
             _meta = metadata("dsclinic")
             merged_data["app_name"] = _meta["Name"]
@@ -101,28 +101,12 @@ class AppSettings(BaseSettings):
                 f"Package metadata loaded: {merged_data['app_name']} v{merged_data['app_version']}"
             )
         except PackageNotFoundError:
-            # Frozen / not installed — fall back to AppSettings field defaults.
-            logger.debug("importlib.metadata: package 'dsclinic' not found — using field defaults for app_name/app_version")
+            logger.debug(
+                "importlib.metadata: package 'dsclinic' not found — using field defaults for app_name/app_version"
+            )
 
-        # A1. Read settings.ini — API keys only (NAME/VERSION block removed in v2.6.1).
-        #     Entire settings.ini block removed in v2.6.3 once keyring_manager is wired.
-        import configparser
-        ini_config = configparser.ConfigParser()
-        ini_path = base_dir / "settings.ini"
-        if ini_path.exists():
-            try:
-                ini_config.read(ini_path, encoding="utf-8")
-
-                google_key = ini_config.get("GOOGLE", "GOOGLE_API_KEY", fallback="").replace('"', '').replace("'", "")
-                anthropic_key = ini_config.get("ANTHROPIC", "ANTHROPIC_API_KEY", fallback="").replace('"', '').replace("'", "")
-                if google_key:
-                    merged_data["google_api_key"] = google_key
-                if anthropic_key:
-                    merged_data["anthropic_api_key"] = anthropic_key
-            except Exception as e:
-                logger.warning(f"Error reading settings.ini: {e}")
-
-        # A2. Read static config.json defaults
+        # A1. Read static config.json defaults.
+        #     API keys are NOT read from any file — they live in the OS keyring (AD-11).
         config_path = base_dir / "config.json"
         if config_path.exists():
             try:
@@ -132,6 +116,11 @@ class AppSettings(BaseSettings):
                 merged_data["app_log_level"] = config_defaults.get("app", {}).get("log_level", "INFO")
                 merged_data["app_debug_export_response"] = config_defaults.get("app", {}).get("debug_export_response", True)
                 merged_data["app_debug_response"] = config_defaults.get("app", {}).get("debug_response", False)
+
+                # Non-secret Google Cloud config
+                merged_data["google_project_location"] = config_defaults.get("google", {}).get(
+                    "project_location", "us-central1"
+                )
 
                 merged_data["ai_supported_models"] = config_defaults.get("ai_supported_models", {})
                 merged_data["ai_supported_input_filetypes"] = config_defaults.get("ai_supported_input_filetypes", {})
@@ -216,15 +205,18 @@ class AppSettings(BaseSettings):
         )
 
         exclude_fields = {
+            # Static config — sourced from config.json or pyproject.toml, never persisted to settings.json
             "ai_supported_models",
             "ai_supported_input_filetypes",
             "ai_response_description",
             "ai_initial_task_key",
             "ai_task_descriptions",
             "claude_supported_models",
-            # app_name and app_version are sourced from pyproject.toml — never persist to disk
             "app_name",
             "app_version",
+            # Secrets — stored in OS keyring only, never written to any file (AD-11)
+            "google_api_key",
+            "anthropic_api_key",
         }
 
         save_data = self.model_dump(exclude=exclude_fields)

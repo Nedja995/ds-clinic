@@ -7,6 +7,7 @@ from npy.core.fileutils import find_input_documents, make_output_filepath, open_
 import pdf_maker
 from models import (
     app_settings,
+    get_credential,
     MedicalReportModel,
     GeminiModelConfig,
     AIServiceConfig,
@@ -28,12 +29,20 @@ class DSClinic:
         self.output_dir = get_output_data_dirpath()
         self.model_name = model_name or app_settings.ai_model_name
         logger.info(f"Initializing DSClinic with model: {self.model_name}, input_dir: {self.input_dir}, output_dir: {self.output_dir}")
-        
+
+        # ── API key — sourced from OS keyring (AD-11); never from app_settings ──
+        _gemini_key = get_credential("gemini") or ""
+        if not _gemini_key:
+            logger.warning(
+                "Gemini API key is not set in OS keyring. "
+                "Open Settings → AI → Google API Key and save your key."
+            )
+
         # AI Client Config
         self.client_config = AIServiceConfig(
-            api_key=app_settings.google_api_key,
+            api_key=_gemini_key,
             model_settings=GeminiModelConfig(
-                model_name=self.model_name, 
+                model_name=self.model_name,
                 system_instruction=tuple(app_settings.ai_system_instructions),
                 thinking_level=app_settings.ai_thinking_level,
                 temperature=app_settings.ai_model_temperature,
@@ -70,14 +79,12 @@ class DSClinic:
 
             # ── CONDITIONAL FILE MAPPING PATTERN BLOCK ────────────────────────
             if anonymization_enabled:
-                # If the original file was a PDF, look for its generated page images inside ANONIMIZOVANO
                 if doc_filepath.lower().endswith('.pdf'):
                     parent_dir = os.path.dirname(doc_filepath)
                     filename = os.path.basename(doc_filepath)
                     base, _ = os.path.splitext(filename)
                     anonymized_subfolder = os.path.join(parent_dir, "ANONIMIZOVANO")
                     
-                    # Find all processed pages for this specific PDF file
                     if os.path.exists(anonymized_subfolder):
                         for file in os.listdir(anonymized_subfolder):
                             if file.startswith(f"{base}_scrubbed_page_") and file.lower().endswith('.jpg'):
@@ -87,13 +94,11 @@ class DSClinic:
                                 if part: input_documents_parts.append(part)
                     continue
 
-                # Standard single-image file replacement mapping
                 target_filepath = doc_filepath
                 if scrubbed_files_map and doc_filepath in scrubbed_files_map:
                     target_filepath = scrubbed_files_map[doc_filepath]
                     logger.info(f"Anonymization map active: Swapping {doc_filepath} -> {target_filepath}")
             else:
-                # If anonymization toggle is turned off, parse the raw input directly
                 target_filepath = doc_filepath
                 logger.info(f"Anonymization disabled by user: Loading original asset path {target_filepath}")
             # ──────────────────────────────────────────────────────────────────
