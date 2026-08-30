@@ -1,1 +1,4 @@
 exclude from search: .venv, *.log, *.json, *.md, docs, *.log*, app.po, toolbar.py, src/test_guis/
+
+describe tasks to switch to pyproject.toml instead requirements.txt and using uv and other as in project GASSI (check files from /docs/claude_export and all it 
+   subdirecotries and files maybe it could help you, expecially how i use it there is described in /docs/claude/export/new_good_practice_project/README.md)`
