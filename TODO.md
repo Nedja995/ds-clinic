@@ -9,269 +9,447 @@
 
 ---
 
-## v2.5.0 — Enterprise MedTech Platform: Core Architecture & Feature Pipeline 🚀 Active
+## v2.5.0 — MVVM Strict Compliance & Defensive Error Handling Audit 🔐 Active
 
-**The "MVP to Scale" portfolio narrative.** An MVP was rapidly prototyped to validate a medical business idea with a real user. This milestone drives the full architectural overhaul to make it enterprise-grade: strict MVVM, pluggable multi-provider inference pipeline, patient session management, PII compliance, multi-brand white-labeling, and automated test coverage. Every sub-version is a demonstrable portfolio piece that answers a specific EU recruiter question.
-
----
-
-### v2.5.1 — MVVM Strict Compliance & Defensive Error Handling Audit
-
-**Why first:** Everything built on top of a broken foundation stays broken. Medical apps cannot silently crash or leak state. This is the #1 discipline question in EU HealthTech interviews.
-
-- [ ] **Full MVVM boundary audit across all ViewModels:**
-  - [ ] Grep entire `src/dsclinic_gui/` for any `tkinter` widget imports (`Label`, `Button`, `Frame`, `ttk.*`) inside ViewModel files — must be zero.
-  - [ ] Verify no ViewModel calls `filedialog`, `messagebox`, or any dialog directly — delegate pattern only.
-  - [ ] Verify all background tasks use `threading.Thread` + `queue.Queue` + `root.after` polling — no direct widget mutations from worker threads.
-  - [ ] Verify `schedule_poll_fn` is the only Tkinter coupling in every ViewModel.
-- [ ] **Defensive error handling audit across all source files:**
-  - [ ] Grep for bare `except:` — must be zero. Replace all with specific exception types.
-  - [ ] Wrap all `src/db/` file I/O operations in `try/except (OSError, json.JSONDecodeError)` with logging.
-  - [ ] Wrap all keyring calls in `try/except keyring.errors.*` with graceful fallback.
-  - [ ] Wrap all background worker thread bodies in `try/except Exception` — always write a `TaskStatus.FAILED` event to the queue on failure, never let the thread die silently.
-  - [ ] Verify all `ProgressEvent(status=TaskStatus.FAILED)` events surface a user-readable message in the UI (not a raw Python exception string).
-- [ ] **Type hints audit:**
-  - [ ] Add missing return type annotations to all functions in `src/dsclinic.py`, `src/dsclinic_gui/report_view_models.py`, `src/dsclinic_gui/settings/`.
-  - [ ] Run `mypy --strict src/` and fix all errors.
-- [ ] **Update `docs/architecture.md`:** Verify AD-01, AD-02, AD-16 accurately reflect the post-audit state.
+**Why first:** Everything built on top of a broken foundation stays broken. Medical apps cannot silently crash or leak state. This is the #1 discipline question in EU HealthTech interviews. Every subsequent milestone depends on a correct, audited base.
 
 ---
 
-### v2.5.2 — Patient Record as First-Class Entity & Session Persistence UI
+### v2.5.1 — MVVM Boundary Audit
 
-**Why second:** `AppDatabase` (sessions, reports, ai_profiles) and `JsonCollection[T]` are already fully implemented in `src/db/` but never wired to any ViewModel or View. `ChatSessionModel` and `MedicalReport` exist but are never persisted after analysis. Sessions and patient records are the data foundation everything else depends on.
-
-**Architectural decision:** A `Patient` model is needed as a first-class entity that owns multiple sessions. Currently a patient is only a name string inside `MedicalReport`. An EU B2B clinic app must track recurring patients across visits.
-
-- [ ] **Extend `src/models/patient.py` — add `PatientRecord` model:**
-  - [ ] `PatientRecord(BaseModel)` with fields: `patient_id: str` (uuid), `full_name: str`, `date_of_birth: str`, `created_at: str`, `session_ids: list[str]` (references to `ChatSessionModel.session_id`).
-  - [ ] Add `patients` collection to `AppDatabase`: `JsonCollection[PatientRecord]` at `app_data/patients/`.
-  - [ ] Index fields: `patient_id`, `full_name`.
-- [ ] **Wire `AppDatabase` into `DSClinicViewModel`:**
-  - [ ] Instantiate `AppDatabase` once in `DSClinicViewModel.__init__`.
-  - [ ] After successful analysis (`TaskStatus.FINISHED` with `MedicalReport`): auto-save the report via `db.reports.save(report.report_id, report)`.
-  - [ ] After each follow-up Q&A exchange: update and re-save the `ChatSessionModel` via `db.sessions.save(session.session_id, session)`.
-- [ ] **Session history panel / patient list (new View or sidebar section):**
-  - [ ] List recent sessions from `db.sessions.list_index()` (fast, no full records loaded).
-  - [ ] Allow clicking a session to load the full `ChatSessionModel` and restore the analysis state.
-  - [ ] Allow clicking a patient to show all their sessions.
-- [ ] **Add `AD-18` to `docs/architecture.md`:** Document `PatientRecord` as first-class entity and `AppDatabase` wiring decision.
+- [ ] Grep entire `src/dsclinic_gui/` for any `tkinter` widget imports (`Label`, `Button`, `Frame`, `ttk.*`) inside ViewModel files — must be zero.
+- [ ] Verify no ViewModel calls `filedialog`, `messagebox`, or any dialog directly — delegate pattern only.
+- [ ] Verify all background tasks use `threading.Thread` + `queue.Queue` + `root.after` polling — no direct widget mutations from worker threads.
+- [ ] Verify `schedule_poll_fn` is the only Tkinter coupling in every ViewModel.
+- [ ] Document any violations found and fix each one.
 
 ---
 
-### v2.5.3 — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
+### v2.5.2 — Defensive Error Handling Audit
 
-**Why third:** The core architectural showpiece. Every cloud/local provider sub-version (v2.5.4, v2.5.5) depends on this interface. The interview pitch is: *"I designed a pluggable inference pipeline that hot-swaps between 6 providers without touching business logic."* Currently `DSClinic` is hard-coupled to `MedicalAnalyzerClient` — this is vendor lock-in.
-
-**Package structure:**
-```
-src/providers/
-    __init__.py          # exports LLMProvider, ProviderFactory, ProviderType
-    base.py              # LLMProvider ABC + ProviderRequest/ProviderResponse dataclasses
-    factory.py           # ProviderFactory.create(provider_type, config) → LLMProvider
-    gemini_provider.py   # GeminiProvider — delegates to api_gemini/client.py
-    claude_provider.py   # ClaudeProvider — delegates to api_claude/client.py
-```
-
-- [ ] **Define `LLMProvider` abstract base (`src/providers/base.py`):**
-  - [ ] `ProviderType(StrEnum)`: `GEMINI`, `CLAUDE`, `GROQ`, `TOGETHER`, `HUGGINGFACE`, `OLLAMA`.
-  - [ ] `ProviderRequest(BaseModel)`: `documents: list`, `question: str`, `system_instructions: list[str]`, `temperature: float`, `max_tokens: int`.
-  - [ ] `ProviderResponse(BaseModel)`: `text: str`, `provider: ProviderType`, `model_name: str`, `tokens_used: int | None`.
-  - [ ] `LLMProvider(ABC)`: abstract methods `analyze(request) → MedicalReportModel`, `ask(question: str) → Iterator[str]`, `provider_type() → ProviderType`, `is_available() → bool`.
-- [ ] **Implement `GeminiProvider` (`src/providers/gemini_provider.py`):**
-  - [ ] Wraps existing `MedicalAnalyzerClient`. Implements `LLMProvider` interface.
-  - [ ] `is_available()` → `bool` based on keyring key presence and client init status.
-- [ ] **Implement `ClaudeProvider` (`src/providers/claude_provider.py`):**
-  - [ ] Wraps existing `ClaudeAnalyzerClient`. Implements `LLMProvider` interface.
-  - [ ] `is_available()` → checks keyring + client init status.
-- [ ] **Implement `ProviderFactory` (`src/providers/factory.py`):**
-  - [ ] `create(provider_type: ProviderType, ...) → LLMProvider` — constructs the right provider from keyring credentials + app_settings.
-  - [ ] `available_providers() → list[ProviderType]` — returns all providers that have valid credentials.
-- [ ] **Refactor `DSClinic` to use `ProviderFactory`:**
-  - [ ] Replace direct `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` instantiation with `ProviderFactory.create(provider_type)`.
-  - [ ] Add `active_provider: LLMProvider` attribute to `DSClinic`.
-  - [ ] `get_initial_analysis_report()` → calls `active_provider.analyze(request)`.
-  - [ ] `ask_followup_question()` → calls `active_provider.ask(question)`.
-- [ ] **Add `AD-19` to `docs/architecture.md`:** Document `src/providers/` package structure, `LLMProvider` interface, and `ProviderFactory` pattern.
-- [ ] **Export from `src/providers/__init__.py`:** `LLMProvider`, `ProviderFactory`, `ProviderType`, `ProviderRequest`, `ProviderResponse`.
+- [ ] Grep entire `src/` for bare `except:` — must be zero. Replace all with specific exception types.
+- [ ] Wrap all `src/db/` file I/O operations in `try/except (OSError, json.JSONDecodeError)` with logging.
+- [ ] Wrap all keyring calls in `try/except keyring.errors.*` with graceful fallback.
+- [ ] Wrap all background worker thread bodies in `try/except Exception` — always write `TaskStatus.FAILED` event to queue on failure, never let thread die silently.
+- [ ] Verify all `ProgressEvent(status=TaskStatus.FAILED)` events surface a user-readable message in the UI — not a raw Python exception string.
 
 ---
 
-### v2.5.4 — Groq + Together AI + HuggingFace Cloud Providers
+### v2.5.3 — Type Hints Audit
 
-**Why here:** Extends v2.5.3. These are the fast, GDPR-compliant open-weights API providers that form the middle tier of the Split-Horizon Architecture. Groq/Together serve anonymized extraction tasks; cloud Gemini/Claude handle reasoning on the cleaned output.
-
-```
-src/providers/
-    groq_provider.py
-    together_provider.py
-    huggingface_provider.py
-```
-
-- [ ] **Add provider credentials to keyring:**
-  - [ ] Add `"groq"` → `"groq_api_key"`, `"together"` → `"together_api_key"`, `"huggingface"` → `"huggingface_api_key"` to `keyring_manager._CREDENTIAL_KEYS`.
-  - [ ] Add the three new vars to `SettingsViewModel` and Settings UI (`_credential_field` each).
-- [ ] **Implement `GroqProvider` (`src/providers/groq_provider.py`):**
-  - [ ] Uses `groq` Python SDK (`pip install groq`). Add to `pyproject.toml`.
-  - [ ] Startup guard: `is_available()` checks keyring key.
-  - [ ] `analyze()` → sends anonymized structured prompt, parses JSON response into `MedicalReportModel`.
-  - [ ] `ask()` → streaming chat response via Groq chat completion API.
-  - [ ] Supported models configurable via `app_settings` / `config.json`.
-- [ ] **Implement `TogetherProvider` (`src/providers/together_provider.py`):**
-  - [ ] Uses `together` Python SDK. Add to `pyproject.toml`.
-  - [ ] Same interface as `GroqProvider`.
-- [ ] **Implement `HuggingFaceProvider` (`src/providers/huggingface_provider.py`):**
-  - [ ] Uses `huggingface_hub` inference client. Add to `pyproject.toml`.
-  - [ ] Configurable endpoint URL for hosted medical models (BioMistral, Llama-3-Medical).
-- [ ] **Add `ProviderType.GROQ`, `TOGETHER`, `HUGGINGFACE` to `base.py` and `factory.py`.**
-- [ ] **Add supported models to `config.json`:** `groq_supported_models`, `together_supported_models`, `huggingface_supported_models`.
+- [ ] Add missing return type annotations to all functions in `src/dsclinic.py`, `src/dsclinic_gui/report_view_models.py`, `src/dsclinic_gui/settings/`.
+- [ ] Add missing type annotations to `src/db/app_database.py` and `src/db/json_collection.py`.
+- [ ] Run `mypy --strict src/` and fix all errors.
+- [ ] Verify `docs/architecture.md` AD-01, AD-02, AD-16 accurately reflect the post-audit state.
 
 ---
 
-### v2.5.5 — Local Ollama Provider (16GB VRAM Optimized, Load-on-Demand)
+## v2.7.0 — Patient Record as First-Class Entity & Session Persistence 📋 Next
 
-**Why here:** The most complex provider. Demonstrates edge hardware optimization — a major EU interview differentiator. 16GB VRAM constraint means sequential "load on demand" model switching, not concurrent loading.
-
-```
-src/providers/
-    ollama_provider.py
-```
-
-- [ ] **Add `keyring_manager` entry for Ollama base URL** (local, not a secret, but keep consistent): `"ollama_base_url"` → stored in `app_settings` (not keyring, it's not sensitive).
-- [ ] **Implement `OllamaProvider` (`src/providers/ollama_provider.py`):**
-  - [ ] Uses `ollama` Python SDK (`pip install ollama`). Add to `pyproject.toml`.
-  - [ ] `is_available()` → pings `ollama.list()` to check if daemon is running.
-  - [ ] **Load-on-demand:** Model is pulled (`ollama.pull()`) only when first needed, not at startup.
-  - [ ] `analyze()` → uses vision-capable model (e.g. `llama3.2-vision`) for document OCR + extraction into `MedicalReportModel` JSON.
-  - [ ] `ask()` → streaming text response via `ollama.chat()` with `stream=True`.
-  - [ ] **4-bit quantization:** Configured via model name tag (e.g. `llama3.2-vision:q4_0`) — Ollama handles quantization automatically.
-  - [ ] **VRAM sequential guard:** Only one model loaded at a time. Before loading a new model, unload the previous via `ollama.delete()` or model swap.
-  - [ ] Supported local models configurable via `config.json` `ollama_supported_models` list.
-- [ ] **Add `ProviderType.OLLAMA` to `base.py` and `factory.py`.**
-- [ ] **Add Ollama base URL field to `AppSettings` and Settings UI** (plain entry field, no masking — not a secret).
+**Why:** `AppDatabase` (sessions, reports, ai_profiles) and `JsonCollection[T]` are fully implemented in `src/db/` but never wired to any ViewModel. Sessions are never saved. Reports are never persisted. A `Patient` model is missing entirely — currently a patient is only a name string inside `MedicalReport`. This is the data foundation every subsequent milestone depends on. See AD-18.
 
 ---
 
-### v2.5.6 — Enterprise Multi-Brand / White-Label & Subscription Config
+### v2.7.1 — `PatientRecord` Model & `AppDatabase` Extension
 
-**Why here:** The system must work before it can be branded. Depends on `AppDatabase` (v2.5.2) being wired for per-clinic settings. This is what makes the app a real B2B SaaS product, not a single-clinic tool.
-
-**Business model:** Two delivery modes:
-1. **White-labeled B2B:** Custom logo, clinic name, colors, PDF header/footer per client. Distributed as a branded `.exe` with a pre-configured `brand.json`.
-2. **Subscription SaaS:** Single app, user pays subscription, configures their own clinic profile via Settings → Clinic Profile.
-
-- [ ] **`BrandConfig` model (`src/models/brand.py`):**
-  - [ ] Fields: `clinic_name: str`, `clinic_subtitle: str`, `clinic_address: str`, `logo_path: str`, `primary_color: str`, `secondary_color: str`, `report_header_text: str`, `report_footer_text: str`, `subscription_tier: str` (`"trial"`, `"standard"`, `"enterprise"`).
-  - [ ] Loaded from `brand.json` (adjacent to `.exe`). If absent, falls back to defaults.
-  - [ ] `brand_config` singleton exported from `src/models/`.
-- [ ] **Dynamic PDF report branding:**
-  - [ ] `pdf_maker.py` reads `brand_config` at generation time for logo, clinic name, header/footer text.
-  - [ ] Logo path resolved relative to executable directory (portable layout, AD-09).
-  - [ ] PDF color scheme driven by `brand_config.primary_color`.
-- [ ] **Dynamic GUI branding:**
-  - [ ] Window title = `brand_config.clinic_name`.
-  - [ ] Toolbar/header displays `brand_config.clinic_name` + `brand_config.clinic_subtitle`.
-  - [ ] Logo image shown in main panel header if `brand_config.logo_path` exists.
-- [ ] **Clinic Profile settings section** (new card in `settings_view.py`):
-  - [ ] Entry fields: Clinic Name, Subtitle, Address, Report Header Text, Report Footer Text.
-  - [ ] Logo file picker (View shows dialog, ViewModel holds path string).
-  - [ ] Saved to `brand.json` via `save_unified()` equivalent.
-- [ ] **`subscription_tier` enforcement stubs:**
-  - [ ] `trial`: Watermark on PDF reports, limited sessions per day.
-  - [ ] `standard`: Full reports, no watermark.
-  - [ ] `enterprise`: Multi-user, custom models, advanced analytics.
-  - [ ] Tier check is a simple gate function for now — actual license validation is a future milestone.
-- [ ] **Add `AD-20` to `docs/architecture.md`:** Document `BrandConfig`, dual delivery modes, and subscription tier architecture.
+- [ ] Add `PatientRecord(BaseModel)` to `src/models/patient.py`:
+  - [ ] Fields: `patient_id: str` (uuid4 hex), `full_name: str`, `date_of_birth: str`, `created_at: str`, `session_ids: list[str]`.
+- [ ] Add `patients: JsonCollection[PatientRecord]` collection to `AppDatabase` at `app_data/patients/`.
+- [ ] Index fields for patients: `patient_id`, `full_name`.
+- [ ] Export `PatientRecord` from `src/models/__init__.py`.
 
 ---
 
-### v2.5.7 — Chat Session View Rewrite + New Features
+### v2.7.2 — Wire `AppDatabase` into `DSClinicViewModel`
 
-**Why here:** UX layer. Depends on v2.5.2 (sessions wired), v2.5.3 (provider abstraction ready). The Chat View is where the user interacts with the analysis — it must showcase the full pipeline.
-
-- [ ] **Fix streaming bubble bug:**
-  - [ ] Track `self._current_bot_bubble: Optional[MarkdownLabel]` in View.
-  - [ ] On first chunk: spawn one bubble, store reference.
-  - [ ] On subsequent chunks: call `_current_bot_bubble.update_text(full_text)` in-place.
-  - [ ] Clear reference when `var_is_analyzing` transitions to `False`.
-  - [ ] Add `update_text(new_text: str)` method to `MarkdownLabel`: enable → clear → re-insert markdown → disable → recalculate height.
-- [ ] **Fix `ChatUser.TFrame/TLabel` colors in `styles.py`:** Solid `ACCENT` blue + `WHITE` text (currently pale `ACCENT_LT`).
-- [ ] **Provider selector UI:** Dropdown in chat toolbar to switch the active provider (Gemini, Claude, Groq, Ollama, etc.) on the fly. Calls `DSClinic.set_active_provider(ProviderType)`.
-- [ ] **Reanalyze command:** Button or `/reanalyze` command in the chat input that re-runs the initial analysis with an additional user prompt appended to the system instructions.
-- [ ] **Report inclusion checkboxes:** Each AI response bubble has a checkbox. Checked responses are included in the final exported PDF report. Unchecked ones are excluded. Stored in `ChatSessionModel.chat_history` with an `include_in_report: bool` flag added to `ChatMessage`.
-- [ ] **Auto-scroll:** Scroll to bottom on each new chunk. Disable input area while request is in-flight.
+- [ ] Instantiate `AppDatabase` once in `DSClinicViewModel.__init__` — store as `self._db`.
+- [ ] After successful analysis (`TaskStatus.FINISHED` with `MedicalReport`): auto-save report via `self._db.reports.save(report.report_id, report)`.
+- [ ] After each follow-up Q&A exchange: update and re-save `ChatSessionModel` via `self._db.sessions.save(session.session_id, session)`.
+- [ ] Wrap all `_db` calls in `try/except (OSError, json.JSONDecodeError)` — log error and continue without crashing.
 
 ---
 
-### v2.5.8 — pytest Coverage
+### v2.7.3 — Session History Panel (View + ViewModel)
 
-**Why here:** Now we have a solid, refactored codebase to write tests against. Tests written before the architecture is stable are thrown away.
-
-- [ ] **Setup pytest infrastructure:**
-  - [ ] Add `pytest`, `pytest-mock`, `pytest-asyncio` to `pyproject.toml` dev dependencies.
-  - [ ] Create `tests/` directory with `conftest.py` and fixture helpers.
-- [ ] **PII scrubber tests (`tests/test_anonymization.py`):**
-  - [ ] Test that known PII patterns (JMBG, names, phone numbers) are redacted.
-  - [ ] Test that clinical values (hemoglobin: 11.2, glucose: 7.8) are NOT redacted (over-anonymization regression test).
-  - [ ] Test both Serbian Cyrillic and Latin script inputs.
-- [ ] **Medical report parser tests (`tests/test_parsers.py`):**
-  - [ ] Test `MedicalReportModel.model_validate_json()` against known good/bad JSON fixtures.
-  - [ ] Test `MedicalCriticalFindingModel` field extraction.
-- [ ] **Provider abstraction tests (`tests/test_providers.py`):**
-  - [ ] Mock `GeminiProvider.analyze()` and `ClaudeProvider.analyze()` — verify `ProviderFactory` routes correctly.
-  - [ ] Test `is_available()` returns `False` when keyring key is absent.
-  - [ ] Test `ProviderFactory.available_providers()` with mocked keyring.
-- [ ] **`AppDatabase` / `JsonCollection` tests (`tests/test_db.py`):**
-  - [ ] Test save → load round-trip for `MedicalReport`, `ChatSessionModel`, `PatientRecord`.
-  - [ ] Test `list_index()` returns correct index entries without loading full records.
-  - [ ] Test `delete()` removes record and updates index.
-  - [ ] Test `_rebuild_index_from_disk()` recovers from corrupted index.
-- [ ] **`AppSettings` / `load_unified` tests (`tests/test_settings.py`):**
-  - [ ] Test `load_unified()` correctly layers `config.json` → `settings.json` overrides.
-  - [ ] Test `importlib.metadata` fallback when package is not installed.
+- [ ] Add `var_sessions_index: list[dict]` observable to ViewModel, populated from `self._db.sessions.list_index()`.
+- [ ] Build a session history sidebar or panel in the main View listing recent sessions (patient name, date, session_id).
+- [ ] Clicking a session loads the full `ChatSessionModel` via `self._db.sessions.load(session_id)` and restores analysis state.
+- [ ] Add a "New Session" button that clears current state and starts fresh.
 
 ---
 
-### v2.5.9 — PII Anonymization Improvements + Debug Panel
+### v2.7.4 — Patient List Panel (View + ViewModel)
 
-**Why here:** Already working (commit `5d5b2f4`). Needs tuning and a debug feature before being considered production-grade. Moving to end so improvements can be driven by test failures from v2.5.8.
-
-- [ ] **Root cause analysis of over-anonymization:**
-  - [ ] Identify which Presidio entity types are causing false positives (e.g. lab values being flagged as dates or phone numbers).
-  - [ ] Tune `AnalyzerEngine` entity list: disable `DATE_TIME` and `PHONE_NUMBER` globally or add whitelists for clinical value patterns.
-  - [ ] Add regex-based allowlist for common lab patterns (e.g. `\d+\.\d+ mmol/L`, `\d+/\d+ mmHg`).
-- [ ] **PII Debug Panel (new optional View section):**
-  - [ ] Toggle-able debug panel in the main UI (hidden by default, enabled via `app_settings.app_debug_response`).
-  - [ ] Shows a side-by-side diff: original text vs anonymized text with highlighted redacted regions.
-  - [ ] Lists each detected entity: type, confidence score, matched text snippet, action taken (redacted/kept).
-  - [ ] Allows developer to quickly identify false positives without running the full pipeline.
-- [ ] **Local model integration stubs for enhanced PII extraction:**
-  - [ ] Stub integration point for Llama 3.2 Vision (via Ollama) as a second-pass PII checker for scanned handwritten documents where EasyOCR confidence is low.
-  - [ ] MONAI slice extraction stub for DICOM MRI inputs (preprocessing only — actual analysis routes to cloud/MedGemma).
-- [ ] **Regression test pass:** Run v2.5.8 PII test suite against improved anonymizer. All tests must pass.
+- [ ] Add `var_patients_index: list[dict]` to ViewModel, populated from `self._db.patients.list_index()`.
+- [ ] Build a patient list panel listing all patients (name, created_at, session count).
+- [ ] Clicking a patient filters the session history panel to show only their sessions.
+- [ ] Add a "New Patient" form: full name, date of birth → creates `PatientRecord` and saves to `_db.patients`.
 
 ---
 
-### v2.5.10 — README Engineering Case Study + Architecture Diagrams
+## v2.8.0 — `src/providers/` LLMProvider Abstraction (Gemini + Claude) 🔌 Planned
 
-**Why last:** Can only be written accurately after the architecture is built. This is the portfolio presentation layer — the thing EU recruiters actually read.
+**Why:** Core architectural showpiece. Currently `DSClinic` is hard-coupled to `MedicalAnalyzerClient`. The interview pitch is: *"I designed a pluggable inference pipeline that hot-swaps between 6 providers without touching business logic."* Every provider milestone (v2.9.0, v2.10.0) and the Split-Horizon Architecture (AD-12) depend on this interface. See AD-19.
 
-- [ ] **`README.md` full rewrite as engineering case study:**
-  - [ ] **Problem statement:** What clinical administrative pain does DSClinic solve? Who is the user?
-  - [ ] **"MVP to Scale" narrative:** Rapid prototype → real user → enterprise architectural overhaul. The story arc.
-  - [ ] **Architecture overview section** with the Split-Horizon diagram (text-based, renders in GitHub).
-  - [ ] **GDPR compliance section:** Explain PII scrubbing pipeline, local-first processing, keyring credential management.
-  - [ ] **Provider abstraction section:** Explain `LLMProvider` interface, list all 6 providers, explain the factory pattern.
-  - [ ] **16GB VRAM optimization section:** Explain quantization, load-on-demand, sequential model switching.
-  - [ ] **Multi-brand / white-label section:** Explain `BrandConfig`, dual delivery modes, subscription tiers.
-  - [ ] **Technical stack table:** Python, Tkinter/ttk, Pydantic v2, MVVM, PyInstaller, Presidio, keyring, Ollama.
-  - [ ] **Interview pitch quote block:** The CV-ready one-liner from the strategy documents.
-- [ ] **Architecture diagrams (`docs/diagrams/`):**
-  - [ ] Split-Horizon Hybrid Inference pipeline diagram (input → anonymizer → reasoning layer).
-  - [ ] MVVM layer diagram (Model / ViewModel / View boundaries).
-  - [ ] Provider abstraction class diagram (`LLMProvider` ABC + 6 concrete providers).
-  - [ ] Patient data flow diagram (input files → anonymization → AI → report → PDF → DB).
-- [ ] **`GEMINI.md` and `docs/architecture.md` final pass:** Ensure both accurately reflect the fully-built v2.5.x architecture.
+---
+
+### v2.8.1 — `LLMProvider` Abstract Base & Data Contracts (`src/providers/base.py`)
+
+- [ ] Create `src/providers/` package with `__init__.py`.
+- [ ] Define `ProviderType(StrEnum)`: `GEMINI`, `CLAUDE`, `GROQ`, `TOGETHER`, `HUGGINGFACE`, `OLLAMA`.
+- [ ] Define `ProviderRequest(BaseModel)`: `documents: list`, `question: str`, `system_instructions: list[str]`, `temperature: float`, `max_tokens: int`.
+- [ ] Define `ProviderResponse(BaseModel)`: `text: str`, `provider: ProviderType`, `model_name: str`, `tokens_used: int | None`.
+- [ ] Define `LLMProvider(ABC)` with abstract methods:
+  - [ ] `analyze(request: ProviderRequest) -> MedicalReportModel`
+  - [ ] `ask(question: str) -> Iterator[str]`
+  - [ ] `provider_type() -> ProviderType`
+  - [ ] `is_available() -> bool`
+
+---
+
+### v2.8.2 — `GeminiProvider` & `ClaudeProvider` Concrete Implementations
+
+- [ ] Implement `GeminiProvider(LLMProvider)` in `src/providers/gemini_provider.py`:
+  - [ ] Delegates to existing `api_gemini/client.py::MedicalAnalyzerClient`.
+  - [ ] `is_available()` → checks keyring key presence + client init status.
+- [ ] Implement `ClaudeProvider(LLMProvider)` in `src/providers/claude_provider.py`:
+  - [ ] Delegates to existing `api_claude/client.py::ClaudeAnalyzerClient`.
+  - [ ] `is_available()` → checks keyring key + client init status.
+
+---
+
+### v2.8.3 — `ProviderFactory` (`src/providers/factory.py`)
+
+- [ ] Implement `ProviderFactory`:
+  - [ ] `create(provider_type: ProviderType, ...) -> LLMProvider` — constructs provider from keyring + app_settings.
+  - [ ] `available_providers() -> list[ProviderType]` — returns all providers where `is_available()` is `True`.
+- [ ] Export `LLMProvider`, `ProviderFactory`, `ProviderType`, `ProviderRequest`, `ProviderResponse` from `src/providers/__init__.py`.
+
+---
+
+### v2.8.4 — Refactor `DSClinic` to Use `ProviderFactory`
+
+- [ ] Replace direct `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` instantiation with `ProviderFactory.create(provider_type)`.
+- [ ] Add `active_provider: LLMProvider` attribute to `DSClinic`.
+- [ ] Add `set_active_provider(provider_type: ProviderType) -> None` method.
+- [ ] `get_initial_analysis_report()` → calls `self.active_provider.analyze(request)`.
+- [ ] `ask_followup_question()` → calls `self.active_provider.ask(question)`.
+- [ ] Default provider on startup: first available from `ProviderFactory.available_providers()`, priority: `GEMINI → CLAUDE → GROQ → TOGETHER → HUGGINGFACE → OLLAMA`.
+
+---
+
+## v2.9.0 — Groq + Together AI + HuggingFace Cloud Providers ☁️ Planned
+
+**Why:** Extends v2.8.0. These are the fast, GDPR-compliant open-weights API providers forming the middle tier of the Split-Horizon Architecture. Demonstrates multi-vendor resilience and cost optimization strategy to EU interviewers.
+
+---
+
+### v2.9.1 — Credential & Config Infrastructure for New Providers
+
+- [ ] Add to `keyring_manager._CREDENTIAL_KEYS`: `"groq"` → `"groq_api_key"`, `"together"` → `"together_api_key"`, `"huggingface"` → `"huggingface_api_key"`.
+- [ ] Add three new `var_*_api_key` vars to `SettingsViewModel`, reading from keyring.
+- [ ] Add three new `_credential_field(...)` entries to Settings UI (`settings_view.py`).
+- [ ] Add `groq_supported_models`, `together_supported_models`, `huggingface_supported_models` to `config.json`.
+- [ ] Add new SDK dependencies to `pyproject.toml`: `groq`, `together`, `huggingface_hub`.
+
+---
+
+### v2.9.2 — `GroqProvider`
+
+- [ ] Implement `GroqProvider(LLMProvider)` in `src/providers/groq_provider.py`.
+- [ ] `is_available()` → keyring key present.
+- [ ] `analyze()` → structured prompt → JSON response → `MedicalReportModel`.
+- [ ] `ask()` → streaming chat completion via Groq API.
+- [ ] Startup guard: log warning + return early if key absent.
+
+---
+
+### v2.9.3 — `TogetherProvider`
+
+- [ ] Implement `TogetherProvider(LLMProvider)` in `src/providers/together_provider.py`.
+- [ ] Same interface and guard pattern as `GroqProvider`.
+- [ ] Configurable endpoint and model via `config.json` `together_supported_models`.
+
+---
+
+### v2.9.4 — `HuggingFaceProvider`
+
+- [ ] Implement `HuggingFaceProvider(LLMProvider)` in `src/providers/huggingface_provider.py`.
+- [ ] Uses `huggingface_hub` inference client.
+- [ ] Configurable endpoint URL for hosted medical models (BioMistral, Llama-3-Medical).
+- [ ] `is_available()` → keyring key present + endpoint reachable.
+
+---
+
+### v2.9.5 — Register New Providers in `ProviderFactory`
+
+- [ ] Add `ProviderType.GROQ`, `TOGETHER`, `HUGGINGFACE` to `base.py`.
+- [ ] Update `ProviderFactory.create()` to construct all three new providers.
+- [ ] Update `ProviderFactory.available_providers()` to include all three.
+
+---
+
+## v2.10.0 — Local Ollama Provider (16GB VRAM Optimized) 🖥️ Planned
+
+**Why:** The most complex provider and the biggest EU interview differentiator. Demonstrates edge hardware optimization — running quantized medical LLMs on consumer hardware within a 16GB VRAM budget. See AD-13.
+
+---
+
+### v2.10.1 — Ollama Infrastructure & Config
+
+- [ ] Add `ollama` SDK to `pyproject.toml` dependencies.
+- [ ] Add `ollama_base_url: str = "http://localhost:11434"` to `AppSettings` (not keyring — not a secret).
+- [ ] Add `ollama_supported_models` list to `config.json` (e.g. `llama3.2-vision:q4_0`, `medgemma:q4_0`).
+- [ ] Add Ollama base URL entry field (plain, unmasked) to Settings UI under a new "Local AI" section.
+
+---
+
+### v2.10.2 — `OllamaProvider` Core Implementation
+
+- [ ] Implement `OllamaProvider(LLMProvider)` in `src/providers/ollama_provider.py`.
+- [ ] `is_available()` → ping `ollama.list()` — returns `True` only if daemon is running.
+- [ ] `analyze()` → uses vision-capable model for document OCR + extraction into `MedicalReportModel` JSON.
+- [ ] `ask()` → streaming text response via `ollama.chat(stream=True)`.
+
+---
+
+### v2.10.3 — Load-on-Demand & VRAM Sequential Guard
+
+- [ ] Model pulled via `ollama.pull()` only when first needed — not at startup.
+- [ ] Before loading a new model: unload previous via model swap to prevent VRAM thrashing.
+- [ ] 4-bit quantization enforced via model name tag (e.g. `llama3.2-vision:q4_0`) — Ollama handles quantization automatically.
+- [ ] Log VRAM optimization decisions at `DEBUG` level for portfolio demo visibility.
+
+---
+
+### v2.10.4 — Register Ollama in `ProviderFactory`
+
+- [ ] Add `ProviderType.OLLAMA` to `base.py`.
+- [ ] Update `ProviderFactory.create()` to construct `OllamaProvider`.
+- [ ] Update `ProviderFactory.available_providers()` — Ollama listed last in priority order.
+
+---
+
+## v2.11.0 — Enterprise Multi-Brand / White-Label & Subscription Config 🏢 Planned
+
+**Why:** What makes DSClinic a real B2B SaaS product rather than a single-clinic tool. Two delivery modes: white-labeled per-client builds and a subscription SaaS app. See AD-04 and AD-20.
+
+---
+
+### v2.11.1 — `BrandConfig` Model & Loader (`src/models/brand.py`)
+
+- [ ] Define `BrandConfig(BaseModel)` with fields: `clinic_name: str`, `clinic_subtitle: str`, `clinic_address: str`, `logo_path: str`, `primary_color: str`, `secondary_color: str`, `report_header_text: str`, `report_footer_text: str`, `subscription_tier: str` (`"trial"` / `"standard"` / `"enterprise"`).
+- [ ] Load from `brand.json` adjacent to executable. Fall back to defaults if absent.
+- [ ] Export `brand_config` singleton from `src/models/__init__.py`.
+
+---
+
+### v2.11.2 — Dynamic PDF Report Branding
+
+- [ ] `pdf_maker.py` reads `brand_config` at generation time for logo, clinic name, header/footer text.
+- [ ] Logo path resolved relative to executable directory (portable layout, AD-09).
+- [ ] PDF color scheme driven by `brand_config.primary_color`.
+- [ ] Trial tier: add watermark text overlay to every page.
+
+---
+
+### v2.11.3 — Dynamic GUI Branding
+
+- [ ] Window title = `brand_config.clinic_name`.
+- [ ] Toolbar/header label = `brand_config.clinic_name` + `brand_config.clinic_subtitle`.
+- [ ] Logo image shown in main panel header if `brand_config.logo_path` resolves to an existing file.
+
+---
+
+### v2.11.4 — Clinic Profile Settings Section
+
+- [ ] New "Clinic Profile" card in `settings_view.py`.
+- [ ] Entry fields: Clinic Name, Subtitle, Address, Report Header Text, Report Footer Text.
+- [ ] Logo file picker: View shows `filedialog.askopenfilename` via delegate callback; ViewModel holds path string.
+- [ ] Save writes to `brand.json` via `BrandConfig` save method.
+- [ ] Subscription tier display (read-only label for now).
+
+---
+
+### v2.11.5 — Subscription Tier Enforcement Stubs
+
+- [ ] `trial`: PDF watermark active (v2.11.2), session limit warning after N analyses per day.
+- [ ] `standard`: No watermark, unlimited sessions.
+- [ ] `enterprise`: Stub only — multi-user and custom model support flagged as future milestone.
+- [ ] Tier check implemented as a single `is_feature_allowed(feature: str) -> bool` gate function.
+
+---
+
+## v2.12.0 — Chat Session View Rewrite + New Features 💬 Planned
+
+**Why:** UX layer. Depends on v2.7.0 (sessions wired), v2.8.0 (provider abstraction ready). The Chat View is where users interact with analysis results — it must showcase the full pipeline and support the features that make the app feel like a real clinical tool.
+
+---
+
+### v2.12.1 — Streaming Bubble Fix & `MarkdownLabel.update_text()`
+
+- [ ] Add `update_text(new_text: str)` method to `MarkdownLabel`: enable widget → clear → re-insert markdown → disable → recalculate height.
+- [ ] Track `self._current_bot_bubble: Optional[MarkdownLabel]` in `ChatSessionView`.
+- [ ] On first chunk: spawn one bubble, store reference. On subsequent chunks: call `_current_bot_bubble.update_text(full_text)` in-place.
+- [ ] Clear reference when `var_is_analyzing` transitions `True → False`.
+- [ ] Auto-scroll to bottom on each chunk update.
+
+---
+
+### v2.12.2 — Style Fixes & Provider Selector
+
+- [ ] Fix `ChatUser.TFrame/TLabel` colors in `styles.py`: solid `ACCENT` blue + `WHITE` text (currently pale `ACCENT_LT`).
+- [ ] Add provider selector dropdown in chat toolbar: lists `ProviderFactory.available_providers()`.
+- [ ] Selecting a provider calls `DSClinic.set_active_provider(ProviderType)` immediately.
+- [ ] Disable input area while `var_is_analyzing` is `True`; show loading indicator.
+
+---
+
+### v2.12.3 — Reanalyze Command & Additional Prompt Input
+
+- [ ] Add "Reanalyze" button in chat toolbar.
+- [ ] Reanalyze re-runs the initial analysis with an additional user prompt appended to system instructions.
+- [ ] Additional prompt entry field: multiline `ttk.Entry` above the send button, pre-populated with current task description.
+- [ ] Reanalyze result spawns a new bubble with `[Reanalysis]` prefix label.
+
+---
+
+### v2.12.4 — Report Inclusion Checkboxes
+
+- [ ] Add `include_in_report: bool = True` field to `ChatMessage` model in `src/models/ai.py`.
+- [ ] Each bot response bubble has a checkbox (default checked).
+- [ ] Unchecked responses are excluded from the final PDF export.
+- [ ] `ChatSessionModel.chat_history` stores the updated `include_in_report` flag per message.
+- [ ] `write_report_pdf()` filters `chat_responses` by `include_in_report` before rendering.
+
+---
+
+## v2.13.0 — pytest Coverage 🧪 Planned
+
+**Why:** Quality gate. Now we have a solid, refactored codebase to write tests against. Tests written before the architecture is stable are thrown away. Medical apps cannot fail silently.
+
+---
+
+### v2.13.1 — pytest Infrastructure
+
+- [ ] Add `pytest`, `pytest-mock`, `pytest-asyncio` to `pyproject.toml` dev dependencies.
+- [ ] Create `tests/` directory with `conftest.py` and shared fixture helpers.
+- [ ] Add `pytest.ini` or `[tool.pytest.ini_options]` block to `pyproject.toml`.
+
+---
+
+### v2.13.2 — PII Scrubber Tests (`tests/test_anonymization.py`)
+
+- [ ] Test that known PII patterns (JMBG, full names, phone numbers, addresses) are redacted.
+- [ ] Test that clinical values (hemoglobin `11.2 mmol/L`, glucose `7.8`, BP `140/90`) are NOT redacted — over-anonymization regression tests.
+- [ ] Test both Serbian Cyrillic and Latin script inputs.
+- [ ] Test PDF page image redaction produces expected black-box coordinates.
+
+---
+
+### v2.13.3 — Medical Report Parser Tests (`tests/test_parsers.py`)
+
+- [ ] Test `MedicalReportModel.model_validate_json()` against known good and bad JSON fixtures.
+- [ ] Test `MedicalCriticalFindingModel` field extraction.
+- [ ] Test empty / partial report graceful defaults.
+
+---
+
+### v2.13.4 — Provider Abstraction Tests (`tests/test_providers.py`)
+
+- [ ] Mock `GeminiProvider.analyze()` and `ClaudeProvider.analyze()` — verify `ProviderFactory` routes correctly per `ProviderType`.
+- [ ] Test `is_available()` returns `False` when keyring key is absent (mocked keyring).
+- [ ] Test `ProviderFactory.available_providers()` with fully mocked keyring returning various key states.
+- [ ] Test `DSClinic.set_active_provider()` switches correctly.
+
+---
+
+### v2.13.5 — `AppDatabase` / `JsonCollection` Tests (`tests/test_db.py`)
+
+- [ ] Test save → load round-trip for `MedicalReport`, `ChatSessionModel`, `PatientRecord`.
+- [ ] Test `list_index()` returns correct index entries without loading full record files.
+- [ ] Test `delete()` removes record file and updates `_index.json`.
+- [ ] Test `_rebuild_index_from_disk()` recovers correctly from a corrupted or missing `_index.json`.
+- [ ] Test `count()` returns accurate value after save and delete operations.
+
+---
+
+### v2.13.6 — `AppSettings` / `load_unified` Tests (`tests/test_settings.py`)
+
+- [ ] Test `load_unified()` correctly layers `config.json` → `settings.json` overrides.
+- [ ] Test `importlib.metadata` `PackageNotFoundError` fallback returns field defaults.
+- [ ] Test `save_unified()` excludes secret field names from written JSON.
+- [ ] Test `BrandConfig` loads from `brand.json` and falls back to defaults when file absent.
+
+---
+
+## v2.14.0 — PII Anonymization Improvements + Debug Panel 🔍 Planned
+
+**Why:** Already working (commit `5d5b2f4`). Improvement driven by v2.13.2 test failures. Debug panel makes over-anonymization visible during development and demo sessions — an interviewer-facing feature.
+
+---
+
+### v2.14.1 — Root Cause Analysis & Presidio Tuning
+
+- [ ] Identify which Presidio entity types cause false positives on clinical values (e.g. `DATE_TIME`, `PHONE_NUMBER` matching lab values).
+- [ ] Tune `AnalyzerEngine` entity list: selectively disable or reduce confidence threshold for problematic entity types.
+- [ ] Add regex-based allowlist for common lab value patterns: `\d+\.?\d*\s?(mmol/L|mg/dL|g/L|mmHg|U/L|µmol/L)`.
+- [ ] Add allowlist for Serbian medical shorthand that triggers false positives.
+- [ ] Run v2.13.2 test suite — all tests must pass before proceeding.
+
+---
+
+### v2.14.2 — PII Debug Panel (View)
+
+- [ ] Toggle-able debug panel in the main UI (hidden by default; enabled when `app_settings.app_debug_response` is `True`).
+- [ ] Shows side-by-side diff: original text vs anonymized text with highlighted redacted regions.
+- [ ] Lists each detected entity: type, confidence score, matched text snippet, action taken (redacted / kept).
+- [ ] Export debug report to `logs/pii_debug_{timestamp}.json` for analysis.
+
+---
+
+### v2.14.3 — Local Model Integration Stubs
+
+- [ ] Stub integration point for Llama 3.2 Vision (via Ollama) as second-pass PII checker for low-confidence EasyOCR scans.
+- [ ] MONAI slice extraction stub for DICOM MRI inputs — preprocessing only, actual analysis routes to cloud/MedGemma.
+- [ ] Both stubs log a `DEBUG` message when triggered: `"[STUB] MONAI preprocessing not yet implemented — passing raw input."`.
+
+---
+
+## v2.15.0 — README Engineering Case Study + Architecture Diagrams 📖 Planned
+
+**Why:** The portfolio presentation layer. EU recruiters hiring 12-year veterans want to see *how you think* — the README is the first thing they read. Can only be written accurately after the full architecture is built.
+
+---
+
+### v2.15.1 — `README.md` Full Rewrite
+
+- [ ] **Problem statement:** What clinical administrative pain does DSClinic solve? Who is the user? What is the business model?
+- [ ] **"MVP to Scale" narrative:** Rapid prototype → real user validated → full architectural overhaul. The interview story arc.
+- [ ] **Architecture overview:** Text-based Split-Horizon diagram (renders in GitHub).
+- [ ] **GDPR compliance section:** PII scrubbing pipeline, local-first processing, keyring credential management.
+- [ ] **Provider abstraction section:** `LLMProvider` interface, all 6 providers listed, factory pattern explained.
+- [ ] **16GB VRAM optimization section:** Quantization, load-on-demand, sequential model switching.
+- [ ] **Multi-brand / white-label section:** `BrandConfig`, dual delivery modes, subscription tiers.
+- [ ] **Technical stack table:** Python, Tkinter/ttk, Pydantic v2, MVVM, PyInstaller, Presidio, keyring, Ollama, Groq, Together, HuggingFace.
+- [ ] **CV-ready interview pitch quote block** from `docs/looking_for_new_job_gemini_conversation.md`.
+
+---
+
+### v2.15.2 — Architecture Diagrams (`docs/diagrams/`)
+
+- [ ] Split-Horizon Hybrid Inference pipeline diagram: Input → Anonymizer → Layer 1 (local/open-weights) → Layer 2 (cloud reasoning) → Report.
+- [ ] MVVM layer diagram: Model / ViewModel / View boundaries with queue communication.
+- [ ] `LLMProvider` class diagram: `LLMProvider` ABC + 6 concrete providers + `ProviderFactory`.
+- [ ] Patient data flow diagram: Input files → PII scrub → AI analysis → `MedicalReport` → PDF → `AppDatabase`.
+
+---
+
+### v2.15.3 — Final Doc Pass
+
+- [ ] `GEMINI.md` final review: ensure all sections accurately reflect the fully-built v2.5.0–v2.15.0 architecture.
+- [ ] `docs/architecture.md` final review: verify all ADs (AD-01 through AD-20) are accurate and complete.
+- [ ] `docs/session_handoff.md` updated to reflect project completion status.
 
 ---
 
