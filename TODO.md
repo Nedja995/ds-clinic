@@ -28,13 +28,23 @@
 
 ---
 
-### v2.5.2 — Defensive Error Handling Audit
+### v2.5.2 — Defensive Error Handling Audit ✅ Completed
 
-- [ ] Grep entire `src/` for bare `except:` — must be zero. Replace all with specific exception types.
-- [ ] Wrap all `src/db/` file I/O operations in `try/except (OSError, json.JSONDecodeError)` with logging.
-- [ ] Wrap all keyring calls in `try/except keyring.errors.*` with graceful fallback.
-- [ ] Wrap all background worker thread bodies in `try/except Exception` — always write `TaskStatus.FAILED` event to queue on failure, never let thread die silently.
-- [ ] Verify all `ProgressEvent(status=TaskStatus.FAILED)` events surface a user-readable message in the UI — not a raw Python exception string.
+- [x] Grep entire `src/` for bare `except:` — must be zero. Replace all with specific exception types.
+- [x] Wrap all `src/db/` file I/O operations in `try/except (OSError, json.JSONDecodeError)` with logging.
+  - `json_collection.py` `_write_raw_index()`: `OSError` guard added, logs and re-raises.
+  - `json_collection.py` `save()`: record `write_text()` wrapped in `OSError` guard.
+  - `json_collection.py` `load()`: `read_text()` + `model_validate_json()` wrapped in `(OSError, json.JSONDecodeError, ValidationError)` — returns `None` on any failure.
+  - `json_collection.py` `delete()`: `path.unlink()` wrapped in `OSError` guard.
+- [x] Wrap all keyring calls in `try/except keyring.errors.*` with graceful fallback.
+  - `keyring_manager.py` `get_credential()`: `keyring.errors.KeyringError` guard added — returns `None`.
+  - `keyring_manager.py` `set_credential()`: `keyring.errors.KeyringError` guard added — logs and returns without raising.
+  - `keyring_manager.py` `delete_credential()`: added `keyring.errors.KeyringError` branch alongside existing `PasswordDeleteError`.
+- [x] Wrap all background worker thread bodies in `try/except Exception` — always write `TaskStatus.FAILED` event to queue on failure, never let thread die silently.
+  - `report_view_models.py` worker threads: already fully wrapped (verified in v2.5.1 audit).
+- [x] Verify all `ProgressEvent(status=TaskStatus.FAILED)` events surface a user-readable message in the UI — not a raw Python exception string.
+  - Verified: all `FAILED` events emit `ErrorMessageEvent` via `on_show_error_message` in `_apply_progress_event`.
+- [x] Additional: `dsclinic.py` `get_initial_analysis_report()` — added `None` check on `report_content`; raises `RuntimeError` with user-readable message instead of crashing on `MedicalReport(content=None)`.
 
 ---
 

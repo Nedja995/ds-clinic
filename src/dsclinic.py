@@ -135,10 +135,16 @@ class DSClinic:
         raw_question = app_settings.ai_initial_task_description
         cleaned_question = " ".join(raw_question.split())
 
-        report_content: MedicalReportModel = self.gemini_client.initial_analysis_report_from_chat_stream(
+        report_content: MedicalReportModel | None = self.gemini_client.initial_analysis_report_from_chat_stream(
             documents=input_documents_parts,
             question=cleaned_question
         )
+
+        if report_content is None:
+            raise RuntimeError(
+                "Gemini returned an empty or unparseable response. "
+                "Check the logs for raw API output. The analysis cannot continue."
+            )
 
         self.report = MedicalReport(content=report_content)
         return self.report
@@ -149,7 +155,7 @@ class DSClinic:
         return self.gemini_client.ask_followup_question(question)
 
 
-def write_report_pdf(report: MedicalReport, output_dir: str | None = None):
+def write_report_pdf(report: MedicalReport, output_dir: str | None = None) -> None:
     if output_dir is None:
         output_dir = get_output_data_dirpath()
     output_path = make_output_filepath(report.content.patient_name, "pdf", output_dir)

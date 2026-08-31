@@ -8,14 +8,17 @@ loading full records.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Generic, Optional, Type, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 T = TypeVar("T", bound=BaseModel)
 
 _INDEX_FILE = "_index.json"
+
+logger = logging.getLogger(__name__)
 
 
 class JsonCollection(Generic[T]):
@@ -56,10 +59,14 @@ class JsonCollection(Generic[T]):
             return []
 
     def _write_raw_index(self, index: list[dict]) -> None:
-        self._index_path.write_text(
-            json.dumps(index, indent=2, ensure_ascii=False, default=str),
-            encoding="utf-8",
-        )
+        try:
+            self._index_path.write_text(
+                json.dumps(index, indent=2, ensure_ascii=False, default=str),
+                encoding="utf-8",
+            )
+        except OSError as e:
+            logger.error("Failed to write index file %s: %s", self._index_path, e, exc_info=True)
+            raise
 
     def _build_index_entry(self, record_id: str, model: T) -> dict:
         """Extract a flat index entry from a model using dot-notation field paths."""
@@ -90,10 +97,15 @@ class JsonCollection(Generic[T]):
 
     def save(self, record_id: str, model: T) -> None:
         """Insert or update a record (upsert)."""
-        self._record_path(record_id).write_text(
-            model.model_dump_json(indent=2),
-            encoding="utf-8",
-        )
+        try:
+            self._record_path(record_id).write_text(
+                model.model_dump_json(indent=2),
+                encoding="utf-8",
+            )
+        except OSError as e:
+            logger.error("Failed to write record %r to %s: %s", record_id, self._dir, e, exc_info=True)
+            raise
+
         index = self._load_raw_index()
         entry = self._build_index_entry(record_id, model)
         # Replace existing entry or prepend new one
@@ -102,18 +114,29 @@ class JsonCollection(Generic[T]):
         self._write_raw_index(index)
 
     def load(self, record_id: str) -> Optional[T]:
-        """Load a single record by id. Returns None if not found."""
+        """Load a single record by id. Returns None if not found or unreadable."""
         path = self._record_path(record_id)
         if not path.exists():
             return None
-        return self._model_class.model_validate_json(path.read_text(encoding="utf-8"))
+        try:
+            return self._model_class.model_validate_json(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as e:
+            logger.error("Failed to read record file %s: %s", path, e, exc_info=True)
+            return None
+        except ValidationError as e:
+            logger.error("Record %r failed schema validation: %s", record_id, e, exc_info=True)
+            return None
 
     def delete(self, record_id: str) -> bool:
         """Delete a record. Returns True if deleted, False if not found."""
         path = self._record_path(record_id)
         if not path.exists():
             return False
-        path.unlink()
+        try:
+            path.unlink()
+        except OSError as e:
+            logger.error("Failed to delete record file %s: %s", path, e, exc_info=True)
+            raise
         index = [e for e in self._load_raw_index() if e.get("id") != record_id]
         self._write_raw_index(index)
         return True

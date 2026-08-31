@@ -72,15 +72,13 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## Current Status: v2.5.0 Active — Next sub-version: v2.5.2
-
-**Roadmap restructured this session:** Each major feature is now its own MINOR version with PATCH sub-versions.
+## Current Status: v2.5.0 Active — Next sub-version: v2.5.3
 
 | Version | Scope | Status |
 |---|---|---|
 | v2.5.1 | MVVM boundary audit | ✅ Done |
-| v2.5.2 | Defensive error handling audit | ▶ Active |
-| v2.5.3 | Type hints audit (`mypy --strict`) | Planned |
+| v2.5.2 | Defensive error handling audit | ✅ Done |
+| v2.5.3 | Type hints audit (`mypy --strict`) | ▶ Active |
 | v2.7.0 | Patient records + session persistence | Planned |
 | v2.8.0 | `src/providers/` LLMProvider abstraction | Planned |
 | v2.9.0 | Groq + Together + HuggingFace providers | Planned |
@@ -93,28 +91,36 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## v2.5.1 Audit Findings (completed 2026-08-31)
+## v2.5.2 Audit Findings (completed 2026-08-31)
 
-All ViewModel files audited. Two violations found and fixed:
+**`db/json_collection.py`** — 4 unguarded I/O sites fixed:
+- `_write_raw_index()`: `OSError` guard, logs + re-raises.
+- `save()`: record `write_text()` wrapped in `OSError` guard.
+- `load()`: `read_text()` + `model_validate_json()` wrapped in `(OSError, json.JSONDecodeError, ValidationError)` — returns `None` on any failure.
+- `delete()`: `path.unlink()` wrapped in `OSError` guard.
 
-1. **`chat_session_view.py`** — View was directly mutating `view_model._model.chat_responses`. Fixed by adding `DSClinicViewModel.append_chat_response(text: str) -> None` and calling that instead.
-2. **`report_view_models.py` `execute_export()`** — raised raw exceptions to the View on PDF failure. Fixed: now wraps `generate_report_pdf_at_filepath()` in `try/except`, emits `on_show_error_message` on failure, never raises.
-3. **Return type annotations** — added `-> None` to all unannotated ViewModel methods in `report_view_models.py`.
+**`models/keyring_manager.py`** — 2 unguarded keyring call sites fixed:
+- `get_credential()`: `keyring.errors.KeyringError` → returns `None`.
+- `set_credential()`: `keyring.errors.KeyringError` → logs, returns without raising.
+- `delete_credential()`: added `KeyringError` branch alongside existing `PasswordDeleteError`.
 
-`settings_view_model.py` — fully compliant, no violations.
-Threading discipline — fully compliant across all ViewModels.
+**`dsclinic.py`** — 1 silent crash path fixed:
+- `get_initial_analysis_report()`: `None` check on `report_content` before constructing `MedicalReport`; raises `RuntimeError` with user-readable message.
+
+**`api_gemini/client.py`, `api_claude/client.py`** — ✅ already fully guarded, no changes.
+**`db/app_database.py`** — ✅ no I/O of its own, no changes.
 
 ---
 
-## v2.5.2 Implementation Notes
+## v2.5.3 Implementation Notes
 
-Files to grep for bare `except:` and missing I/O guards:
-- `src/db/json_collection.py` — all file reads/writes
-- `src/db/app_database.py` — collection init
-- `src/models/keyring_manager.py` — keyring calls
-- `src/api_gemini/client.py`, `src/api_claude/client.py` — API calls
-- `src/dsclinic.py` — business logic wrappers
-- `src/dsclinic_gui/report_view_models.py` — worker thread bodies (partially addressed in v2.5.1)
+Files to audit for missing type annotations and `mypy --strict` compliance:
+- `src/dsclinic.py` — `get_initial_analysis_report()`, `ask_followup_question()`, `write_report_pdf()` (partially done in v2.5.2)
+- `src/dsclinic_gui/report_view_models.py` — all methods (partially done in v2.5.1)
+- `src/dsclinic_gui/settings/settings_view_model.py` — `update_from_config()`, `save_to_config()`, validators, commands
+- `src/db/app_database.py` — `__init__` parameter and collection field types
+- `src/db/json_collection.py` — all public and private methods (partially done in v2.5.2)
+- Run `mypy --strict src/` and fix all remaining errors before marking complete.
 
 ---
 

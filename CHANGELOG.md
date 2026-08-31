@@ -78,6 +78,24 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.5.2] - 2026-08-31
+
+### Fixed
+- `db/json_collection.py` — `_write_raw_index()`: wrapped `Path.write_text()` in `try/except OSError`; logs error and re-raises.
+- `db/json_collection.py` — `save()`: wrapped record `write_text()` in `try/except OSError`; logs and re-raises before index update.
+- `db/json_collection.py` — `load()`: wrapped `read_text()` + `model_validate_json()` in `try/except (OSError, json.JSONDecodeError, ValidationError)`; returns `None` on any failure instead of raising.
+- `db/json_collection.py` — `delete()`: wrapped `path.unlink()` in `try/except OSError`; logs and re-raises.
+- `models/keyring_manager.py` — `get_credential()`: wrapped `keyring.get_password()` in `try/except keyring.errors.KeyringError`; returns `None` on unavailable backend.
+- `models/keyring_manager.py` — `set_credential()`: wrapped `keyring.set_password()` in `try/except keyring.errors.KeyringError`; logs error and returns without raising.
+- `models/keyring_manager.py` — `delete_credential()`: added `except keyring.errors.KeyringError` branch alongside existing `PasswordDeleteError` handler.
+- `dsclinic.py` — `get_initial_analysis_report()`: added explicit `None` check on `report_content`; raises `RuntimeError` with a user-readable message instead of crashing on `MedicalReport(content=None)`.
+
+### Changed
+- `db/json_collection.py` — added `logging` and `pydantic.ValidationError` imports; removed unused `from pydantic import BaseModel` duplicate path (kept via `T = TypeVar`).
+- `dsclinic.py` — `write_report_pdf()` annotated with `-> None` return type.
+
+---
+
 ## [2.5.1] - 2026-08-31
 
 ### Fixed
