@@ -12,13 +12,13 @@ See [TODO.md](TODO.md) for planned sub-versions.
 ## [2.6.7] - 2026-08-30
 
 ### Security
-- **`settings.ini` permanently deleted from the repository** (`git rm settings.ini`). All credentials were already migrated to the OS keyring in v2.6.2–v2.6.6. The file no longer exists in the project.
-- **New keys rotated:** Both `GOOGLE_API_KEY` and `ANTHROPIC_API_KEY` regenerated and entered via Settings UI → written to OS keyring. Old compromised keys deactivated.
-- **Verified end-to-end:** App starts, Settings UI reads keys from keyring, Gemini analysis confirmed working with keyring-sourced credentials.
+- `settings.ini` permanently deleted from the repository (`git rm settings.ini`).
+- Both `GOOGLE_API_KEY` and `ANTHROPIC_API_KEY` regenerated and entered via Settings UI → written to OS keyring. Old compromised keys deactivated.
+- App verified working end-to-end with keyring-sourced Gemini key.
 
 ### Changed
-- **`GEMINI.md` § 2 Technical Stack:** Added `keyring` / `keyring_manager.py` as the credential storage layer.
-- **`GEMINI.md` § 3.D Coding Conventions:** Added credential management rule (AD-11 reference), `settings.ini` deletion notice, and client startup guard pattern.
+- `GEMINI.md` § 2 Technical Stack: Added `keyring` / `keyring_manager.py` as credential storage layer.
+- `GEMINI.md` § 3.D Coding Conventions: Added credential management rule (AD-11 reference), `settings.ini` deletion notice, and client startup guard pattern.
 
 ---
 
@@ -79,34 +79,31 @@ See [TODO.md](TODO.md) for planned sub-versions.
 ## [2.6.0] - 2026-08-30 — Secure Credential Management & `settings.ini` Elimination ✅ Released
 
 ### Security
-- All API keys and sensitive identifiers moved from `settings.ini` (plain-text, committed to public repo) to OS-native credential store via `keyring` library.
-- `settings.ini` permanently deleted from repository.
-- Settings UI credential fields masked (`show="*"`) with keyring hint labels.
+- All API keys and sensitive identifiers moved from `settings.ini` to OS-native credential store via `keyring`.
+- `settings.ini` permanently deleted.
+- Settings UI credential fields masked with keyring hint labels.
 - `AppSettings` purged of all secret fields.
 
 ### Changed
-- `app_name`/`app_version` sourced exclusively from `pyproject.toml` via `importlib.metadata`.
-- `GOOGLE_PROJECT_LOCATION` moved to `config.json` (non-secret).
-- `GEMINI.md` updated with credential management rules and startup guard pattern.
-
-### Sub-versions
-- v2.6.1 ✅ — `app_name`/`app_version` from `pyproject.toml`.
-- v2.6.2 ✅ — `keyring_manager.py`.
-- v2.6.3 ✅ — `AppSettings` purged; `configparser` block removed.
-- v2.6.4 ✅ — `SettingsViewModel` reads/writes via keyring.
-- v2.6.5 ✅ — Settings UI masked credential fields.
-- v2.6.6 ✅ — Both clients startup-guarded; Claude wired to keyring.
-- v2.6.7 ✅ — Keys rotated, `settings.ini` deleted, `GEMINI.md` updated.
+- `app_name`/`app_version` sourced from `pyproject.toml` via `importlib.metadata`.
+- `GOOGLE_PROJECT_LOCATION` moved to `config.json`.
+- `GEMINI.md` updated with credential management rules.
 
 ---
 
-## [2.5.0] - Planned — Chat Session View & Pluggable Multi-Provider Pipeline
+## [2.5.0] - Planned — Enterprise MedTech Platform: Core Architecture & Feature Pipeline
 
-### Added
-- Chat Session View full rewrite with streaming bubble fix and `MarkdownLabel.update_text()`.
-- `LLMProvider` abstraction (Gemini, Claude, Groq, Together, HuggingFace, Local Ollama).
-- PII Anonymization Layer (Presidio-based local scrubbing).
-- `pytest` coverage for parsing, anonymization, provider fallback logic.
+### Planned sub-versions
+- v2.5.1 — MVVM strict compliance + defensive error handling audit.
+- v2.5.2 — `PatientRecord` model + `AppDatabase` wired to ViewModel + session persistence UI.
+- v2.5.3 — `src/providers/` `LLMProvider` abstraction (Gemini + Claude).
+- v2.5.4 — Groq + Together AI + HuggingFace cloud providers.
+- v2.5.5 — Local Ollama provider (16GB VRAM optimized, load-on-demand).
+- v2.5.6 — `BrandConfig` + white-label + enterprise subscription tier.
+- v2.5.7 — Chat Session View rewrite + new features (reanalyze, checkboxes, provider selector).
+- v2.5.8 — `pytest` coverage.
+- v2.5.9 — PII anonymization improvements + debug panel.
+- v2.5.10 — README engineering case study + architecture diagrams.
 
 ---
 
@@ -116,7 +113,6 @@ See [TODO.md](TODO.md) for planned sub-versions.
 - Unified `src/models/` Package.
 - Hybrid `AppSettings` Model with `load_unified` and atomic `save_unified`.
 - Portability-by-Default Layout.
-- `settings.ini` fallback integration (superseded by v2.6.x).
 
 ### Changed
 - Codebase-wide refactor to `from models import app_settings`.

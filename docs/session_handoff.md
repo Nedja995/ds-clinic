@@ -23,12 +23,9 @@ This handoff is prepared to allow any incoming development AI assistant (includi
 
 ## Key Docs — Read On Demand, Not Upfront
 
-**Read all these at session start**
-This handoff doc is designed to be self-contained for starting work.
-
 - `TODO.md` — only if planning the next milestone or checking roadmap ordering
 - `CHANGELOG.md` — only if debugging a regression or checking what changed in a specific version
-- `docs/architecture.md` — only if making a non-obvious design decision (check if an AD already covers it). **Last updated by developer: AD-12 through AD-17 added covering hybrid inference, VRAM constraints, multimodal preprocessing, PII pipeline, defensive threading, and pytest strategy.**
+- `docs/architecture.md` — **AD-18, AD-19, AD-20 added in this session** — read before v2.5.2, v2.5.3, v2.5.6 work
 - `GEMINI.md` — DSClinic Development Guidelines & Project Context
 - `.dev_profile/developer_profile.md` — standing workflow rules and commit discipline
 
@@ -41,22 +38,22 @@ This handoff doc is designed to be self-contained for starting work.
 Every AI assistant (Claude/Gemini) handling a programming task for DSClinic must implicitly wrap all code generation under these strict engineering rules:
 
 1. **Defensive Error Handling (Desktop Resiliency):**
-   - **No Bare Excepts:** Python code must never use `except:`. Always catch specific exceptions (e.g., `except FileNotFoundError`, `except APIError`).
-   - **Graceful Failure UI:** If an operation fails in a background thread or service, it must write a structured error payload to the communication queue. The main thread must handle this to prevent app hangs or silent failures.
-   - **File & Network I/O Protection:** Wrap all local file database accesses (`src/db/`), OS keyring interactions, and remote API calls in explicit `try...except...finally` blocks with logging.
-   - **No raise on missing API key at init time:** Both `MedicalAnalyzerClient` and `ClaudeAnalyzerClient` log a warning and return early if the key is absent. They raise `RuntimeError` at call time with a clear Settings navigation hint.
+   - **No Bare Excepts:** Python code must never use `except:`. Always catch specific exceptions.
+   - **Graceful Failure UI:** Operations failing in background threads must write structured error payloads to the queue.
+   - **File & Network I/O Protection:** Wrap all `src/db/`, keyring, and API calls in explicit `try/except/finally` with logging.
+   - **No raise on missing API key at init time:** Both clients log warning + early return. `RuntimeError` raised at call time only.
 
 2. **Absolute Privacy Enforcement (GDPR Alignment):**
-   - **PII Leakage Prevention:** Any new service or backend module processing patient inputs must pass raw text through the Presidio/spaCy anonymization layer *prior* to external transmission.
-   - **Key Protection:** Under no circumstances should an AI assistant write code containing hardcoded API keys or fall back to checking text files for credentials. Only use `keyring_manager.py`. `settings.ini` no longer exists.
+   - **PII Leakage Prevention:** All patient inputs pass through Presidio/spaCy before external transmission.
+   - **Key Protection:** Only `keyring_manager.py`. Never hardcode or read from files. `settings.ini` no longer exists.
 
 3. **MVVM Integrity & Typing Rules:**
-   - **Zero UI Imports in Logic:** No `tkinter` or `ttk` imports inside `src/models/`, `src/db/`, or any ViewModel.
-   - **Strict Type Hinting:** All newly written functions must include complete Python type annotations.
+   - **Zero UI Imports in Logic:** No `tkinter`/`ttk` imports in `src/models/`, `src/db/`, or any ViewModel.
+   - **Strict Type Hinting:** All new functions must include complete Python type annotations.
 
 4. **Multi-Brand Code Decoupling:**
-   - Never hardcode paths to client logos, company text, or localization overrides directly into layout code.
-   - View templates must fetch strings from translation blocks and resolve branding via `settings.json`.
+   - Never hardcode clinic names, logos, or branding in layout code.
+   - All identity and commercial config flows through `BrandConfig` (v2.5.6).
 
 ---
 
@@ -85,7 +82,7 @@ The AI assistant provides the exact `git add` command with real filenames **at t
 | `.dev_profile/developer_profile.md` | Update standing workflow conventions | Any time a standing rule is added or changed |
 
 ### TODO Archiving Rule
-**Completed versions are never collapsed or summarised.** Every completed sub-version and its full task list remains fully expanded with `[x]` checkboxes in `TODO.md` indefinitely. Never remove task detail, never replace a completed section with a one-liner stub.
+**Completed versions are never collapsed or summarised.** Full task lists stay expanded with `[x]` checkboxes indefinitely.
 
 ### File Edit Discipline
 Never use `str_replace` on dev docs. Always use `write_file` with the complete file content.
@@ -94,24 +91,49 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## Current Status: v2.5.0 Active 🚀
+## Current Status: v2.5.0 Active — Next sub-version: v2.5.1
 
-**v2.6.0 fully complete:** All credentials migrated to OS keyring. Both clients startup-guarded. `settings.ini` permanently deleted. Keys rotated and verified working. `GEMINI.md` updated.
+**v2.6.0 fully complete.** v2.5.0 plan finalised this session. All 10 sub-versions planned and documented in `TODO.md`. AD-18 (PatientRecord), AD-19 (LLMProvider abstraction), AD-20 (BrandConfig / dual delivery) added to `docs/architecture.md`.
 
-**Active milestone:** v2.5.0 — Chat Session View & Pluggable Multi-Provider Pipeline.
+**Active milestone:** v2.5.0 — Enterprise MedTech Platform: Core Architecture & Feature Pipeline.
 
 ---
 
-## v2.5.0 Implementation Context
+## v2.5.0 Sub-version Map
 
-Key files to read before starting:
-- `src/dsclinic_gui/chat_session_view.py` — current state of the chat view
-- `src/dsclinic_gui/report_view_models.py` — `DSClinicViewModel` owns `var_response`, `var_is_analyzing`, `followup_question_submit()`
-- `src/dsclinic_gui/styles.py` — `ChatUser.TFrame`, `ChatBot.TFrame`, `ACCENT`, `ACCENT_LT`, `WHITE`
-- `src/dsclinic_gui/main_container.py` — where `ChatSessionView` is wired
+| Sub-version | Scope | Priority rationale |
+|---|---|---|
+| v2.5.1 | MVVM strict compliance + defensive error handling audit | Foundation — everything built on top must be correct |
+| v2.5.2 | PatientRecord model + AppDatabase wired to ViewModel + session persistence UI | Data foundation all other features depend on |
+| v2.5.3 | `src/providers/` LLMProvider abstraction — Gemini + Claude | Core architectural showpiece |
+| v2.5.4 | Groq + Together AI + HuggingFace cloud providers | Extends v2.5.3 |
+| v2.5.5 | Local Ollama provider — 16GB VRAM optimized, load-on-demand | Most complex provider |
+| v2.5.6 | BrandConfig + white-label + subscription tier | Enterprise commercial layer |
+| v2.5.7 | Chat Session View rewrite + new features (reanalyze, checkboxes, provider selector) | UX — depends on sessions + providers |
+| v2.5.8 | pytest coverage | Quality gate — tests solid codebase |
+| v2.5.9 | PII anonymization improvements + debug panel | Polish — driven by test failures |
+| v2.5.10 | README engineering case study + architecture diagrams | Portfolio presentation layer |
 
-**Streaming bug summary:** Trace on `var_response` in `ChatSessionView.__init__` calls `add_message()` on every write — each chunk spawns a new bubble. Fix: track `self._current_bot_bubble: Optional[MarkdownLabel]`; on first chunk create one bubble and hold the reference; on subsequent chunks call `_current_bot_bubble.update_text(full_text)` in-place; clear reference when `var_is_analyzing` transitions to `False`.
+---
 
-**`MarkdownLabel` needs:** new `update_text(new_text: str)` method — enable widget, clear, re-insert markdown, disable, recalculate height.
+## Key Existing Code to Read Before v2.5.1
 
-**Style fix needed:** `ChatUser.TFrame/TLabel` uses `ACCENT_LT` (pale blue) — should be solid `ACCENT` blue with `WHITE` text.
+- `src/dsclinic_gui/report_view_models.py` — main ViewModel, check for MVVM violations
+- `src/dsclinic_gui/settings/settings_view_model.py` — settings ViewModel
+- `src/dsclinic.py` — business logic layer
+- `src/db/app_database.py` — already complete, not yet wired
+- `src/db/json_collection.py` — generic collection engine
+- `src/models/ai.py` — `ChatSessionModel`, `GeminiModelConfig`, `ClaudeModelConfig`
+- `src/models/patient.py` — `MedicalReport`, `MedicalReportModel`, `PatientRecord` (to be added in v2.5.2)
+
+---
+
+## PII Anonymization — Already Implemented
+
+Commit `5d5b2f4` (Gemini CLI). Working but over-anonymizes clinical numeric values. Improvement + debug panel planned in v2.5.9, driven by pytest failures from v2.5.8.
+
+---
+
+## Previously Active Milestone: v2.6.0 ✅ Complete
+
+All credentials migrated to OS keyring. `settings.ini` permanently deleted. Keys rotated and verified.
