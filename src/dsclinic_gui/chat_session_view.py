@@ -153,7 +153,8 @@ class ChatSessionView(ttk.Frame):
             return
 
         if not is_user:
-            self.view_model._model.chat_responses.append(text) # Store bot responses
+            # Delegate model mutation to ViewModel — View must never touch _model directly.
+            self.view_model.append_chat_response(text)
             
         anchor = "e" if is_user else "w"
         style_frame = "ChatUser.TFrame" if is_user else "ChatBot.TFrame"
@@ -182,7 +183,7 @@ class ChatSessionView(ttk.Frame):
     #         return
 
     #     if not is_user:
-    #         self.view_model._model.chat_responses.append(text) 
+    #         self.view_model.append_chat_response(text)
             
     #     anchor = "e" if is_user else "w"
     #     style_frame = "ChatUser.TFrame" if is_user else "ChatBot.TFrame"

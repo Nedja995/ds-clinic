@@ -15,13 +15,16 @@
 
 ---
 
-### v2.5.1 — MVVM Boundary Audit
+### v2.5.1 — MVVM Boundary Audit ✅ Completed
 
-- [ ] Grep entire `src/dsclinic_gui/` for any `tkinter` widget imports (`Label`, `Button`, `Frame`, `ttk.*`) inside ViewModel files — must be zero.
-- [ ] Verify no ViewModel calls `filedialog`, `messagebox`, or any dialog directly — delegate pattern only.
-- [ ] Verify all background tasks use `threading.Thread` + `queue.Queue` + `root.after` polling — no direct widget mutations from worker threads.
-- [ ] Verify `schedule_poll_fn` is the only Tkinter coupling in every ViewModel.
-- [ ] Document any violations found and fix each one.
+- [x] Grep entire `src/dsclinic_gui/` for any `tkinter` widget imports (`Label`, `Button`, `Frame`, `ttk.*`) inside ViewModel files — must be zero.
+- [x] Verify no ViewModel calls `filedialog`, `messagebox`, or any dialog directly — delegate pattern only.
+- [x] Verify all background tasks use `threading.Thread` + `queue.Queue` + `root.after` polling — no direct widget mutations from worker threads.
+- [x] Verify `schedule_poll_fn` is the only Tkinter coupling in every ViewModel.
+- [x] Document any violations found and fix each one.
+  - Fixed: `chat_session_view.py` directly mutated `view_model._model.chat_responses` — replaced with `view_model.append_chat_response(text)` delegate method.
+  - Fixed: `execute_export()` raised raw exceptions to the View — now catches internally and emits `on_show_error_message`.
+  - Added `-> None` return type annotations to all unannotated ViewModel methods.
 
 ---
 

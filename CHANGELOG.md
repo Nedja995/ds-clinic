@@ -78,6 +78,18 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.5.1] - 2026-08-31
+
+### Fixed
+- `report_view_models.py` — added `append_chat_response(text: str) -> None` public method on `DSClinicViewModel`; View must never mutate `_model` directly.
+- `chat_session_view.py` — replaced `self.view_model._model.chat_responses.append(text)` with `self.view_model.append_chat_response(text)`, eliminating the View→Model boundary violation.
+- `report_view_models.py` — `execute_export()` now wraps `generate_report_pdf_at_filepath()` in `try/except Exception`; emits `on_show_error_message` on failure instead of raising to the View.
+
+### Changed
+- Added `-> None` return type annotations to all previously unannotated ViewModel methods in `report_view_models.py`.
+
+---
+
 ## [2.6.7] - 2026-08-30
 
 ### Security

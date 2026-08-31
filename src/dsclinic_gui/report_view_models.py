@@ -86,7 +86,7 @@ class DSClinicViewModel:
         self.dsclinicapp = DSClinic(model_name=app_settings.ai_model_name)
 
 
-    def _update_viewmodel_from_model(self):
+    def _update_viewmodel_from_model(self) -> None:
         logger.debug("Updating ViewModel from Model...")
         # Sync Model to Observables
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
@@ -96,7 +96,7 @@ class DSClinicViewModel:
         self.var_input_dir.set(self._model.input_dir)
         #self.app.event_generate("<<VM_DataChanged>>")
         
-    def _update_model_from_viewmodel(self):
+    def _update_model_from_viewmodel(self) -> None:
         logger.debug("Updating Model from ViewModel...")
         # Sync Observables to Model
         self._model.content.patient_name                   = self.var_patient_name.get()
@@ -111,14 +111,14 @@ class DSClinicViewModel:
 
     ## Findings management is separate from therapy, but has the same structure (add/remove blank entries)
     #
-    def add_finding(self):
+    def add_finding(self) -> None:
         """Adds a blank finding to the list."""
         logger.debug("Adding new finding...")
         self.findings.append(MedicalCriticalFindingModel())
         #self._update_viewmodel_from_model()
         #self.app.event_generate("<<VM_DataChanged>>")
         
-    def remove_finding(self, index: int):
+    def remove_finding(self, index: int) -> None:
         """Removes a finding at the specified index."""
         logger.debug(f"Removing finding at index {index}...")
         if 0 <= index < len(self.findings):
@@ -126,21 +126,30 @@ class DSClinicViewModel:
 
     ## Therapy management is separate from findings, but has the same structure (add/remove blank entries)
     #
-    def add_therapy(self):
+    def add_therapy(self) -> None:
         """Adds a blank therapy to the list."""
         logger.debug("Adding new therapy...")
         self.therapy_data.append(MedicalTherapyModel())
         # self._update_viewmodel_from_model()
         # self.app.event_generate("<<VM_DataChanged>>")
 
-    def remove_therapy(self, index: int):
+    def remove_therapy(self, index: int) -> None:
         """Removes a therapy at the specified index."""
         logger.debug(f"Removing therapy at index {index}...")
         if 0 <= index < len(self.therapy_data):
             self.therapy_data.pop(index)
 
+    # --- Logic: Chat ---
+
+    def append_chat_response(self, text: str) -> None:
+        """Appends a bot response string to the model's chat history.
+        Called by the View after rendering a bot bubble — the View must never
+        mutate self._model directly.
+        """
+        self._model.chat_responses.append(text)
+
     # --- Logic: Analysis ---
-    def toggle_analysis(self):
+    def toggle_analysis(self) -> None:
         """Toggles the analysis process. If not currently analyzing, starts the analysis. If already analyzing, cancels it."""
         if not self.var_is_analyzing.get():
             self._start_analysis()
@@ -155,7 +164,7 @@ class DSClinicViewModel:
         self.var_status_title.set("Cancelling")
         self.var_status_detail.set("Cancelling analysis...")
         
-    def _start_analysis(self):
+    def _start_analysis(self) -> None:
         """Starts the analysis process in a background thread and sets up the ViewModel state for tracking progress."""
         self.var_is_analyzing.set(True)
         self.var_btn_analyze_text.set("Cancel")
@@ -175,11 +184,11 @@ class DSClinicViewModel:
         # no external dispatcher needed.
         self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
         
-    def _cancel_analysis(self):
+    def _cancel_analysis(self) -> None:
         self._reset_task_state()
         self._cancel_event.set()
 
-    def _run_task_initial_analyzis(self, output_queue: queue.Queue[ProgressEvent], cancel_event: threading.Event):
+    def _run_task_initial_analyzis(self, output_queue: queue.Queue[ProgressEvent], cancel_event: threading.Event) -> None:
         try:
             output_queue.put(ProgressEvent(status=TaskStatus.RUNNING, message="Finding local medical files..."))
             
@@ -297,7 +306,7 @@ class DSClinicViewModel:
 
 
 
-    def followup_question_submit(self):
+    def followup_question_submit(self) -> None:
         logger.debug("Submitting followup question...")
         question = self.var_initial_question.get()
         question = self.var_initial_question.get().strip()
@@ -325,7 +334,7 @@ class DSClinicViewModel:
         # Ensure the polling loop is active
         self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
 
-    def _run_task_followup_question(self, question: str, output_queue: queue.Queue[ProgressEvent]):
+    def _run_task_followup_question(self, question: str, output_queue: queue.Queue[ProgressEvent]) -> None:
         try:
             answer = self.dsclinicapp.ask_followup_question(question)
             output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, result=answer))
@@ -437,7 +446,7 @@ class DSClinicViewModel:
             
     # Logic: View Updates
     
-    def update_view_from_viewmodel(self):
+    def update_view_from_viewmodel(self) -> None:
         logger.debug("Updating View from ViewModel...")
         self.on_vm_data_changed.emit()
             
@@ -472,13 +481,24 @@ class DSClinicViewModel:
         """
         Step 2 of the export flow (ViewModel side).
         Called by the View after the user confirms a filepath in the dialog.
-        Performs the actual PDF generation and updates status observables.
-        Raises on failure so the View can show an appropriate error dialog.
+        Performs PDF generation, updates status observables, and emits
+        on_show_error_message on failure — never raises to the View.
         """
         self.var_status_title.set("Exporting")
         self.var_status_detail.set(f"Generating PDF at {output_filepath}...")
 
-        generate_report_pdf_at_filepath(self._model, output_filename=output_filepath)
+        try:
+            generate_report_pdf_at_filepath(self._model, output_filename=output_filepath)
+        except Exception as e:
+            error_msg = f"PDF export failed: {e}"
+            logger.error(error_msg, exc_info=True)
+            self.var_status_title.set("Export Failed")
+            self.var_status_detail.set("✖ PDF generation error.")
+            self.on_show_error_message.emit(ErrorMessageEvent(
+                title="Export Failed",
+                message=error_msg,
+            ))
+            return
 
         self.var_status_title.set("Saved")
         self.var_status_detail.set("PDF Saved Successfully")

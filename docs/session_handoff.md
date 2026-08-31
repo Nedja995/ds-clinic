@@ -72,13 +72,15 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## Current Status: v2.5.0 Active — Next sub-version: v2.5.1
+## Current Status: v2.5.0 Active — Next sub-version: v2.5.2
 
 **Roadmap restructured this session:** Each major feature is now its own MINOR version with PATCH sub-versions.
 
 | Version | Scope | Status |
 |---|---|---|
-| v2.5.0 | MVVM strict compliance + defensive error handling audit | ▶ Active |
+| v2.5.1 | MVVM boundary audit | ✅ Done |
+| v2.5.2 | Defensive error handling audit | ▶ Active |
+| v2.5.3 | Type hints audit (`mypy --strict`) | Planned |
 | v2.7.0 | Patient records + session persistence | Planned |
 | v2.8.0 | `src/providers/` LLMProvider abstraction | Planned |
 | v2.9.0 | Groq + Together + HuggingFace providers | Planned |
@@ -91,18 +93,28 @@ Full rule reference: `.dev_profile/developer_profile.md` § 5.
 
 ---
 
-## v2.5.0 Implementation Notes
+## v2.5.1 Audit Findings (completed 2026-08-31)
 
-Files most likely to contain MVVM violations and type hint gaps:
-- `src/dsclinic_gui/report_view_models.py` — main ViewModel, check for any widget imports or dialog calls
-- `src/dsclinic_gui/settings/settings_view_model.py` — settings ViewModel
-- `src/dsclinic.py` — business logic, check return type annotations
+All ViewModel files audited. Two violations found and fixed:
 
-Files to check for bare `except:` and missing I/O guards:
+1. **`chat_session_view.py`** — View was directly mutating `view_model._model.chat_responses`. Fixed by adding `DSClinicViewModel.append_chat_response(text: str) -> None` and calling that instead.
+2. **`report_view_models.py` `execute_export()`** — raised raw exceptions to the View on PDF failure. Fixed: now wraps `generate_report_pdf_at_filepath()` in `try/except`, emits `on_show_error_message` on failure, never raises.
+3. **Return type annotations** — added `-> None` to all unannotated ViewModel methods in `report_view_models.py`.
+
+`settings_view_model.py` — fully compliant, no violations.
+Threading discipline — fully compliant across all ViewModels.
+
+---
+
+## v2.5.2 Implementation Notes
+
+Files to grep for bare `except:` and missing I/O guards:
 - `src/db/json_collection.py` — all file reads/writes
 - `src/db/app_database.py` — collection init
 - `src/models/keyring_manager.py` — keyring calls
 - `src/api_gemini/client.py`, `src/api_claude/client.py` — API calls
+- `src/dsclinic.py` — business logic wrappers
+- `src/dsclinic_gui/report_view_models.py` — worker thread bodies (partially addressed in v2.5.1)
 
 ---
 
