@@ -19,7 +19,20 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.10.0] - Planned — Local Ollama Provider (16GB VRAM Optimized)
 ## [2.9.0] - Planned — Groq + Together AI + HuggingFace Cloud Providers
 ## [2.8.0] - Planned — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
-## [2.7.0] - Planned — Patient Record as First-Class Entity & Session Persistence
+## [2.7.0] - In Progress — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.7.1] - 2026-09-01
+
+### Added
+- `src/models/patient.py` — `PatientRecord(BaseModel)` with fields: `patient_id` (uuid4 hex), `full_name`, `date_of_birth`, `created_at`, `session_ids: list[str]`. First-class persistent entity per AD-18.
+- `src/db/app_database.py` — `patients: JsonCollection[PatientRecord]` collection at `app_data/patients/`. Index fields: `patient_id`, `full_name`, `created_at`.
+- `src/models/__init__.py` — `PatientRecord` exported from the models package.
+
+### Changed
+- `src/models/patient.py` — added module-level docstring explaining ownership boundary and AD-18 join key contract.
+- `src/db/app_database.py` — updated module docstring to include `patients/` in directory layout and usage examples.
 
 ---
 

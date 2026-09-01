@@ -3,6 +3,7 @@ from models.patient import (
     MedicalReportModel,
     MedicalTherapyModel,
     MedicalReport,
+    PatientRecord,
 )
 from models.ai import (
     ChatMessage,

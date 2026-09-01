@@ -376,19 +376,19 @@
 
 ---
 
-## v2.7.0 — Patient Record as First-Class Entity & Session Persistence 📋 Next
+## v2.7.0 — Patient Record as First-Class Entity & Session Persistence 📋 In Progress
 
 **Why:** `AppDatabase` (sessions, reports, ai_profiles) and `JsonCollection[T]` are fully implemented in `src/db/` but never wired to any ViewModel. Sessions are never saved. Reports are never persisted. A `Patient` model is missing entirely — currently a patient is only a name string inside `MedicalReport`. This is the data foundation every subsequent milestone depends on. See AD-18.
 
 ---
 
-### v2.7.1 — `PatientRecord` Model & `AppDatabase` Extension
+### v2.7.1 — `PatientRecord` Model & `AppDatabase` Extension ✅ Completed
 
-- [ ] Add `PatientRecord(BaseModel)` to `src/models/patient.py`:
-  - [ ] Fields: `patient_id: str` (uuid4 hex), `full_name: str`, `date_of_birth: str`, `created_at: str`, `session_ids: list[str]`.
-- [ ] Add `patients: JsonCollection[PatientRecord]` collection to `AppDatabase` at `app_data/patients/`.
-- [ ] Index fields for patients: `patient_id`, `full_name`.
-- [ ] Export `PatientRecord` from `src/models/__init__.py`.
+- [x] Add `PatientRecord(BaseModel)` to `src/models/patient.py`:
+  - [x] Fields: `patient_id: str` (uuid4 hex), `full_name: str`, `date_of_birth: str`, `created_at: str`, `session_ids: list[str]`.
+- [x] Add `patients: JsonCollection[PatientRecord]` collection to `AppDatabase` at `app_data/patients/`.
+- [x] Index fields for patients: `patient_id`, `full_name`, `created_at`.
+- [x] Export `PatientRecord` from `src/models/__init__.py`.
 
 ---
 
@@ -526,7 +526,7 @@
 - [x] Add missing type annotations to `src/db/app_database.py` and `src/db/json_collection.py`.
 - [x] Run `mypy --strict src/` and fix all errors — **0 errors across 26 checked files**.
   - `db/json_collection.py` — all bare `dict` → `dict[str, Any]`; `_load_raw_index` return typed; `_build_index_entry` node traversal typed.
-  - `models/ai.py` — `tuple` → `tuple[str, ...]` on `system_instruction` fields.
+  - `models/ai.py` — `tuple` → `tuple[str, ...]` on both `system_instruction` fields.
   - `models/diagnostics.py` — `UserList[T]` parameterised; `ObservableList` fully annotated (`__init__`, `extend`, `__setitem__`, `__delitem__`, `__iter__`).
   - `api_gemini/client.py` — `chat_session: Optional[Any]`; `-> None` on all methods; `SafetySetting` uses enum members; `system_instruction` passed as `str`.
   - `api_gemini/utils.py` — `Optional[types.Part]` return; `None` init removed.

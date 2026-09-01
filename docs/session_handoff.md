@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.5.0 ✅ Complete — Next: v2.7.0
+## Current Status: v2.7.1 ✅ Complete — Next: v2.7.2
 
 | Version | Scope | Status |
 |---|---|---|
@@ -58,7 +58,10 @@ git push
 | v2.5.2 | Defensive error handling audit | ✅ Done |
 | v2.5.3 | `mypy --strict` type hints audit | ✅ Done |
 | v2.5.4 | `pyproject.toml` + `uv` migration, README | ✅ Done |
-| v2.7.0 | Patient records + session persistence | ▶ Next |
+| v2.7.1 | `PatientRecord` model + `AppDatabase` extension | ✅ Done |
+| v2.7.2 | Wire `AppDatabase` into `DSClinicViewModel` | ▶ Next |
+| v2.7.3 | Session history panel (View + ViewModel) | Planned |
+| v2.7.4 | Patient list panel (View + ViewModel) | Planned |
 | v2.8.0 | `src/providers/` LLMProvider abstraction | Planned |
 | v2.9.0 | Groq + Together + HuggingFace providers | Planned |
 | v2.10.0 | Local Ollama provider | Planned |
@@ -70,40 +73,41 @@ git push
 
 ---
 
-## v2.5.4 Changes (completed 2026-09-01)
+## v2.7.1 Changes (completed 2026-09-01)
 
-- `pyproject.toml` — single source of truth for all tool config: `[tool.mypy]`, `[tool.pytest.ini_options]`, `[tool.autopep8]`, `[dependency-groups] dev`, `[project.optional-dependencies]` (`claude`, `local`, `providers` extras), full runtime dep set with version pins, `requires-python`, `authors`, `readme`, `license`.
-- `mypy.ini` — **deleted** (manually: `git rm mypy.ini`). Config moved to `[tool.mypy]` in `pyproject.toml`.
-- `README.md` — full rewrite: `uv` workflow, keyring setup, run/mypy/pytest/pyinstaller commands, project structure, architecture overview.
-
-**Manual action required:**
-```powershell
-git rm mypy.ini
-```
+- `src/models/patient.py` — added `PatientRecord(BaseModel)`: `patient_id` (uuid4 hex), `full_name`, `date_of_birth`, `created_at`, `session_ids: list[str]`. Module docstring added explaining AD-18 join key contract.
+- `src/db/app_database.py` — added `patients: JsonCollection[PatientRecord]` collection at `app_data/patients/`. Index fields: `patient_id`, `full_name`, `created_at`. Module docstring updated with patients directory layout and usage examples.
+- `src/models/__init__.py` — `PatientRecord` exported from the models package.
 
 ---
 
-## v2.7.0 Implementation Notes
+## v2.7.2 Implementation Notes
 
 Files to read before starting:
-- `src/db/app_database.py` — add `patients: JsonCollection[PatientRecord]` collection here.
-- `src/models/patient.py` — add `PatientRecord(BaseModel)` here.
-- `src/models/__init__.py` — export `PatientRecord`.
-- `src/dsclinic_gui/report_view_models.py` — wire `AppDatabase` as `self._db`.
+- `src/dsclinic_gui/report_view_models.py` — `DSClinicViewModel.__init__` is the injection point for `self._db: AppDatabase`.
+- `src/db/app_database.py` — confirmed: `patients`, `sessions`, `reports` collections all available.
+- `src/models/ai.py` — read `ChatSessionModel` fields to understand what to persist in v2.7.2.
+
+Key decisions for v2.7.2:
+- `AppDatabase` instantiated once in `DSClinicViewModel.__init__` — not passed in, not a singleton module-level global.
+- Auto-save report in `_apply_progress_event` `TaskStatus.FINISHED` branch (after `self._model = progress_event.result`).
+- Auto-save session after each follow-up Q&A in `_apply_progress_event` `TaskStatus.FINISHED` str branch.
+- All `_db` calls wrapped in `try/except (OSError, json.JSONDecodeError)` with `logger.error` — never propagate to UI as a crash.
 
 ---
 
 ## Key Existing Code Context
 
-- `src/db/app_database.py` — implemented, not yet wired to ViewModel (v2.7.0).
+- `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` collections all implemented. `patients` added in v2.7.1.
 - `src/db/json_collection.py` — `JsonCollection[T]`, fully typed and guarded.
+- `src/models/patient.py` — `PatientRecord` added in v2.7.1. `MedicalReport` existing.
 - `src/models/ai.py` — `ChatSessionModel`, `GeminiModelConfig`, `ClaudeModelConfig`.
-- `src/models/patient.py` — `MedicalReport` exists; `PatientRecord` added in v2.7.1.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.7.1** ✅ — `PatientRecord` model, `AppDatabase.patients` collection, export from `models/__init__`.
 - **v2.6.0** ✅ — Credentials to OS keyring, `settings.ini` deleted.
 - **v2.5.0** ✅ — MVVM audit, error handling, `mypy --strict` clean, `uv` migration.
