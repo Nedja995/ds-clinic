@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from models.patient import MedicalReport
 
+
 class ChatMessage(BaseModel):
     content: str = Field(description="The content of the message.")
     timestamp: datetime = Field(default_factory=datetime.now)
@@ -14,7 +15,7 @@ class GeminiModelConfig(BaseModel):
     top_p: float = Field(default=0.95)
     max_output_tokens: int = Field(default=65535)
     thinking_level: str = Field(default="HIGH")
-    system_instruction: tuple = Field(default=(
+    system_instruction: tuple[str, ...] = Field(default=(
         "You are an expert medical data analyst using equally both holistic and traditional medical data.",
         "Always highlight severe abnormalities."
     ))
@@ -39,7 +40,7 @@ class ClaudeModelConfig(BaseModel):
     top_p: float = Field(default=0.95)
     max_output_tokens: int = Field(default=8096)
     thinking_budget_tokens: int = Field(default=0)
-    system_instruction: tuple = Field(default=(
+    system_instruction: tuple[str, ...] = Field(default=(
         "You are an expert medical data analyst using equally both holistic and traditional medical data.",
         "Always highlight severe abnormalities."
     ))

@@ -1,8 +1,13 @@
-from enum import Enum
+from __future__ import annotations
+
 from collections import UserList
-from typing import TypeVar, Generic, Callable
+from enum import Enum
+from typing import Any, Callable, Generic, Iterator, TypeVar
+
 from pydantic import BaseModel, Field
+
 from models.patient import MedicalReport
+
 
 class TaskStatus(str, Enum):
     RUNNING = "running"
@@ -19,11 +24,13 @@ class ProgressEvent(BaseModel):
     result: MedicalReport | str | None = None
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
-class ObservableList(UserList, Generic[T]):
+
+class ObservableList(UserList[T], Generic[T]):
     """An observable list that notifies subscribers on mutation."""
-    def __init__(self, initlist=None):
+
+    def __init__(self, initlist: list[T] | None = None) -> None:
         super().__init__(initlist)
         self._callbacks: list[Callable[[list[T]], None]] = []
 
@@ -42,7 +49,7 @@ class ObservableList(UserList, Generic[T]):
         super().remove(item)
         self._notify()
 
-    def extend(self, other) -> None:
+    def extend(self, other: Any) -> None:
         super().extend(other)
         self._notify()
 
@@ -50,10 +57,13 @@ class ObservableList(UserList, Generic[T]):
         super().clear()
         self._notify()
 
-    def __setitem__(self, i, item) -> None:
+    def __setitem__(self, i: Any, item: Any) -> None:
         super().__setitem__(i, item)
         self._notify()
 
-    def __delitem__(self, i) -> None:
+    def __delitem__(self, i: Any) -> None:
         super().__delitem__(i)
         self._notify()
+
+    def __iter__(self) -> Iterator[T]:
+        return super().__iter__()

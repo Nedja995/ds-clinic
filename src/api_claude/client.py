@@ -1,7 +1,7 @@
 import json
 import time
 from enum import StrEnum
-from typing import Iterator
+from typing import Any, Iterator, Optional
 
 import anthropic
 
@@ -22,8 +22,8 @@ class Models(StrEnum):
 
 
 def _build_system_prompt(
-    base_instructions: tuple | list[str] | str,
-    response_schema_model,
+    base_instructions: tuple[str, ...] | list[str] | str,
+    response_schema_model: Any,
 ) -> str:
     """
     Combine system instructions with JSON schema enforcement.
@@ -51,13 +51,12 @@ class ClaudeAnalyzerClient:
     Mirrors api_gemini/client.py::MedicalAnalyzerClient surface.
     """
 
-    client: anthropic.Anthropic = None
-    chat_history: list[dict] = []
-    system_prompt: str = ""
-
-    def __init__(self, config: ClaudeAIServiceConfig = None):
+    def __init__(self, config: Optional[ClaudeAIServiceConfig] = None) -> None:
         logger.info("[api_claude] Initializing ClaudeAnalyzerClient...")
-        self.config = config or ClaudeAIServiceConfig()
+        self.config: ClaudeAIServiceConfig = config or ClaudeAIServiceConfig()
+        self.client: Optional[anthropic.Anthropic] = None
+        self.chat_history: list[dict[str, Any]] = []
+        self.system_prompt: str = ""
 
         if not self.config.api_key:
             logger.warning(
@@ -65,7 +64,6 @@ class ClaudeAnalyzerClient:
                 "Open Settings → AI → Anthropic API Key and save your key. "
                 "Claude analysis will fail until a valid key is provided."
             )
-            # Do not raise — allow app to start so user can enter key via Settings
             return
 
         logger.debug(f"[api_claude] Using model: {self.config.model_settings.model_name}")
@@ -93,7 +91,7 @@ class ClaudeAnalyzerClient:
     def close(self) -> None:
         logger.debug("[api_claude] Closing ClaudeAnalyzerClient...")
         try:
-            if self.client and hasattr(self.client, 'close'):
+            if self.client and hasattr(self.client, "close"):
                 self.client.close()
             logger.debug("[api_claude] ClaudeAnalyzerClient closed successfully")
         except Exception as e:
@@ -106,9 +104,9 @@ class ClaudeAnalyzerClient:
 
     def initial_analysis_report_from_chat_stream(
         self,
-        documents: list[dict],
+        documents: list[dict[str, Any]],
         question: str,
-    ) -> MedicalReportModel:
+    ) -> Optional[MedicalReportModel]:
         if not self.client:
             raise RuntimeError(
                 "[api_claude] Claude client is not initialized. "
@@ -118,7 +116,7 @@ class ClaudeAnalyzerClient:
         logger.info("[api_claude] Run initial medical analysis from chat stream (Streaming JSON).")
         start_time = time.time()
         accumulated_json: str = ""
-        parsed_report: MedicalReportModel = None
+        parsed_report: Optional[MedicalReportModel] = None
 
         for chunk in self._initial_analysis_run_chat_stream(documents, question):
             accumulated_json += chunk
@@ -148,27 +146,32 @@ class ClaudeAnalyzerClient:
 
     def _initial_analysis_run_chat_stream(
         self,
-        documents: list[dict],
+        documents: list[dict[str, Any]],
         predefined_question: str,
     ) -> Iterator[str]:
         logger.debug("[api_claude] Run initial analysis chat stream")
 
-        user_content: list[dict] = [{"type": "text", "text": "Here are the input medical/lab documents:"}]
-        user_content.extend(documents)
-        user_content.append({"type": "text", "text": f"Question/Task: {predefined_question}"})
+        # Build multimodal user content — cast to Any because the Anthropic SDK
+        # TypedDict for MessageParam.content does not include plain dict, but the
+        # API accepts it at runtime. Full TypedDict migration deferred to v2.8.0
+        # (ClaudeProvider implementation).
+        user_content: Any = [
+            {"type": "text", "text": "Here are the input medical/lab documents:"},
+            *documents,
+            {"type": "text", "text": f"Question/Task: {predefined_question}"},
+        ]
 
         self.chat_history.append({
             "role": "user",
             "content": f"[Initial analysis with {len(documents)} document(s)] Question/Task: {predefined_question}",
         })
 
+        assert self.client is not None
         logger.debug(f"[api_claude]   Sending {len(documents)} document(s) to Claude API...")
         try:
             with self.client.messages.stream(
                 model=self.config.model_settings.model_name,
                 max_tokens=self.config.model_settings.max_output_tokens,
-                temperature=self.config.model_settings.temperature,
-                top_p=self.config.model_settings.top_p,
                 system=self.system_prompt,
                 messages=[{"role": "user", "content": user_content}],
             ) as stream:
@@ -197,14 +200,13 @@ class ClaudeAnalyzerClient:
         self.chat_history.append({"role": "user", "content": follow_up_question})
 
         accumulated_response = ""
+        assert self.client is not None
         try:
             with self.client.messages.stream(
                 model=self.config.model_settings.model_name,
                 max_tokens=self.config.model_settings.max_output_tokens,
-                temperature=self.config.model_settings.temperature,
-                top_p=self.config.model_settings.top_p,
                 system=self.system_prompt,
-                messages=self.chat_history,
+                messages=self.chat_history,  # type: ignore[arg-type]
             ) as stream:
                 logger.debug("[api_claude] Follow-up response stream initialized")
                 chunk_count = 0

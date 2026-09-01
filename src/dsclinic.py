@@ -27,8 +27,7 @@ logger = setup_logger()
 class DSClinic:
     """Glavna logika za DSClinic aplikaciju."""
 
-    def __init__(self, model_name: str | None = None):
-        # ── settings ──────────────────────────────────────────────────────
+    def __init__(self, model_name: str | None = None) -> None:
         self.input_dir = app_settings.input_dir
         self.output_dir = get_output_data_dirpath()
         self.model_name = model_name or app_settings.ai_model_name
@@ -137,7 +136,7 @@ class DSClinic:
 
         report_content: MedicalReportModel | None = self.gemini_client.initial_analysis_report_from_chat_stream(
             documents=input_documents_parts,
-            question=cleaned_question
+            question=cleaned_question,
         )
 
         if report_content is None:
@@ -152,7 +151,8 @@ class DSClinic:
     def ask_followup_question(self, question: str) -> str:
         if not self.report:
             raise ValueError("No initial report available. Please run analysis first.")
-        return self.gemini_client.ask_followup_question(question)
+        result: str = self.gemini_client.ask_followup_question(question)
+        return result
 
 
 def write_report_pdf(report: MedicalReport, output_dir: str | None = None) -> None:
@@ -161,5 +161,5 @@ def write_report_pdf(report: MedicalReport, output_dir: str | None = None) -> No
     output_path = make_output_filepath(report.content.patient_name, "pdf", output_dir)
     pdf_maker.generate_report_pdf_at_filepath(
         report,
-        output_filename=output_path
+        output_filename=output_path,
     )

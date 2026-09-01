@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Generic, Optional, Type, TypeVar
+from typing import Any, Generic, Optional, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -52,13 +52,16 @@ class JsonCollection(Generic[T]):
     def _record_path(self, record_id: str) -> Path:
         return self._dir / f"{record_id}.json"
 
-    def _load_raw_index(self) -> list[dict]:
+    def _load_raw_index(self) -> list[dict[str, Any]]:
         try:
-            return json.loads(self._index_path.read_text(encoding="utf-8"))
+            raw: list[dict[str, Any]] = json.loads(
+                self._index_path.read_text(encoding="utf-8")
+            )
+            return raw
         except (json.JSONDecodeError, FileNotFoundError):
             return []
 
-    def _write_raw_index(self, index: list[dict]) -> None:
+    def _write_raw_index(self, index: list[dict[str, Any]]) -> None:
         try:
             self._index_path.write_text(
                 json.dumps(index, indent=2, ensure_ascii=False, default=str),
@@ -68,21 +71,21 @@ class JsonCollection(Generic[T]):
             logger.error("Failed to write index file %s: %s", self._index_path, e, exc_info=True)
             raise
 
-    def _build_index_entry(self, record_id: str, model: T) -> dict:
+    def _build_index_entry(self, record_id: str, model: T) -> dict[str, Any]:
         """Extract a flat index entry from a model using dot-notation field paths."""
-        data: dict = model.model_dump(mode="json")
-        entry: dict = {"id": record_id}
+        data: dict[str, Any] = model.model_dump(mode="json")
+        entry: dict[str, Any] = {"id": record_id}
         for field_path in self._index_fields:
-            value = data
+            node: Any = data
             for key in field_path.split("."):
-                value = value.get(key) if isinstance(value, dict) else None
+                node = node.get(key) if isinstance(node, dict) else None
             # Store under a flat key: 'content.patient_name' → 'content_patient_name'
-            entry[field_path.replace(".", "_")] = value
+            entry[field_path.replace(".", "_")] = node
         return entry
 
     def _rebuild_index_from_disk(self) -> None:
         """Rebuild _index.json by scanning all .json records on disk."""
-        entries: list[dict] = []
+        entries: list[dict[str, Any]] = []
         for record_file in sorted(self._dir.glob("*.json")):
             if record_file.name == _INDEX_FILE:
                 continue
@@ -144,7 +147,7 @@ class JsonCollection(Generic[T]):
     def exists(self, record_id: str) -> bool:
         return self._record_path(record_id).exists()
 
-    def list_index(self) -> list[dict]:
+    def list_index(self) -> list[dict[str, Any]]:
         """Return lightweight index entries (fast — no record files opened)."""
         return self._load_raw_index()
 
@@ -152,7 +155,7 @@ class JsonCollection(Generic[T]):
         """Load and return all records (expensive — opens every file)."""
         records: list[T] = []
         for entry in self._load_raw_index():
-            record = self.load(entry["id"])
+            record = self.load(str(entry["id"]))
             if record is not None:
                 records.append(record)
         return records
