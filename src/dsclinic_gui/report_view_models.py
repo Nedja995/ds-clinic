@@ -10,7 +10,15 @@ import multiprocessing
 from dsclinic_gui.settings.settings_view_model import SettingsViewModel
 from npy.core.logger import setup_logger
 from npy.core import utils, fileutils
-from models import app_settings, MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
+from models import (
+    app_settings,
+    MedicalReport,
+    MedicalReportModel,
+    MedicalCriticalFindingModel,
+    MedicalTherapyModel,
+)
+from models.ai import ChatMessage, ChatSessionModel
+from db import AppDatabase
 from dsclinic import DSClinic
 from pdf_maker import generate_report_pdf_at_filepath
 from npy.core.event_emitter import EventEmitter, ErrorMessageEvent
@@ -38,6 +46,19 @@ class DSClinicViewModel:
     ) -> None:
         self.schedule_poll_fn = schedule_poll_fn
         self._model: MedicalReport = model or MedicalReport()
+
+        # Single AppDatabase instance for the lifetime of this ViewModel (AD-06).
+        # Instantiated here rather than passed in — AppDatabase is a local file
+        # store, not an injected dependency, and there is exactly one per session.
+        self._db: AppDatabase = AppDatabase()
+
+        # Active session wraps the current report + chat history for persistence.
+        # Initialised fresh here; replaced when a saved session is loaded.
+        self._session: ChatSessionModel = ChatSessionModel(report=self._model)
+
+        # Holds the question text from the most recent follow-up submission so
+        # the FINISHED handler can build the ChatMessage pair for persistence.
+        self._pending_question: str = ""
 
         # Handled manually for Text widgets
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
@@ -89,6 +110,34 @@ class DSClinicViewModel:
         self._model.content.recommended_therapy_and_advice = self.therapy_text_content
         self._model.content.critical_findings              = self.findings
         self._model.therapies                              = self.therapy_data
+
+    # ── Persistence helpers ───────────────────────────────────────────────────
+
+    def _persist_report(self, report: MedicalReport) -> None:
+        """Auto-save a completed MedicalReport to the reports collection.
+
+        Failures are logged and swallowed — a DB write error must never crash
+        the analysis result that the user is looking at.
+        """
+        try:
+            self._db.reports.save(report.report_id, report)
+            logger.info("Report %r auto-saved to AppDatabase.", report.report_id)
+        except (OSError, Exception) as e:
+            logger.error("Failed to auto-save report %r: %s", report.report_id, e, exc_info=True)
+
+    def _persist_session(self) -> None:
+        """Re-save the current ChatSessionModel after any mutation.
+
+        Called after analysis completion and after each Q&A exchange so the
+        session is always recoverable from disk.
+        """
+        # Keep session.report in sync with the current model state.
+        self._session.report = self._model
+        try:
+            self._db.sessions.save(self._session.session_id, self._session)
+            logger.info("Session %r auto-saved to AppDatabase.", self._session.session_id)
+        except (OSError, Exception) as e:
+            logger.error("Failed to auto-save session %r: %s", self._session.session_id, e, exc_info=True)
 
     # --- Logic: Data Management ---
 
@@ -271,6 +320,10 @@ class DSClinicViewModel:
         self.var_status_detail.set("Waiting for AI response...")
         self.var_progress_value.set(0)
 
+        # Stash the question so the FINISHED handler can build the ChatMessage
+        # pair — the thread only returns the answer, not the original question.
+        self._pending_question = question
+
         self._worker_thread = threading.Thread(
             target=self._run_task_followup_question,
             args=(question, self._output_queue),
@@ -337,12 +390,33 @@ class DSClinicViewModel:
                     self.var_is_analyzing.set(False)
                     self.var_btn_analyze_text.set(_("Analyze"))  # type: ignore[name-defined]
                     self.on_vm_data_changed.emit()
+
+                    # Persist report and open a fresh session around it so
+                    # subsequent Q&A exchanges are recoverable from disk.
+                    self._persist_report(self._model)
+                    self._session = ChatSessionModel(report=self._model)
+                    self._persist_session()
+
                 elif isinstance(progress_event.result, str):
-                    self.var_response.set(progress_event.result)
+                    answer = progress_event.result
+                    self.var_response.set(answer)
                     self.var_is_analyzing.set(False)
                     self.var_status_title.set("Ready")
                     self.var_status_detail.set("Chat response received.")
                     self.var_progress_value.set(100)
+
+                    # Record the Q&A pair in the session and re-save so the
+                    # conversation is fully persistent even if the app crashes.
+                    if self._pending_question:
+                        self._session.chat_history.append(
+                            ChatMessage(content=self._pending_question)
+                        )
+                        self._session.chat_history.append(
+                            ChatMessage(content=answer)
+                        )
+                        self._pending_question = ""
+                    self._persist_session()
+
                 else:
                     error_msg = (
                         f"Unexpected result type in ProgressEvent: "

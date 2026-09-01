@@ -23,6 +23,22 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.7.2] - 2026-09-01
+
+### Added
+- `dsclinic_gui/report_view_models.py` — `self._db: AppDatabase` instantiated once in `DSClinicViewModel.__init__`.
+- `dsclinic_gui/report_view_models.py` — `self._session: ChatSessionModel` tracks the active session wrapping the current report and chat history.
+- `dsclinic_gui/report_view_models.py` — `self._pending_question: str` stashes the submitted question text so the `FINISHED` handler can build the `ChatMessage` pair without re-reading the (already-cleared) `StringVar`.
+- `dsclinic_gui/report_view_models.py` — `_persist_report()`: saves `MedicalReport` to `_db.reports` on analysis completion. Failures logged and swallowed — never propagate to UI.
+- `dsclinic_gui/report_view_models.py` — `_persist_session()`: re-saves `ChatSessionModel` to `_db.sessions` after analysis completion and after each Q&A exchange. Syncs `session.report` to current model state before writing.
+- `dsclinic_gui/report_view_models.py` — `_apply_progress_event` `FINISHED/MedicalReport` branch: calls `_persist_report` + creates fresh `ChatSessionModel` + calls `_persist_session` immediately after analysis.
+- `dsclinic_gui/report_view_models.py` — `_apply_progress_event` `FINISHED/str` branch: appends question + answer `ChatMessage` pair to `_session.chat_history`, clears `_pending_question`, calls `_persist_session`.
+
+### Changed
+- `dsclinic_gui/report_view_models.py` — `followup_question_submit()`: stashes question into `self._pending_question` before clearing `var_initial_question`.
+
+---
+
 ## [2.7.1] - 2026-09-01
 
 ### Added

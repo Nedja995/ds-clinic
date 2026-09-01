@@ -382,6 +382,15 @@
 
 ---
 
+### v2.7.2 — Wire `AppDatabase` into `DSClinicViewModel` ✅ Completed
+
+- [x] Instantiate `AppDatabase` once in `DSClinicViewModel.__init__` — store as `self._db`.
+- [x] After successful analysis (`TaskStatus.FINISHED` with `MedicalReport`): auto-save report via `self._db.reports.save(report.report_id, report)`.
+- [x] After each follow-up Q&A exchange: update and re-save `ChatSessionModel` via `self._db.sessions.save(session.session_id, session)`.
+- [x] Wrap all `_db` calls in `try/except (OSError, json.JSONDecodeError)` — log error and continue without crashing.
+
+---
+
 ### v2.7.1 — `PatientRecord` Model & `AppDatabase` Extension ✅ Completed
 
 - [x] Add `PatientRecord(BaseModel)` to `src/models/patient.py`:
@@ -389,15 +398,6 @@
 - [x] Add `patients: JsonCollection[PatientRecord]` collection to `AppDatabase` at `app_data/patients/`.
 - [x] Index fields for patients: `patient_id`, `full_name`, `created_at`.
 - [x] Export `PatientRecord` from `src/models/__init__.py`.
-
----
-
-### v2.7.2 — Wire `AppDatabase` into `DSClinicViewModel`
-
-- [ ] Instantiate `AppDatabase` once in `DSClinicViewModel.__init__` — store as `self._db`.
-- [ ] After successful analysis (`TaskStatus.FINISHED` with `MedicalReport`): auto-save report via `self._db.reports.save(report.report_id, report)`.
-- [ ] After each follow-up Q&A exchange: update and re-save `ChatSessionModel` via `self._db.sessions.save(session.session_id, session)`.
-- [ ] Wrap all `_db` calls in `try/except (OSError, json.JSONDecodeError)` — log error and continue without crashing.
 
 ---
 
