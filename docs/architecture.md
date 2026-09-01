@@ -170,3 +170,23 @@ This document tracks the key architectural decisions made for **DSClinic** and t
   * **White-labeled B2B build:** Distributor pre-populates `brand.json` + logo asset alongside the `.exe`. Client sees only their clinic branding; DSClinic name is invisible.
   * **Subscription SaaS:** Single `.exe` distributed publicly. User fills in clinic profile via Settings UI. `brand.json` written locally. Tier enforced by license key check (stub in v2.5.6, full validation in a future milestone).
 * **`subscription_tier` values:** `"trial"` (PDF watermark, session limit), `"standard"` (full reports), `"enterprise"` (multi-user, custom models, advanced analytics).
+
+---
+
+## AD-21: `pyproject.toml` + `uv` as Canonical Build & Dependency Toolchain
+* **Decision:** `pyproject.toml` is the single source of truth for project metadata, dependencies, and build configuration. `uv` is the canonical tool for virtual environment creation, dependency resolution, and package installation. This mirrors the toolchain established in the GASSI reference project (`proj_gassi2`).
+* **Rationale:**
+  1. **Speed:** `uv` resolves and installs dependencies an order of magnitude faster than `pip` + `venv`. In a dev loop with frequent environment rebuilds (CI, PyInstaller dist builds, new contributor onboarding), this matters.
+  2. **Lockfile reproducibility:** `uv` produces a `uv.lock` lockfile that pins the exact transitive dependency graph. This is essential for medical software where a silent dependency upgrade could change model output or break the Presidio anonymization pipeline.
+  3. **Single config file:** All metadata (`name`, `version`, `description`, `dependencies`, `dev-dependencies`, `build-system`, `mypy` options) lives in `pyproject.toml`. No `setup.py`, no `requirements.txt`, no `setup.cfg`. Consistent with modern Python packaging standards (PEP 517/518/621).
+  4. **GASSI parity:** GASSI (`proj_gassi2`) uses `pyproject.toml` + `uv` as its canonical toolchain. DSClinic mirrors this so both projects share the same developer workflow and any automation scripts written for one transfer directly to the other.
+* **Conventions:**
+  * Runtime dependencies → `[project] dependencies`.
+  * Dev-only tools (`mypy`, `pytest`, `pytest-mock`) → `[dependency-groups] dev` (uv convention).
+  * Version is the single authoritative field in `[project] version` — read at runtime via `importlib.metadata.metadata("dsclinic")["Version"]` (see AD-11).
+  * `uv sync` to install/update all dependencies from `uv.lock`.
+  * `uv run python src/dsclinic.py` to run the app inside the managed venv.
+  * `uv run mypy src/` to run type checks.
+  * `uv run pytest` to run the test suite.
+* **Migration status:** `pyproject.toml` is in place and correct. `uv.lock` to be generated and committed when `uv` is formally adopted in the dev environment (next session that touches dependencies). Until then, `pip install -e .` inside `.venv` remains the fallback.
+* **Reference:** See GASSI `pyproject.toml` at `F:\__STORAGE\__PROJECTS_F\proj-gassi\proj_gassi2\pyproject.toml` for the canonical pattern to mirror.

@@ -4,17 +4,73 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.5.2"
-description = "MedAI Assistant - ViTec"
+version = "2.5.4"
+description = "Enterprise B2B Medical AI Analysis & Report Platform — ViTec"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+authors = [
+    { name = "ViTec", email = "your@email.com" },
+]
+
+# ── Runtime dependencies ───────────────────────────────────────────────────────
 dependencies = [
-    "google-genai",
-    "pydantic",
+    "google-genai>=1.0",
+    "pydantic>=2.9",
     "pydantic-settings>=2.6",
-    "keyring",
+    "keyring>=25.5",
+    "fpdf2>=2.7",
+    "presidio-analyzer>=2.2",
+    "presidio-anonymizer>=2.2",
+    "spacy>=3.7",
+    "easyocr>=1.7",
+    "Pillow>=11.0",
+    "pdf2image>=1.17",
+]
+
+[project.optional-dependencies]
+claude = [
+    "anthropic>=0.40",
+]
+local = [
+    "ollama>=0.3",
+]
+providers = [
+    "openai>=1.50",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-mock>=3.14",
+    "pyinstaller>=6.11",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[autopep8]
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+exclude = [
+    "src/test_guis/",
+    "src/gui_widgets/",
+    "src/npy/",
+    "src/anlyzer_manual\\.py",
+    "src/dsclinic_cli\\.py",
+    "src/pdf_maker\\.py",
+    "src/dsclinic_gui/redaction_worker\\.py",
+    "src/dsclinic_gui/report_view\\.py",
+    "src/dsclinic_gui/settings/settings_view\\.py",
+    "src/dsclinic_gui/dsclinic_gui_app\\.py",
+    "src/dsclinic_gui/styles\\.py",
+    "src/dsclinic_gui/widgets/toolbar\\.py",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.autopep8]
 max_line_length = 500

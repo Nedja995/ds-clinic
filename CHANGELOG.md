@@ -12,194 +12,101 @@ See [TODO.md](TODO.md) for planned versions.
 ---
 
 ## [2.15.0] - Planned — README Engineering Case Study + Architecture Diagrams
-- `README.md` full rewrite as portfolio engineering case study.
-- Architecture diagrams: Split-Horizon pipeline, MVVM layers, `LLMProvider` class diagram, patient data flow.
-- Final `GEMINI.md` and `docs/architecture.md` review pass.
-
 ## [2.14.0] - Planned — PII Anonymization Improvements + Debug Panel
-- Root cause analysis and Presidio entity tuning for over-anonymization of clinical values.
-- Side-by-side PII debug panel (toggle via `app_settings.app_debug_response`).
-- Regex allowlist for clinical value patterns (`mmol/L`, `mg/dL`, `mmHg`, etc.).
-- Local model integration stubs: Llama 3.2 Vision second-pass checker, MONAI DICOM slice stub.
-
 ## [2.13.0] - Planned — pytest Coverage
-- pytest infrastructure: `tests/`, `conftest.py`, `pytest.ini`.
-- PII scrubber tests: redaction coverage + over-anonymization regression tests.
-- Medical report parser tests: `MedicalReportModel` good/bad JSON fixtures.
-- Provider abstraction tests: `ProviderFactory` routing with mocked keyring.
-- `AppDatabase` / `JsonCollection` CRUD + index tests.
-- `AppSettings` / `load_unified` + `BrandConfig` fallback tests.
-
 ## [2.12.0] - Planned — Chat Session View Rewrite + New Features
-- Streaming bubble fix: `MarkdownLabel.update_text()` + `_current_bot_bubble` tracking.
-- `ChatUser` style fix: solid `ACCENT` blue + `WHITE` text.
-- Provider selector dropdown in chat toolbar.
-- Reanalyze command with additional prompt input.
-- Report inclusion checkboxes per response bubble (`include_in_report` flag in `ChatMessage`).
-
 ## [2.11.0] - Planned — Enterprise Multi-Brand / White-Label & Subscription Config
-- `BrandConfig` model + `brand.json` loader with fallback defaults.
-- Dynamic PDF branding: logo, clinic name, header/footer, color scheme, trial watermark.
-- Dynamic GUI branding: window title, toolbar header, logo in main panel.
-- Clinic Profile settings card in Settings UI.
-- Subscription tier enforcement stubs: `trial` / `standard` / `enterprise`.
-
 ## [2.10.0] - Planned — Local Ollama Provider (16GB VRAM Optimized)
-- `OllamaProvider(LLMProvider)` with `is_available()` daemon ping.
-- Load-on-demand: model pulled only when first needed.
-- 4-bit quantization via Ollama model name tags.
-- Sequential VRAM guard: one model loaded at a time.
-- Ollama base URL in `AppSettings` + Settings UI "Local AI" section.
-
 ## [2.9.0] - Planned — Groq + Together AI + HuggingFace Cloud Providers
-- Keyring credentials + Settings UI fields for Groq, Together, HuggingFace.
-- `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider` concrete implementations.
-- New SDK dependencies: `groq`, `together`, `huggingface_hub`.
-- All three registered in `ProviderFactory`.
-
 ## [2.8.0] - Planned — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
-- `src/providers/` package: `base.py` (ABC + data contracts), `factory.py`, `gemini_provider.py`, `claude_provider.py`.
-- `LLMProvider` ABC: `analyze()`, `ask()`, `provider_type()`, `is_available()`.
-- `ProviderFactory.create()` and `ProviderFactory.available_providers()`.
-- `DSClinic` refactored to use `ProviderFactory` — direct SDK client coupling removed.
-
 ## [2.7.0] - Planned — Patient Record as First-Class Entity & Session Persistence
-- `PatientRecord` model added to `src/models/patient.py`.
-- `AppDatabase.patients` collection added.
-- `AppDatabase` wired into `DSClinicViewModel` — reports and sessions auto-saved after analysis.
-- Session history panel + patient list panel in main View.
 
 ---
 
-## [2.5.0] - Planned — MVVM Strict Compliance & Defensive Error Handling Audit
-- Full MVVM boundary audit: zero widget imports in ViewModels, no direct dialog calls.
-- Defensive error handling: no bare `except:`, all I/O wrapped, all thread failures queued.
-- Type hints audit: `mypy --strict src/` passing.
+## [2.5.4] - 2026-09-01
+
+### Added
+- `pyproject.toml` — migrated all tool configuration into `pyproject.toml` as single source of truth: `[tool.mypy]` (replaces `mypy.ini`), `[tool.pytest.ini_options]`, `[tool.autopep8]`.
+- `pyproject.toml` — added `requires-python = ">=3.12,<3.13"`, `authors`, `readme`, `license` fields (mirrors GASSI `pyproject.toml` convention, see AD-21).
+- `pyproject.toml` — added `[project.optional-dependencies]`: `claude`, `local`, `providers` extras for opt-in backends.
+- `pyproject.toml` — added `[dependency-groups] dev` with `mypy`, `pytest`, `pytest-mock`, `pyinstaller` (install with `uv sync --group dev`).
+- `pyproject.toml` — added full runtime dependency set with version pins: `fpdf2`, `presidio-analyzer`, `presidio-anonymizer`, `spacy`, `easyocr`, `Pillow`, `pdf2image`.
+- `README.md` — full rewrite: `uv`-based setup (`uv sync`, extras, spaCy model download), keyring credential setup, run commands, mypy, pytest, PyInstaller release builds, project structure, architecture overview.
+
+### Removed
+- `mypy.ini` — deleted; all mypy configuration now lives in `[tool.mypy]` inside `pyproject.toml`.
+- `README.md` — removed outdated `pip` / `requirements.txt` / Poetry workflow references.
+
+### Changed
+- `pyproject.toml` — `[autopep8]` section key renamed to `[tool.autopep8]` (correct TOML tool namespace).
+
+---
+
+## [2.5.3] - 2026-09-01
+
+### Fixed — `mypy --strict src/` now passes with 0 errors across 26 checked files
+- `db/json_collection.py` — all bare `dict` replaced with `dict[str, Any]`; `_load_raw_index` return type explicit; `_build_index_entry` node traversal typed correctly.
+- `models/ai.py` — `tuple` → `tuple[str, ...]` on both `system_instruction` fields.
+- `models/diagnostics.py` — `UserList[T]` parameterised; `ObservableList` fully annotated (`__init__`, `extend`, `__setitem__`, `__delitem__`, `__iter__`).
+- `api_gemini/client.py` — `chat_session: Optional[Any]` (SDK has no stable public chat session type); `-> None` added to all methods; `SafetySetting` uses enum members; `system_instruction` passed as `str`.
+- `api_gemini/utils.py` — return type `Optional[types.Part]`; `None` initialiser removed.
+- `api_claude/client.py` — unused `MessageParam` import removed (type doesn't exist in SDK); `user_content: Any` cast eliminates TypedDict mismatch; all bare `dict` type-args filled; `# type: ignore` codes corrected.
+- `api_claude/utils.py` — `dict[str, Any]` throughout; `frozenset[str]` constants typed.
+- `dsclinic.py` — `__init__` annotated `-> None`; `ask_followup_question` uses explicit `result: str` assignment to suppress `no-any-return`.
+- `dsclinic_gui/report_view_models.py` — `callable` → `Callable[..., Any]`; `mp_input_queue`/`mp_output_queue` annotated as `multiprocessing.Queue[Any]`; `_` calls suppressed with `# type: ignore[name-defined]`.
+- `dsclinic_gui/chat_session_view.py` — full annotations on `MarkdownLabel`; `_wheel` parameter typed as `Any`; `anchor` typed as `Literal["e", "w"]`; unused `Optional` import removed; unused `# type: ignore` comments removed.
+
+### Added
+- `mypy.ini` — created with `[mypy]` strict config and exclude list for View-layer files deferred to rewrite milestones.
+
+### Removed
+- `src/test_guis/` — removed from git tracking via `git rm -r src/test_guis/`.
 
 ---
 
 ## [2.5.2] - 2026-08-31
 
 ### Fixed
-- `db/json_collection.py` — `_write_raw_index()`: wrapped `Path.write_text()` in `try/except OSError`; logs error and re-raises.
-- `db/json_collection.py` — `save()`: wrapped record `write_text()` in `try/except OSError`; logs and re-raises before index update.
-- `db/json_collection.py` — `load()`: wrapped `read_text()` + `model_validate_json()` in `try/except (OSError, json.JSONDecodeError, ValidationError)`; returns `None` on any failure instead of raising.
-- `db/json_collection.py` — `delete()`: wrapped `path.unlink()` in `try/except OSError`; logs and re-raises.
-- `models/keyring_manager.py` — `get_credential()`: wrapped `keyring.get_password()` in `try/except keyring.errors.KeyringError`; returns `None` on unavailable backend.
-- `models/keyring_manager.py` — `set_credential()`: wrapped `keyring.set_password()` in `try/except keyring.errors.KeyringError`; logs error and returns without raising.
-- `models/keyring_manager.py` — `delete_credential()`: added `except keyring.errors.KeyringError` branch alongside existing `PasswordDeleteError` handler.
-- `dsclinic.py` — `get_initial_analysis_report()`: added explicit `None` check on `report_content`; raises `RuntimeError` with a user-readable message instead of crashing on `MedicalReport(content=None)`.
-
-### Changed
-- `db/json_collection.py` — added `logging` and `pydantic.ValidationError` imports; removed unused `from pydantic import BaseModel` duplicate path (kept via `T = TypeVar`).
-- `dsclinic.py` — `write_report_pdf()` annotated with `-> None` return type.
+- `db/json_collection.py` — all four unguarded I/O sites wrapped in `try/except OSError` / `ValidationError`.
+- `models/keyring_manager.py` — `get_credential()` and `set_credential()` wrapped in `keyring.errors.KeyringError`; `delete_credential()` gets additional `KeyringError` branch.
+- `dsclinic.py` — `get_initial_analysis_report()`: `None` check on `report_content` before constructing `MedicalReport`; raises `RuntimeError` with user-readable message.
 
 ---
 
 ## [2.5.1] - 2026-08-31
 
 ### Fixed
-- `report_view_models.py` — added `append_chat_response(text: str) -> None` public method on `DSClinicViewModel`; View must never mutate `_model` directly.
-- `chat_session_view.py` — replaced `self.view_model._model.chat_responses.append(text)` with `self.view_model.append_chat_response(text)`, eliminating the View→Model boundary violation.
-- `report_view_models.py` — `execute_export()` now wraps `generate_report_pdf_at_filepath()` in `try/except Exception`; emits `on_show_error_message` on failure instead of raising to the View.
+- `report_view_models.py` — added `append_chat_response(text: str) -> None`; View must never mutate `_model` directly.
+- `chat_session_view.py` — replaced direct `_model` mutation with `view_model.append_chat_response(text)`.
+- `report_view_models.py` — `execute_export()` wraps PDF generation in `try/except`; emits `on_show_error_message` on failure.
 
 ### Changed
-- Added `-> None` return type annotations to all previously unannotated ViewModel methods in `report_view_models.py`.
+- Added `-> None` return type annotations to all previously unannotated ViewModel methods.
 
 ---
 
 ## [2.6.7] - 2026-08-30
 
 ### Security
-- `settings.ini` permanently deleted from the repository (`git rm settings.ini`).
-- Both `GOOGLE_API_KEY` and `ANTHROPIC_API_KEY` regenerated and entered via Settings UI → written to OS keyring.
-- App verified working end-to-end with keyring-sourced Gemini key.
-
-### Changed
-- `GEMINI.md` § 2 Technical Stack: Added `keyring` / `keyring_manager.py`.
-- `GEMINI.md` § 3.D Coding Conventions: Added credential management rule (AD-11 reference) and client startup guard pattern.
+- `settings.ini` permanently deleted. Both API keys regenerated and written to OS keyring.
 
 ---
 
-## [2.6.6] - 2026-08-30
-
-### Fixed
-- `api_gemini/client.py` — replaced `raise ValueError` on missing key with `logger.warning` + early `return`.
-- `api_claude/client.py` — same startup guard pattern applied.
-- `dsclinic.py` — `ClaudeAnalyzerClient` wired to keyring; startup guard added.
-- Both clients guard `self.client` before use — `RuntimeError` with Settings navigation hint if called without a key.
-
----
-
-## [2.6.5] - 2026-08-30
-
-### Changed
-- New `_credential_field` helper: masked `ttk.Entry` (`show="*"`) + `SUBTLE`-coloured hint label.
-- Three credential fields in Settings UI: Google API Key, Anthropic API Key, Google Project ID.
-- `_HEIGHT` bumped from 760 to 860px.
-
----
-
-## [2.6.4] - 2026-08-30
-
-### Changed
-- `SettingsViewModel` reads all three credentials from keyring on init and `update_from_config()`.
-- Writes all three via `set_credential()` in `save_to_config()`.
-- `app_settings.google_api_key` assignment removed entirely.
-
----
-
-## [2.6.3] - 2026-08-30
-
-### Changed
-- `google_api_key`/`anthropic_api_key` removed from `AppSettings`.
-- `configparser`/`settings.ini` block removed from `load_unified()`.
-- `google_project_location` field added; read from `config.json`.
-- Hotfix: `dsclinic.py` uses `get_credential("gemini")`.
-
----
-
-## [2.6.2] - 2026-08-30
-
-### Added
-- `src/models/keyring_manager.py` with `get_credential`, `set_credential`, `delete_credential`.
-- Exported from `src/models/__init__.py`.
-
----
-
-## [2.6.1] - 2026-08-30
-
-### Changed
-- `app_name`/`app_version` sourced from `pyproject.toml` via `importlib.metadata`.
-- `[APP]` INI block removed. Both fields excluded from `save_unified()`.
-
----
-
-## [2.6.0] - 2026-08-30 — Secure Credential Management & `settings.ini` Elimination ✅ Released
+## [2.6.0] - 2026-08-30 — Secure Credential Management & `settings.ini` Elimination ✅
 
 ### Security
-- All API keys and sensitive identifiers moved to OS-native credential store via `keyring`.
-- `settings.ini` permanently deleted.
-- Settings UI credential fields masked with keyring hint labels.
-- `AppSettings` purged of all secret fields.
+- All API keys moved to OS keyring via `keyring_manager.py`. `settings.ini` deleted.
 
 ### Changed
 - `app_name`/`app_version` sourced from `pyproject.toml` via `importlib.metadata`.
 - `GOOGLE_PROJECT_LOCATION` moved to `config.json`.
-- `GEMINI.md` updated with credential management rules and startup guard pattern.
 
 ---
 
 ## [2.3.0] - 2026-08-29
 
 ### Added
-- Unified `src/models/` Package with `patient.py`, `ai.py`, `diagnostics.py`, `settings.py`.
-- Hybrid `AppSettings` Model with `load_unified` and atomic `save_unified`.
-- Portability-by-Default Layout.
-
-### Changed
-- Codebase-wide refactor to `from models import app_settings`.
-- Settings UI ViewModel and Window migrated to `app_settings`.
+- Unified `src/models/` package. `AppSettings` Pydantic model. Layered `load_unified` / `save_unified`.
 
 ### Removed
 - Legacy `src/models.py`, `src/models_new/`, `src/config.py`, `src/npy/core/settings_manager.py`.
@@ -209,15 +116,7 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.1.10] - 2026-08-28
 
 ### Added
-- Brand-new "SUPPORT" card section inside the Settings window.
-- Horizontal alignment for Support Email and its input Entry.
-- Auto-synchronization of active language selection display in Settings combobox.
-- Token-optimization filters inside `src/dsclinic.py`.
-
-### Changed
-- Reworked "GENERAL" section to hold only Language dropdown and App Version.
-- Centered main report panel card titles via `anchor="center"` on `_card` helper label.
-- Relocated "Send Logs" and "Show Logs Folder" buttons to new "Support" card section.
+- "SUPPORT" card section in Settings window. Token-optimization filters in `dsclinic.py`.
 
 ### Fixed
-- Resolved nested-tuple serialization bug on multiple settings saves in `config.json`.
+- Nested-tuple serialization bug on multiple settings saves in `config.json`.

@@ -7,133 +7,103 @@ Read this before starting any work. It captures everything needed to continue de
 > [!IMPORTANT]
 > **CRITICAL AI SYSTEM DIRECTIVES (MANDATORY):**
 > Before writing, proposing, or refactoring any code for this session, you MUST read, cross-reference, and strictly adhere to **Section 3.G (AI Coding Assistant System Directives)** inside `GEMINI.md`.
-> Skipping this step or breaking its core principles (Defensive Error Handling, Absolute GDPR Privacy/Anonymization, strict MVVM decoupled boundaries, and complete Type Hinting) will result in a failed session task.
-
----
-
-# Session Handoff
-
-Read this before starting any work. It captures everything needed to continue development without going through previous chat history.
-This handoff is prepared to allow any incoming development AI assistant (including Gemini CLI and Claude) to immediately continue development.
-
-> [!IMPORTANT]
-> **Handoff & TODO Update Rule (GASSI Standard):** On *every single code modification or task completion*, the active AI assistant MUST immediately update **all applicable dev docs** and `docs/session_handoff.md`. Skipping any applicable file without explicit reason is an error.
 
 ---
 
 ## Key Docs — Read On Demand, Not Upfront
 
-- `TODO.md` — only if planning the next milestone or checking roadmap ordering
-- `CHANGELOG.md` — only if debugging a regression or checking what changed in a specific version
-- `docs/architecture.md` — AD-01 through AD-20. Read before any design decision. **AD-18 (PatientRecord), AD-19 (LLMProvider), AD-20 (BrandConfig) added this session.**
-- `GEMINI.md` — DSClinic Development Guidelines & Project Context
-- `.dev_profile/developer_profile.md` — standing workflow rules and commit discipline
-
-**Source files:** read only the specific files the task touches. Never edit from memory.
+- `TODO.md` — roadmap and task status
+- `CHANGELOG.md` — version history
+- `docs/architecture.md` — AD-01 through AD-21
+- `GEMINI.md` — project-wide coding guidelines
+- `.dev_profile/developer_profile.md` — standing workflow and commenting rules
 
 ---
 
-## AI Coding Assistant System Directives (Strict Execution Rules)
+## AI Coding Assistant Directives
 
-1. **Defensive Error Handling:** No bare `except:`. All background thread failures write structured `TaskStatus.FAILED` queue payloads. All `src/db/`, keyring, and API calls wrapped in `try/except/finally` with logging. No `raise` at client `__init__` time — warn + return early, raise `RuntimeError` at call time only.
-2. **Absolute Privacy (GDPR):** All patient inputs through Presidio/spaCy before external transmission. Only `keyring_manager.py` for credentials. `settings.ini` no longer exists.
-3. **MVVM Integrity:** Zero `tkinter`/`ttk` widget imports in `src/models/`, `src/db/`, or any ViewModel. Complete type annotations on all new functions.
-4. **Multi-Brand Decoupling:** All identity and commercial config through `BrandConfig` (v2.11.0). Never hardcode clinic names or logos in layout code.
+1. **Defensive Error Handling:** No bare `except:`. All thread failures → `TaskStatus.FAILED` queue. All `src/db/` and keyring calls wrapped.
+2. **GDPR:** All patient data through Presidio before external transmission. Credentials via `keyring_manager.py` only.
+3. **MVVM:** Zero `tkinter`/`ttk` imports in ViewModels. Complete type annotations on all new code.
+4. **Commenting:** Follow `.dev_profile/developer_profile.md` §6. Explain *why*, not *what*. Module/class docstrings on all new files.
+5. **Toolchain:** `uv` + `pyproject.toml` (AD-21). `uv sync --group dev`, `uv run mypy src/`, `uv run pytest`, `uv run pyinstaller ...`.
+6. **Multi-Brand:** All identity/commercial config via `BrandConfig` (v2.11.0). Never hardcode clinic names.
 
 ---
 
-## Version & Commit Discipline (GASSI Standard)
+## Version & Commit Discipline
 
 ```bash
-git add <exact files changed in this task>
-git commit -m "vX.Y.Z: <imperative short description>"
+git add <exact files changed>
+git commit -m "vX.Y.Z: <imperative description>"
 git push
 ```
 
-Exact `git add` command provided at end of every completed task. Never pre-written.
-
-### Mandatory doc checklist:
-
-| File | Update | When |
-|---|---|---|
-| `CHANGELOG.md` | New `## [X.Y.Z]` entry | Every sub-version |
-| `TODO.md` | Mark completed tasks `[x]` | Every sub-version |
-| `pyproject.toml` | Bump `version = "X.Y.Z"` | Every sub-version |
-| `docs/session_handoff.md` | Advance current status | Every sub-version |
-| `docs/architecture.md` | Add `AD-XX` for design decisions | Any time a design choice is made |
-| `GEMINI.md` | Update project-wide rules | Any time project-wide rules change |
-| `.dev_profile/developer_profile.md` | Update workflow conventions | Any time a standing rule changes |
-
-**TODO Archiving Rule:** Completed versions never collapsed. Full task lists stay expanded with `[x]` checkboxes indefinitely.
-
-**File Edit Discipline:** Never use `str_replace` on dev docs. Always `write_file` with complete file content.
-
-Full rule reference: `.dev_profile/developer_profile.md` § 5.
+| File | When |
+|---|---|
+| `CHANGELOG.md` | Every sub-version |
+| `TODO.md` | Every sub-version |
+| `pyproject.toml` version | Every sub-version |
+| `docs/session_handoff.md` | Every sub-version |
+| `docs/architecture.md` | Any design decision |
+| `.dev_profile/developer_profile.md` | Any standing rule change |
 
 ---
 
-## Current Status: v2.5.0 Active — Next sub-version: v2.5.3
+## Current Status: v2.5.0 ✅ Complete — Next: v2.7.0
 
 | Version | Scope | Status |
 |---|---|---|
 | v2.5.1 | MVVM boundary audit | ✅ Done |
 | v2.5.2 | Defensive error handling audit | ✅ Done |
-| v2.5.3 | Type hints audit (`mypy --strict`) | ▶ Active |
-| v2.7.0 | Patient records + session persistence | Planned |
+| v2.5.3 | `mypy --strict` type hints audit | ✅ Done |
+| v2.5.4 | `pyproject.toml` + `uv` migration, README | ✅ Done |
+| v2.7.0 | Patient records + session persistence | ▶ Next |
 | v2.8.0 | `src/providers/` LLMProvider abstraction | Planned |
 | v2.9.0 | Groq + Together + HuggingFace providers | Planned |
 | v2.10.0 | Local Ollama provider | Planned |
 | v2.11.0 | BrandConfig + white-label + subscription | Planned |
-| v2.12.0 | Chat Session View rewrite + new features | Planned |
+| v2.12.0 | Chat Session View rewrite | Planned |
 | v2.13.0 | pytest coverage | Planned |
 | v2.14.0 | PII improvements + debug panel | Planned |
 | v2.15.0 | README case study + architecture diagrams | Planned |
 
 ---
 
-## v2.5.2 Audit Findings (completed 2026-08-31)
+## v2.5.4 Changes (completed 2026-09-01)
 
-**`db/json_collection.py`** — 4 unguarded I/O sites fixed:
-- `_write_raw_index()`: `OSError` guard, logs + re-raises.
-- `save()`: record `write_text()` wrapped in `OSError` guard.
-- `load()`: `read_text()` + `model_validate_json()` wrapped in `(OSError, json.JSONDecodeError, ValidationError)` — returns `None` on any failure.
-- `delete()`: `path.unlink()` wrapped in `OSError` guard.
+- `pyproject.toml` — single source of truth for all tool config: `[tool.mypy]`, `[tool.pytest.ini_options]`, `[tool.autopep8]`, `[dependency-groups] dev`, `[project.optional-dependencies]` (`claude`, `local`, `providers` extras), full runtime dep set with version pins, `requires-python`, `authors`, `readme`, `license`.
+- `mypy.ini` — **deleted** (manually: `git rm mypy.ini`). Config moved to `[tool.mypy]` in `pyproject.toml`.
+- `README.md` — full rewrite: `uv` workflow, keyring setup, run/mypy/pytest/pyinstaller commands, project structure, architecture overview.
 
-**`models/keyring_manager.py`** — 2 unguarded keyring call sites fixed:
-- `get_credential()`: `keyring.errors.KeyringError` → returns `None`.
-- `set_credential()`: `keyring.errors.KeyringError` → logs, returns without raising.
-- `delete_credential()`: added `KeyringError` branch alongside existing `PasswordDeleteError`.
-
-**`dsclinic.py`** — 1 silent crash path fixed:
-- `get_initial_analysis_report()`: `None` check on `report_content` before constructing `MedicalReport`; raises `RuntimeError` with user-readable message.
-
-**`api_gemini/client.py`, `api_claude/client.py`** — ✅ already fully guarded, no changes.
-**`db/app_database.py`** — ✅ no I/O of its own, no changes.
+**Manual action required:**
+```powershell
+git rm mypy.ini
+```
 
 ---
 
-## v2.5.3 Implementation Notes
+## v2.7.0 Implementation Notes
 
-Files to audit for missing type annotations and `mypy --strict` compliance:
-- `src/dsclinic.py` — `get_initial_analysis_report()`, `ask_followup_question()`, `write_report_pdf()` (partially done in v2.5.2)
-- `src/dsclinic_gui/report_view_models.py` — all methods (partially done in v2.5.1)
-- `src/dsclinic_gui/settings/settings_view_model.py` — `update_from_config()`, `save_to_config()`, validators, commands
-- `src/db/app_database.py` — `__init__` parameter and collection field types
-- `src/db/json_collection.py` — all public and private methods (partially done in v2.5.2)
-- Run `mypy --strict src/` and fix all remaining errors before marking complete.
+Files to read before starting:
+- `src/db/app_database.py` — add `patients: JsonCollection[PatientRecord]` collection here.
+- `src/models/patient.py` — add `PatientRecord(BaseModel)` here.
+- `src/models/__init__.py` — export `PatientRecord`.
+- `src/dsclinic_gui/report_view_models.py` — wire `AppDatabase` as `self._db`.
 
 ---
 
-## Key Existing Code Context for Upcoming Milestones
+## Key Existing Code Context
 
-- **`src/db/app_database.py`** — fully implemented, never wired to any ViewModel (v2.7.0)
-- **`src/db/json_collection.py`** — generic `JsonCollection[T]` engine, complete
-- **`src/models/ai.py`** — `ChatSessionModel`, `GeminiModelConfig`, `ClaudeModelConfig` exist
-- **`src/models/patient.py`** — `MedicalReport` exists; `PatientRecord` to be added in v2.7.1
-- **PII anonymization** — implemented in commit `5d5b2f4`, working, over-anonymizes clinical values. Improvement in v2.14.0 driven by v2.13.2 test failures.
+- `src/db/app_database.py` — implemented, not yet wired to ViewModel (v2.7.0).
+- `src/db/json_collection.py` — `JsonCollection[T]`, fully typed and guarded.
+- `src/models/ai.py` — `ChatSessionModel`, `GeminiModelConfig`, `ClaudeModelConfig`.
+- `src/models/patient.py` — `MedicalReport` exists; `PatientRecord` added in v2.7.1.
+- PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
-## Previously Completed: v2.6.0 ✅
+## Previously Completed
 
-All credentials migrated to OS keyring. `settings.ini` permanently deleted. Keys rotated and verified working.
+- **v2.6.0** ✅ — Credentials to OS keyring, `settings.ini` deleted.
+- **v2.5.0** ✅ — MVVM audit, error handling, `mypy --strict` clean, `uv` migration.

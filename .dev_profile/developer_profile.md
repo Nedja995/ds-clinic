@@ -83,3 +83,24 @@ The AI assistant must check and update **every applicable file** from this list 
 - Never collapse or stub out completed TODO sections — keep all task detail fully visible.
 - Never remove or rewrite content the developer wrote in any dev doc — only add or update the specific section the task requires.
 - **Never use `str_replace` on dev docs (`TODO.md`, `CHANGELOG.md`, `session_handoff.md`, `architecture.md`, `developer_profile.md`) — always use `write_file` with the full file content.**
+
+---
+
+## 6. Code Commenting Standard
+
+All AI-generated code must follow senior production-grade commenting discipline. Comments explain **why**, not **what**. The reader is assumed to be a senior engineer who can read the code itself.
+
+### Rules
+
+- **Module docstrings:** Every new module gets a top-level docstring stating its responsibility, what it owns, and what it deliberately does NOT do. One short paragraph maximum.
+- **Class docstrings:** Every class gets a docstring explaining its role, its key invariants, and any non-obvious ownership rules (e.g. "ViewModels must never import tkinter"). Constructor parameters documented if non-obvious.
+- **Method/function docstrings:** Only when the signature and name are insufficient — i.e. when there is a non-obvious contract, side effect, or constraint the caller must know. One-liner docstrings preferred; full Args/Returns blocks only for public API surface.
+- **Inline comments:** Used sparingly. Only for:
+  - Non-obvious business logic that a senior engineer would genuinely stop at (e.g. "# GDPR: anonymized payload only — PII stripped in Layer 1 before this point").
+  - Deliberate deviations from the obvious approach with a one-line rationale (e.g. "# load-on-demand: only one model in VRAM at a time — see AD-13").
+  - `# type: ignore[...]` suppressions must include a comment explaining why the suppression is legitimate and when it should be removed.
+- **Section separators:** Long files may use `# ── Section Name ──` dividers to group logically related blocks. Used in `report_view_models.py` and `json_collection.py` as the canonical style.
+- **Forbidden:** Comments that restate the code (`# increment counter`, `# call the function`). TODO comments inside source files — all TODOs go in `TODO.md`. Commented-out dead code — delete it, git tracks history.
+
+### Tone
+Comments are written as if leaving a note for a competent colleague who will maintain this code in six months. Concise, precise, professional. No apologies, no filler.
