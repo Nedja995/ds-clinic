@@ -9,54 +9,6 @@
 
 ---
 
-## v2.5.0 — MVVM Strict Compliance & Defensive Error Handling Audit 🔐 Active
-
-**Why first:** Everything built on top of a broken foundation stays broken. Medical apps cannot silently crash or leak state. This is the #1 discipline question in EU HealthTech interviews. Every subsequent milestone depends on a correct, audited base.
-
----
-
-### v2.5.1 — MVVM Boundary Audit ✅ Completed
-
-- [x] Grep entire `src/dsclinic_gui/` for any `tkinter` widget imports (`Label`, `Button`, `Frame`, `ttk.*`) inside ViewModel files — must be zero.
-- [x] Verify no ViewModel calls `filedialog`, `messagebox`, or any dialog directly — delegate pattern only.
-- [x] Verify all background tasks use `threading.Thread` + `queue.Queue` + `root.after` polling — no direct widget mutations from worker threads.
-- [x] Verify `schedule_poll_fn` is the only Tkinter coupling in every ViewModel.
-- [x] Document any violations found and fix each one.
-  - Fixed: `chat_session_view.py` directly mutated `view_model._model.chat_responses` — replaced with `view_model.append_chat_response(text)` delegate method.
-  - Fixed: `execute_export()` raised raw exceptions to the View — now catches internally and emits `on_show_error_message`.
-  - Added `-> None` return type annotations to all unannotated ViewModel methods.
-
----
-
-### v2.5.2 — Defensive Error Handling Audit ✅ Completed
-
-- [x] Grep entire `src/` for bare `except:` — must be zero. Replace all with specific exception types.
-- [x] Wrap all `src/db/` file I/O operations in `try/except (OSError, json.JSONDecodeError)` with logging.
-  - `json_collection.py` `_write_raw_index()`: `OSError` guard added, logs and re-raises.
-  - `json_collection.py` `save()`: record `write_text()` wrapped in `OSError` guard.
-  - `json_collection.py` `load()`: `read_text()` + `model_validate_json()` wrapped in `(OSError, json.JSONDecodeError, ValidationError)` — returns `None` on any failure.
-  - `json_collection.py` `delete()`: `path.unlink()` wrapped in `OSError` guard.
-- [x] Wrap all keyring calls in `try/except keyring.errors.*` with graceful fallback.
-  - `keyring_manager.py` `get_credential()`: `keyring.errors.KeyringError` guard added — returns `None`.
-  - `keyring_manager.py` `set_credential()`: `keyring.errors.KeyringError` guard added — logs and returns without raising.
-  - `keyring_manager.py` `delete_credential()`: added `keyring.errors.KeyringError` branch alongside existing `PasswordDeleteError`.
-- [x] Wrap all background worker thread bodies in `try/except Exception` — always write `TaskStatus.FAILED` event to queue on failure, never let thread die silently.
-  - `report_view_models.py` worker threads: already fully wrapped (verified in v2.5.1 audit).
-- [x] Verify all `ProgressEvent(status=TaskStatus.FAILED)` events surface a user-readable message in the UI — not a raw Python exception string.
-  - Verified: all `FAILED` events emit `ErrorMessageEvent` via `on_show_error_message` in `_apply_progress_event`.
-- [x] Additional: `dsclinic.py` `get_initial_analysis_report()` — added `None` check on `report_content`; raises `RuntimeError` with user-readable message instead of crashing on `MedicalReport(content=None)`.
-
----
-
-### v2.5.3 — Type Hints Audit
-
-- [ ] Add missing return type annotations to all functions in `src/dsclinic.py`, `src/dsclinic_gui/report_view_models.py`, `src/dsclinic_gui/settings/`.
-- [ ] Add missing type annotations to `src/db/app_database.py` and `src/db/json_collection.py`.
-- [ ] Run `mypy --strict src/` and fix all errors.
-- [ ] Verify `docs/architecture.md` AD-01, AD-02, AD-16 accurately reflect the post-audit state.
-
----
-
 ## v2.7.0 — Patient Record as First-Class Entity & Session Persistence 📋 Next
 
 **Why:** `AppDatabase` (sessions, reports, ai_profiles) and `JsonCollection[T]` are fully implemented in `src/db/` but never wired to any ViewModel. Sessions are never saved. Reports are never persisted. A `Patient` model is missing entirely — currently a patient is only a name string inside `MedicalReport`. This is the data foundation every subsequent milestone depends on. See AD-18.
@@ -210,7 +162,7 @@
 
 ### v2.10.1 — Ollama Infrastructure & Config
 
-- [ ] Add `ollama` SDK to `pyproject.toml` dependencies.
+- [ ] Add `ollama` SDK to `pyproject.toml` optional extras (`local`).
 - [ ] Add `ollama_base_url: str = "http://localhost:11434"` to `AppSettings` (not keyring — not a secret).
 - [ ] Add `ollama_supported_models` list to `config.json` (e.g. `llama3.2-vision:q4_0`, `medgemma:q4_0`).
 - [ ] Add Ollama base URL entry field (plain, unmasked) to Settings UI under a new "Local AI" section.
@@ -345,9 +297,9 @@
 
 ### v2.13.1 — pytest Infrastructure
 
-- [ ] Add `pytest`, `pytest-mock`, `pytest-asyncio` to `pyproject.toml` dev dependencies.
+- [ ] `pytest`, `pytest-mock` already in `[dependency-groups] dev` in `pyproject.toml`. Add `pytest-asyncio`.
 - [ ] Create `tests/` directory with `conftest.py` and shared fixture helpers.
-- [ ] Add `pytest.ini` or `[tool.pytest.ini_options]` block to `pyproject.toml`.
+- [ ] Verify `[tool.pytest.ini_options]` block in `pyproject.toml` is correct (testpaths, asyncio_mode).
 
 ---
 
@@ -461,8 +413,80 @@
 ### v2.15.3 — Final Doc Pass
 
 - [ ] `GEMINI.md` final review: ensure all sections accurately reflect the fully-built v2.5.0–v2.15.0 architecture.
-- [ ] `docs/architecture.md` final review: verify all ADs (AD-01 through AD-20) are accurate and complete.
+- [ ] `docs/architecture.md` final review: verify all ADs (AD-01 through AD-21) are accurate and complete.
 - [ ] `docs/session_handoff.md` updated to reflect project completion status.
+
+---
+
+## v2.5.0 — MVVM Strict Compliance & Defensive Error Handling Audit ✅ Completed
+
+---
+
+### v2.5.4 — `pyproject.toml` + `uv` Migration & README Rewrite ✅ Completed
+
+- [x] `pyproject.toml` — added `requires-python`, `authors`, `readme`, `license` metadata (GASSI pattern, AD-21).
+- [x] `pyproject.toml` — full runtime dep set with version pins: `fpdf2>=2.7`, `presidio-analyzer>=2.2`, `presidio-anonymizer>=2.2`, `spacy>=3.7`, `easyocr>=1.7`, `Pillow>=11.0`, `pdf2image>=1.17`.
+- [x] `pyproject.toml` — added `[project.optional-dependencies]`: `claude`, `local`, `providers` extras.
+- [x] `pyproject.toml` — added `[dependency-groups] dev`: `mypy>=1.13`, `pytest>=8.3`, `pytest-mock>=3.14`, `pyinstaller>=6.11`.
+- [x] `pyproject.toml` — all tool config migrated in: `[tool.mypy]` (full exclude list), `[tool.pytest.ini_options]`, `[tool.autopep8]`.
+- [x] `mypy.ini` — deleted (`git rm mypy.ini`). All config now in `[tool.mypy]`.
+- [x] `README.md` — full rewrite: `uv` install, `uv sync --group dev`, optional extras, spaCy model download, keyring credential setup, run/mypy/pytest/pyinstaller commands, project structure, Split-Horizon architecture overview.
+- [x] `.dev_profile/developer_profile.md` — added §6 Code Commenting Standard.
+- [x] `docs/architecture.md` — added AD-21: `pyproject.toml` + `uv` canonical toolchain.
+
+---
+
+### v2.5.3 — Type Hints Audit (`mypy --strict`) ✅ Completed
+
+- [x] Add missing return type annotations to all functions in `src/dsclinic.py`, `src/dsclinic_gui/report_view_models.py`, `src/dsclinic_gui/settings/`.
+- [x] Add missing type annotations to `src/db/app_database.py` and `src/db/json_collection.py`.
+- [x] Run `mypy --strict src/` and fix all errors — **0 errors across 26 checked files**.
+  - `db/json_collection.py` — all bare `dict` → `dict[str, Any]`; `_load_raw_index` return typed; `_build_index_entry` node traversal typed.
+  - `models/ai.py` — `tuple` → `tuple[str, ...]` on `system_instruction` fields.
+  - `models/diagnostics.py` — `UserList[T]` parameterised; `ObservableList` fully annotated (`__init__`, `extend`, `__setitem__`, `__delitem__`, `__iter__`).
+  - `api_gemini/client.py` — `chat_session: Optional[Any]`; `-> None` on all methods; `SafetySetting` uses enum members; `system_instruction` passed as `str`.
+  - `api_gemini/utils.py` — `Optional[types.Part]` return; `None` init removed.
+  - `api_claude/client.py` — unused `MessageParam` import removed; `user_content: Any` cast eliminates TypedDict mismatch; all bare `dict` type-args filled; `# type: ignore` codes corrected.
+  - `api_claude/utils.py` — `dict[str, Any]` throughout; `frozenset[str]` constants typed.
+  - `dsclinic.py` — `__init__ -> None`; explicit `result: str` on `ask_followup_question` removes `no-any-return`.
+  - `dsclinic_gui/report_view_models.py` — `callable` → `Callable[..., Any]`; `mp_input_queue`/`mp_output_queue` annotated as `multiprocessing.Queue[Any]`; `_` calls suppressed with `# type: ignore[name-defined]`.
+  - `dsclinic_gui/chat_session_view.py` — full annotations on `MarkdownLabel`; `_wheel` typed as `Any`; `anchor` typed as `Literal["e", "w"]`; unused `Optional` import and unused `# type: ignore` comments removed.
+- [x] `mypy.ini` created with strict config and exclude list for View-layer files deferred to rewrite milestones.
+- [x] `src/test_guis/` removed from git tracking via `git rm -r src/test_guis/`.
+- [x] Verify `docs/architecture.md` AD-01, AD-02, AD-16 accurately reflect the post-audit state.
+
+---
+
+### v2.5.2 — Defensive Error Handling Audit ✅ Completed
+
+- [x] Grep entire `src/` for bare `except:` — must be zero. Replace all with specific exception types.
+- [x] Wrap all `src/db/` file I/O operations in `try/except (OSError, json.JSONDecodeError)` with logging.
+  - `json_collection.py` `_write_raw_index()`: `OSError` guard added, logs and re-raises.
+  - `json_collection.py` `save()`: record `write_text()` wrapped in `OSError` guard.
+  - `json_collection.py` `load()`: `read_text()` + `model_validate_json()` wrapped in `(OSError, json.JSONDecodeError, ValidationError)` — returns `None` on any failure.
+  - `json_collection.py` `delete()`: `path.unlink()` wrapped in `OSError` guard.
+- [x] Wrap all keyring calls in `try/except keyring.errors.*` with graceful fallback.
+  - `keyring_manager.py` `get_credential()`: `keyring.errors.KeyringError` guard added — returns `None`.
+  - `keyring_manager.py` `set_credential()`: `keyring.errors.KeyringError` guard added — logs and returns without raising.
+  - `keyring_manager.py` `delete_credential()`: added `keyring.errors.KeyringError` branch alongside existing `PasswordDeleteError`.
+- [x] Wrap all background worker thread bodies in `try/except Exception` — always write `TaskStatus.FAILED` event to queue on failure, never let thread die silently.
+  - `report_view_models.py` worker threads: already fully wrapped (verified in v2.5.1 audit).
+- [x] Verify all `ProgressEvent(status=TaskStatus.FAILED)` events surface a user-readable message in the UI — not a raw Python exception string.
+  - Verified: all `FAILED` events emit `ErrorMessageEvent` via `on_show_error_message` in `_apply_progress_event`.
+- [x] Additional: `dsclinic.py` `get_initial_analysis_report()` — added `None` check on `report_content`; raises `RuntimeError` with user-readable message instead of crashing on `MedicalReport(content=None)`.
+
+---
+
+### v2.5.1 — MVVM Boundary Audit ✅ Completed
+
+- [x] Grep entire `src/dsclinic_gui/` for any `tkinter` widget imports (`Label`, `Button`, `Frame`, `ttk.*`) inside ViewModel files — must be zero.
+- [x] Verify no ViewModel calls `filedialog`, `messagebox`, or any dialog directly — delegate pattern only.
+- [x] Verify all background tasks use `threading.Thread` + `queue.Queue` + `root.after` polling — no direct widget mutations from worker threads.
+- [x] Verify `schedule_poll_fn` is the only Tkinter coupling in every ViewModel.
+- [x] Document any violations found and fix each one.
+  - Fixed: `chat_session_view.py` directly mutated `view_model._model.chat_responses` — replaced with `view_model.append_chat_response(text)` delegate method.
+  - Fixed: `execute_export()` raised raw exceptions to the View — now catches internally and emits `on_show_error_message`.
+  - Added `-> None` return type annotations to all unannotated ViewModel methods.
 
 ---
 
