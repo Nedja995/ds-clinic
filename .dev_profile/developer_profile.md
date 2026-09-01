@@ -64,13 +64,22 @@ The AI assistant must check and update **every applicable file** from this list 
 | `GEMINI.md` | Update architectural guidelines or project-wide workflow rules | Any time project-wide rules change |
 | `.dev_profile/developer_profile.md` | Update workflow rules, constraints, or standing conventions | Any time a standing rule is added or changed |
 
+### TODO Sorting Rule (Strict Descending Version Order)
+`TODO.md` is always sorted **newest version number at the top, oldest at the bottom**. This rule applies at every level:
+
+- **Planned section:** highest upcoming version number at the top, lowest at the bottom.
+- **Completed section:** highest completed version number at the top, lowest at the bottom. When a version is completed it is inserted above all older completed versions — never appended at the bottom.
+- **Sub-versions within a parent:** listed newest-first inside their parent block (e.g. v2.5.4 above v2.5.3 above v2.5.2 above v2.5.1).
+
+The AI assistant must verify and correct sort order on every `TODO.md` edit. Inserting a completed version below an older one is an error.
+
+### TODO Completion Rule
+**Completed versions are never collapsed or summarised.** Every completed sub-version and its full task list remains fully expanded with `[x]` checkboxes in `TODO.md` indefinitely. The only change on completion is marking tasks `[x]` and adding a ✅ to the section heading. Never remove task detail, never replace a completed section with a one-liner stub.
+
 ### File Edit Discipline
 **When updating any dev doc, the AI assistant must only change the sections relevant to the current task.** The AI must never reformat, restructure, rewrite, or remove content written by the developer. If the file needs a status update, update only that section. Leave all other content exactly as the developer wrote it — including phrasing, structure, and ordering.
 
 **Dev doc write tool rule:** When updating `TODO.md`, `CHANGELOG.md`, `docs/session_handoff.md`, `docs/architecture.md`, or `.dev_profile/developer_profile.md`, always use `write_file` with the **complete file content**. Never use `str_replace` on these files — a partial match or off-by-one error silently destroys the rest of the file, as happened in commit `e6c28bf`.
-
-### TODO Archiving Rule
-**Completed versions are never collapsed or summarised.** Every completed sub-version and its full task list remains fully expanded with `[x]` checkboxes in `TODO.md` indefinitely. The only change on completion is marking tasks `[x]` and adding a ✅ to the section heading. Never remove task detail, never replace a completed section with a one-liner stub.
 
 ### What NOT to Do
 - Never use `git add .` — always stage specific files only.
@@ -83,6 +92,7 @@ The AI assistant must check and update **every applicable file** from this list 
 - Never collapse or stub out completed TODO sections — keep all task detail fully visible.
 - Never remove or rewrite content the developer wrote in any dev doc — only add or update the specific section the task requires.
 - **Never use `str_replace` on dev docs (`TODO.md`, `CHANGELOG.md`, `session_handoff.md`, `architecture.md`, `developer_profile.md`) — always use `write_file` with the full file content.**
+- **Never insert a completed version below an older completed version in `TODO.md` — the whole file is always newest-first.**
 
 ---
 
