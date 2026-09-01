@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.7.2"
+version = "2.7.3"
 description = "Enterprise B2B Medical AI Analysis & Report Platform — ViTec"
 readme = "README.md"
 license = "MIT"
@@ -67,6 +67,8 @@ exclude = [
     "src/dsclinic_gui/dsclinic_gui_app\\.py",
     "src/dsclinic_gui/styles\\.py",
     "src/dsclinic_gui/widgets/toolbar\\.py",
+    "src/dsclinic_gui/session_history_view\\.py",
+    "src/dsclinic_gui/main_container\\.py",
 ]
 
 [tool.pytest.ini_options]

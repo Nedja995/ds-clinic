@@ -23,6 +23,24 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.7.3] - 2026-09-01
+
+### Added
+- `src/dsclinic_gui/session_history_view.py` — new `SessionHistoryView(ttk.Frame)` sidebar widget. Subscribes to `on_sessions_changed`; rebuilds `tk.Listbox` from `var_sessions_index` on every update. Clicking a row calls `view_model.load_session(session_id)`. "New Session" button calls `view_model.new_session()`. Empty-state label shown when no sessions exist yet.
+- `src/dsclinic_gui/report_view_models.py` — `var_sessions_index: list[dict]` attribute, populated from `_db.sessions.list_index()` on init and refreshed after every `_persist_session()` call.
+- `src/dsclinic_gui/report_view_models.py` — `on_sessions_changed: EventEmitter` — fired whenever `var_sessions_index` is refreshed.
+- `src/dsclinic_gui/report_view_models.py` — `_refresh_sessions_index()`: reloads index from disk and emits `on_sessions_changed`.
+- `src/dsclinic_gui/report_view_models.py` — `load_session(session_id: str)`: loads `ChatSessionModel` from DB, replaces `_model` and `_session`, emits `on_vm_data_changed`.
+- `src/dsclinic_gui/report_view_models.py` — `new_session()`: resets all model/session/observable state to defaults, emits `on_vm_data_changed`.
+- `src/dsclinic_gui/styles.py` — `SIDEBAR_BG`, `SIDEBAR_STRIP` palette constants; `SidebarPanel.TFrame`, `SidebarStrip.TFrame`, `SidebarTitle.TLabel`, `SidebarEmpty.TLabel` style definitions.
+
+### Changed
+- `src/dsclinic_gui/main_container.py` — three-pane layout: `SessionHistoryView` (weight=2) added as leftmost pane; `MedicalReportView` weight reduced from 8 to 6 to preserve proportional feel. Module and class docstrings added.
+- `src/dsclinic_gui/report_view_models.py` — `_persist_session()` now calls `_refresh_sessions_index()` after every save so the sidebar stays current.
+- `pyproject.toml` — `session_history_view.py` and `main_container.py` added to `[tool.mypy]` exclude list (View-layer files, deferred to rewrite milestones).
+
+---
+
 ## [2.7.2] - 2026-09-01
 
 ### Added

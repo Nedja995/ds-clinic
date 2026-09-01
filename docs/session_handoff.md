@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.7.2 ✅ Complete — Next: v2.7.3
+## Current Status: v2.7.3 ✅ Complete — Next: v2.7.4
 
 | Version | Scope | Status |
 |---|---|---|
@@ -60,8 +60,8 @@ git push
 | v2.5.4 | `pyproject.toml` + `uv` migration, README | ✅ Done |
 | v2.7.1 | `PatientRecord` model + `AppDatabase` extension | ✅ Done |
 | v2.7.2 | Wire `AppDatabase` into `DSClinicViewModel` | ✅ Done |
-| v2.7.3 | Session history panel (View + ViewModel) | ▶ Next |
-| v2.7.4 | Patient list panel (View + ViewModel) | Planned |
+| v2.7.3 | Session history panel (View + ViewModel) | ✅ Done |
+| v2.7.4 | Patient list panel (View + ViewModel) | ▶ Next |
 | v2.8.0 | `src/providers/` LLMProvider abstraction | Planned |
 | v2.9.0 | Groq + Together + HuggingFace providers | Planned |
 | v2.10.0 | Local Ollama provider | Planned |
@@ -73,49 +73,45 @@ git push
 
 ---
 
-## v2.7.2 Changes (completed 2026-09-01)
+## v2.7.3 Changes (completed 2026-09-01)
 
-- `src/dsclinic_gui/report_view_models.py`:
-  - `self._db: AppDatabase` instantiated once in `__init__`.
-  - `self._session: ChatSessionModel` tracks the active session (wraps current report + chat history).
-  - `self._pending_question: str` stashes submitted question text so the `FINISHED` handler can build the `ChatMessage` pair without re-reading the already-cleared `StringVar`.
-  - `_persist_report()`: saves `MedicalReport` to `_db.reports`; failures logged and swallowed.
-  - `_persist_session()`: re-saves `ChatSessionModel` to `_db.sessions`; syncs `session.report` to current model before writing.
-  - `_apply_progress_event` `FINISHED/MedicalReport` branch: calls `_persist_report` → creates fresh `ChatSessionModel` → calls `_persist_session`.
-  - `_apply_progress_event` `FINISHED/str` branch: appends `ChatMessage` pair to `_session.chat_history`, clears `_pending_question`, calls `_persist_session`.
-  - `followup_question_submit()`: stashes question into `_pending_question` before clearing `var_initial_question`.
+- `src/dsclinic_gui/session_history_view.py` — new `SessionHistoryView(ttk.Frame)`. Header strip, "New Session" button, scrollable `tk.Listbox`, empty-state label. Subscribes to `on_sessions_changed`; rebuilds list on every update. Row click → `view_model.load_session(session_id)`. Button → `view_model.new_session()`. Parallel `_session_ids` list keeps index→session_id mapping in sync with listbox.
+- `src/dsclinic_gui/report_view_models.py` — added `var_sessions_index`, `on_sessions_changed` EventEmitter, `_refresh_sessions_index()`, `load_session()`, `new_session()`. `_persist_session()` now calls `_refresh_sessions_index()` after every save.
+- `src/dsclinic_gui/styles.py` — added `SIDEBAR_BG`, `SIDEBAR_STRIP` constants; `SidebarPanel.TFrame`, `SidebarStrip.TFrame`, `SidebarTitle.TLabel`, `SidebarEmpty.TLabel` styles.
+- `src/dsclinic_gui/main_container.py` — three-pane layout: `SessionHistoryView` (weight=2) | `MedicalReportView` (weight=6) | `ChatSessionView` (weight=2). Module + class docstrings added.
+- `pyproject.toml` — `session_history_view.py` and `main_container.py` added to `[tool.mypy]` exclude list.
 
 ---
 
-## v2.7.3 Implementation Notes
+## v2.7.4 Implementation Notes
 
 Files to read before starting:
-- `src/dsclinic_gui/report_view_models.py` — `self._db` and `self._session` now available; add `var_sessions_index` observable here.
-- `src/dsclinic_gui/report_view.py` — main View file; this is where the session history panel widget gets added.
-- `src/db/json_collection.py` — `list_index()` returns `list[dict[str, Any]]`; index keys for sessions are `session_id`, `report_report_date`, `report_content_patient_name` (dot-paths flattened with `_`).
+- `src/dsclinic_gui/report_view_models.py` — add `var_patients_index`, `load_patient_sessions()`, `new_patient()`, `save_new_patient()` here.
+- `src/dsclinic_gui/session_history_view.py` — add patient filter support: when a patient is selected, filter the listbox to show only sessions whose `session_id` is in the patient's `session_ids` list.
+- `src/models/patient.py` — `PatientRecord` fields: `patient_id`, `full_name`, `date_of_birth`, `created_at`, `session_ids`.
 
-Key decisions for v2.7.3:
-- `var_sessions_index` is a plain Python list attribute on the ViewModel (not a `tk.StringVar`) — the View reads it on `on_vm_data_changed` to rebuild the listbox/treeview.
-- Session history panel is a sidebar or collapsible panel in the existing main View layout — do not create a new top-level window.
-- Loading a session replaces `self._model` and `self._session` on the ViewModel and emits `on_vm_data_changed`.
-- "New Session" resets `_model`, `_session`, `_pending_question`, and all observable vars to defaults, then emits `on_vm_data_changed`.
+Key decisions for v2.7.4:
+- Patient list panel is a second tab or section within `SessionHistoryView` — use `ttk.Notebook` with two tabs: "Sessions" and "Patients". Keeps the sidebar footprint unchanged.
+- "New Patient" form: inline entry fields at the bottom of the Patients tab (full_name, date_of_birth) + Save button. No separate dialog.
+- Clicking a patient filters `var_sessions_index` in the Sessions tab to show only that patient's sessions. Clicking "All" or deselecting restores the full list.
+- `PatientRecord.session_ids` is updated when a new session is saved and a patient is selected/active — v2.7.4 adds this linkage.
 
 ---
 
 ## Key Existing Code Context
 
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` collections all implemented.
-- `src/db/json_collection.py` — `JsonCollection[T]`, fully typed and guarded. `list_index()` returns lightweight index without loading full records.
-- `src/models/patient.py` — `PatientRecord` added in v2.7.1. `MedicalReport` existing.
-- `src/models/ai.py` — `ChatSessionModel` (session_id, model_settings, report, chat_history), `ChatMessage`.
-- `src/dsclinic_gui/report_view_models.py` — `self._db`, `self._session`, `_persist_report()`, `_persist_session()` all wired in v2.7.2.
-- PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
+- `src/db/json_collection.py` — `list_index()` returns lightweight index. `save()`, `load()`, `delete()` all guarded.
+- `src/models/patient.py` — `PatientRecord` (patient_id, full_name, date_of_birth, created_at, session_ids).
+- `src/dsclinic_gui/session_history_view.py` — `SessionHistoryView` with `_rebuild_list()`, `_session_ids`, `on_sessions_changed` subscription.
+- `src/dsclinic_gui/report_view_models.py` — `var_sessions_index`, `on_sessions_changed`, `_refresh_sessions_index()`, `load_session()`, `new_session()` all wired in v2.7.3.
 
 ---
 
 ## Previously Completed
 
-- **v2.7.2** ✅ — `AppDatabase` wired into `DSClinicViewModel`; report + session auto-persist after analysis and Q&A.
-- **v2.7.1** ✅ — `PatientRecord` model, `AppDatabase.patients` collection, export from `models/__init__`.
+- **v2.7.3** ✅ — `SessionHistoryView` sidebar, `load_session()`, `new_session()`, `on_sessions_changed` event, sidebar styles, three-pane `MainContainerView`.
+- **v2.7.2** ✅ — `AppDatabase` wired into `DSClinicViewModel`; report + session auto-persist.
+- **v2.7.1** ✅ — `PatientRecord` model, `AppDatabase.patients` collection.
 - **v2.6.0** ✅ — Credentials to OS keyring, `settings.ini` deleted.
 - **v2.5.0** ✅ — MVVM audit, error handling, `mypy --strict` clean, `uv` migration.

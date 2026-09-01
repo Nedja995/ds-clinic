@@ -1,5 +1,12 @@
+"""
+Main layout controller.
 
+Owns: the top-level horizontal PanedWindow that divides the three primary
+panes — session history sidebar (left), report form (centre), chat (right).
 
+Does NOT own: any business logic, persistence, or widget state beyond the
+sash layout.
+"""
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
@@ -7,25 +14,24 @@ from typing import Any
 from dsclinic_gui.report_view import MedicalReportView
 from dsclinic_gui.report_view_models import DSClinicViewModel
 from dsclinic_gui.chat_session_view import ChatSessionView
-from dsclinic_gui.constants import INIT_WIDTH
+from dsclinic_gui.session_history_view import SessionHistoryView
+
 
 class MainContainerView(ttk.PanedWindow):
     """
-    Main layout controller. Uses a horizontal PanedWindow to separate 
-    left and right views with a vertical, draggable sash.
+    Three-pane horizontal layout:
+      weight=2  SessionHistoryView  — saved session sidebar
+      weight=6  MedicalReportView   — report form (reduced from 8 to make room)
+      weight=2  ChatSessionView     — AI chat panel
     """
+
     def __init__(self, parent: tk.Misc, view_model: DSClinicViewModel, **kwargs: Any) -> None:
-        # orient=tk.HORIZONTAL creates panes side-by-side separated by a vertical line
         super().__init__(parent, orient=tk.HORIZONTAL, **kwargs)
 
-        # Instantiate sub-views
-        self.left_view = MedicalReportView(self, view_model, padding=4)
-        self.right_view = ChatSessionView(self, view_model, padding=4)
+        self.session_view = SessionHistoryView(self, view_model)
+        self.left_view    = MedicalReportView(self, view_model, padding=4)
+        self.right_view   = ChatSessionView(self, view_model, padding=4)
 
-        # Add views to PanedWindow
-        self.add(self.left_view, weight=8)  # weight=8 means it takes 8 parts of the scalable space (80% of the total width)
-        self.add(self.right_view, weight=2) # weight=2 means it takes 2 parts of the scalable space (20% of the total width)
-
-
-        # self.left_view.configure(width=left_w)
-        # self.right_view.configure(width=right_w)
+        self.add(self.session_view, weight=2)
+        self.add(self.left_view,    weight=6)
+        self.add(self.right_view,   weight=2)

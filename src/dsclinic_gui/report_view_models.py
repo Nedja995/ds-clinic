@@ -70,6 +70,11 @@ class DSClinicViewModel:
         self.var_report_date = tk.StringVar(value=self._model.report_date)
         self.var_input_dir = tk.StringVar(value=self._model.input_dir)
 
+        # Session history index — plain list updated whenever sessions change.
+        # The View reads this on on_sessions_changed to rebuild the sidebar list.
+        # Each entry is the flat dict produced by JsonCollection.list_index().
+        self.var_sessions_index: list[dict[str, Any]] = self._db.sessions.list_index()
+
         # Chat session (TODO: get rid of these)
         self.var_initial_question = tk.StringVar(value="")
         self.var_response = tk.StringVar(value="")
@@ -91,6 +96,9 @@ class DSClinicViewModel:
         self.on_show_error_message: EventEmitter = EventEmitter()
         self.on_export_requested:   EventEmitter = EventEmitter()
         self.on_export_succeeded:   EventEmitter = EventEmitter()
+        # Fired whenever var_sessions_index is refreshed — SessionHistoryView
+        # subscribes to rebuild its list without coupling to on_vm_data_changed.
+        self.on_sessions_changed:   EventEmitter = EventEmitter()
 
         self.dsclinicapp = DSClinic(model_name=app_settings.ai_model_name)
 
@@ -129,7 +137,7 @@ class DSClinicViewModel:
         """Re-save the current ChatSessionModel after any mutation.
 
         Called after analysis completion and after each Q&A exchange so the
-        session is always recoverable from disk.
+        session is always recoverable from disk. Also refreshes the sidebar index.
         """
         # Keep session.report in sync with the current model state.
         self._session.report = self._model
@@ -138,6 +146,83 @@ class DSClinicViewModel:
             logger.info("Session %r auto-saved to AppDatabase.", self._session.session_id)
         except (OSError, Exception) as e:
             logger.error("Failed to auto-save session %r: %s", self._session.session_id, e, exc_info=True)
+
+        self._refresh_sessions_index()
+
+    def _refresh_sessions_index(self) -> None:
+        """Reload the flat session index from disk and notify the sidebar."""
+        try:
+            self.var_sessions_index = self._db.sessions.list_index()
+        except (OSError, Exception) as e:
+            logger.error("Failed to refresh sessions index: %s", e, exc_info=True)
+            self.var_sessions_index = []
+        self.on_sessions_changed.emit()
+
+    # ── Session management ────────────────────────────────────────────────────
+
+    def load_session(self, session_id: str) -> None:
+        """Restore a previously saved session from disk.
+
+        Replaces the current model and session state. Emits on_vm_data_changed
+        so the report form rebuilds from the loaded data.
+        """
+        if self.var_is_analyzing.get():
+            logger.warning("Cannot load session while analysis is running.")
+            return
+
+        try:
+            loaded_session = self._db.sessions.load(session_id)
+        except (OSError, Exception) as e:
+            logger.error("Failed to load session %r: %s", session_id, e, exc_info=True)
+            self.on_show_error_message.emit(ErrorMessageEvent(
+                title="Load Failed",
+                message=f"Could not load session: {e}",
+            ))
+            return
+
+        if loaded_session is None:
+            self.on_show_error_message.emit(ErrorMessageEvent(
+                title="Not Found",
+                message=f"Session {session_id!r} not found on disk.",
+            ))
+            return
+
+        self._session = loaded_session
+        self._model = loaded_session.report
+        self._pending_question = ""
+        self._update_viewmodel_from_model()
+        self.on_vm_data_changed.emit()
+        logger.info("Session %r loaded and restored.", session_id)
+
+    def new_session(self) -> None:
+        """Reset all state to defaults and start a fresh session.
+
+        Does not persist anything — the new session is saved to disk only after
+        the first analysis completes.
+        """
+        if self.var_is_analyzing.get():
+            logger.warning("Cannot start new session while analysis is running.")
+            return
+
+        self._model = MedicalReport()
+        self._session = ChatSessionModel(report=self._model)
+        self._pending_question = ""
+        self.therapy_text_content = ""
+        self.findings = []
+        self.therapy_data = []
+
+        self.var_patient_name.set(self._model.content.patient_name)
+        self.var_report_date.set(self._model.report_date)
+        self.var_input_dir.set(self._model.input_dir)
+        self.var_response.set("")
+        self.var_initial_question.set("")
+        self.var_status_title.set("IDLE")
+        self.var_status_detail.set("Ready")
+        self.var_progress_value.set(0.0)
+        self.var_btn_analyze_text.set(_("Analyze"))  # type: ignore[name-defined]
+
+        self.on_vm_data_changed.emit()
+        logger.info("New session started.")
 
     # --- Logic: Data Management ---
 

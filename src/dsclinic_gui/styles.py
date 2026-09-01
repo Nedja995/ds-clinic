@@ -24,6 +24,10 @@ WHITE     = "#FFFFFF"
 SHADOW    = "#0D1B2A"
 PB_TRACK  = "#C8D8E8"
 
+# Sidebar palette — slightly deeper than main BG to visually separate the pane.
+SIDEBAR_BG    = "#E4EBF2"
+SIDEBAR_STRIP = "#14527E"   # darker shade of ACCENT for the sidebar header
+
 # ── Fonts ─────────────────────────────────────────────────────────────────────
 F_UI = "Segoe UI"
 FL   = (F_UI, 10, "bold")
@@ -59,7 +63,17 @@ def build_styles():
     s.configure("RowA.TFrame",     background=ROW_A)
     s.configure("RowB.TFrame",     background=ROW_B)
     s.configure("Rows.TFrame",     background=BG)
-    
+
+    # ── Sidebar ───────────────────────────────────────────────────────
+    s.configure("SidebarPanel.TFrame",  background=SIDEBAR_BG)
+    s.configure("SidebarStrip.TFrame",  background=SIDEBAR_STRIP)
+    s.configure("SidebarTitle.TLabel",
+                background=SIDEBAR_STRIP, foreground=WHITE,
+                font=FB, padding=(8, 0))
+    s.configure("SidebarEmpty.TLabel",
+                background=SIDEBAR_BG, foreground=SUBTLE,
+                font=FS)
+
     # Chat message styles
     s.configure("ChatUser.TFrame", background=ACCENT_LT)
     s.configure("ChatBot.TFrame",  background=WHITE)

@@ -382,6 +382,15 @@
 
 ---
 
+### v2.7.3 — Session History Panel (View + ViewModel) ✅ Completed
+
+- [x] Add `var_sessions_index: list[dict]` observable to ViewModel, populated from `self._db.sessions.list_index()`.
+- [x] Build a session history sidebar or panel in the main View listing recent sessions (patient name, date, session_id).
+- [x] Clicking a session loads the full `ChatSessionModel` via `self._db.sessions.load(session_id)` and restores analysis state.
+- [x] Add a "New Session" button that clears current state and starts fresh.
+
+---
+
 ### v2.7.2 — Wire `AppDatabase` into `DSClinicViewModel` ✅ Completed
 
 - [x] Instantiate `AppDatabase` once in `DSClinicViewModel.__init__` — store as `self._db`.
@@ -398,15 +407,6 @@
 - [x] Add `patients: JsonCollection[PatientRecord]` collection to `AppDatabase` at `app_data/patients/`.
 - [x] Index fields for patients: `patient_id`, `full_name`, `created_at`.
 - [x] Export `PatientRecord` from `src/models/__init__.py`.
-
----
-
-### v2.7.3 — Session History Panel (View + ViewModel)
-
-- [ ] Add `var_sessions_index: list[dict]` observable to ViewModel, populated from `self._db.sessions.list_index()`.
-- [ ] Build a session history sidebar or panel in the main View listing recent sessions (patient name, date, session_id).
-- [ ] Clicking a session loads the full `ChatSessionModel` via `self._db.sessions.load(session_id)` and restores analysis state.
-- [ ] Add a "New Session" button that clears current state and starts fresh.
 
 ---
 
