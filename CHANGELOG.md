@@ -18,8 +18,21 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.11.0] - Planned — Enterprise Multi-Brand / White-Label & Subscription Config
 ## [2.10.0] - Planned — Local Ollama Provider (16GB VRAM Optimized)
 ## [2.9.0] - Planned — Groq + Together AI + HuggingFace Cloud Providers
-## [2.8.0] - Planned — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
+## [2.8.0] - In Progress — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
 ## [2.7.0] - Completed — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.8.1] - 2026-09-02
+
+### Added
+- `src/providers/` — new package directory created.
+- `src/providers/__init__.py` — package init; exports `LLMProvider`, `ProviderType`, `ProviderRequest`, `ProviderResponse`.
+- `src/providers/base.py` — abstract LLMProvider interface and shared data contracts (AD-19):
+  - `ProviderType(StrEnum)` — `GEMINI`, `CLAUDE`, `GROQ`, `TOGETHER`, `HUGGINGFACE`, `OLLAMA`.
+  - `ProviderRequest(BaseModel)` — `documents: list[Any]`, `question: str`, `system_instructions: list[str]`, `temperature: float`, `max_tokens: int`.
+  - `ProviderResponse(BaseModel)` — `text: str`, `provider: ProviderType`, `model_name: str`, `tokens_used: int | None`.
+  - `LLMProvider(ABC)` — abstract methods: `analyze()`, `ask()`, `provider_type()`, `is_available()`.
 
 ---
 

@@ -325,23 +325,23 @@
 
 ---
 
-## v2.8.0 — `src/providers/` LLMProvider Abstraction (Gemini + Claude) 🔌 Planned
+## v2.8.0 — `src/providers/` LLMProvider Abstraction (Gemini + Claude) 🔌 In Progress
 
 **Why:** Core architectural showpiece. Currently `DSClinic` is hard-coupled to `MedicalAnalyzerClient`. The interview pitch is: *"I designed a pluggable inference pipeline that hot-swaps between 6 providers without touching business logic."* Every provider milestone (v2.9.0, v2.10.0) and the Split-Horizon Architecture (AD-12) depend on this interface. See AD-19.
 
 ---
 
-### v2.8.1 — `LLMProvider` Abstract Base & Data Contracts (`src/providers/base.py`)
+### v2.8.1 — `LLMProvider` Abstract Base & Data Contracts (`src/providers/base.py`) ✅ Completed
 
-- [ ] Create `src/providers/` package with `__init__.py`.
-- [ ] Define `ProviderType(StrEnum)`: `GEMINI`, `CLAUDE`, `GROQ`, `TOGETHER`, `HUGGINGFACE`, `OLLAMA`.
-- [ ] Define `ProviderRequest(BaseModel)`: `documents: list`, `question: str`, `system_instructions: list[str]`, `temperature: float`, `max_tokens: int`.
-- [ ] Define `ProviderResponse(BaseModel)`: `text: str`, `provider: ProviderType`, `model_name: str`, `tokens_used: int | None`.
-- [ ] Define `LLMProvider(ABC)` with abstract methods:
-  - [ ] `analyze(request: ProviderRequest) -> MedicalReportModel`
-  - [ ] `ask(question: str) -> Iterator[str]`
-  - [ ] `provider_type() -> ProviderType`
-  - [ ] `is_available() -> bool`
+- [x] Create `src/providers/` package with `__init__.py`.
+- [x] Define `ProviderType(StrEnum)`: `GEMINI`, `CLAUDE`, `GROQ`, `TOGETHER`, `HUGGINGFACE`, `OLLAMA`.
+- [x] Define `ProviderRequest(BaseModel)`: `documents: list[Any]`, `question: str`, `system_instructions: list[str]`, `temperature: float`, `max_tokens: int`.
+- [x] Define `ProviderResponse(BaseModel)`: `text: str`, `provider: ProviderType`, `model_name: str`, `tokens_used: int | None`.
+- [x] Define `LLMProvider(ABC)` with abstract methods:
+  - [x] `analyze(request: ProviderRequest) -> MedicalReportModel`
+  - [x] `ask(question: str) -> Iterator[str]`
+  - [x] `provider_type() -> ProviderType`
+  - [x] `is_available() -> bool`
 
 ---
 

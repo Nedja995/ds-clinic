@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.7.0 ✅ Complete — Next: v2.8.0
+## Current Status: v2.8.1 ✅ Complete — Next: v2.8.2
 
 | Version | Scope | Status |
 |---|---|---|
@@ -62,7 +62,10 @@ git push
 | v2.7.2 | Wire `AppDatabase` into `DSClinicViewModel` | ✅ Done |
 | v2.7.3 | Session history panel (View + ViewModel) | ✅ Done |
 | v2.7.4 | Patient list panel (View + ViewModel) | ✅ Done |
-| v2.8.0 | `src/providers/` LLMProvider abstraction | ▶ Next |
+| v2.8.1 | `LLMProvider` ABC + data contracts (`src/providers/base.py`) | ✅ Done |
+| v2.8.2 | `GeminiProvider` + `ClaudeProvider` concrete implementations | ▶ Next |
+| v2.8.3 | `ProviderFactory` + `__init__.py` exports | Planned |
+| v2.8.4 | Refactor `DSClinic` to use `ProviderFactory` | Planned |
 | v2.9.0 | Groq + Together + HuggingFace providers | Planned |
 | v2.10.0 | Local Ollama provider | Planned |
 | v2.11.0 | BrandConfig + white-label + subscription | Planned |
@@ -73,42 +76,31 @@ git push
 
 ---
 
-## v2.7.4 Changes (completed 2026-09-01)
+## v2.8.1 Changes (completed 2026-09-02)
 
-- `src/dsclinic_gui/session_history_view.py` — rewritten as `ttk.Notebook` with two tabs:
-  - **Sessions tab:** filter indicator label, `+ New Session` button, scrollable `tk.Listbox`. Patient filter applied when `_filter_patient_id` is set; toggle-click on selected patient clears filter. Clicking a row → `view_model.load_session()`.
-  - **Patients tab:** scrollable `tk.Listbox`. Clicking a patient sets the session filter, calls `view_model.set_active_patient()`, switches to Sessions tab. Inline "New Patient" form (full name + DOB + Save button) at the bottom; calls `view_model.save_new_patient()` and clears fields on success.
-  - `_filter_patient_id` / `_filter_session_ids` — View-local filter state; no ViewModel involvement.
-  - `_load_patient_session_ids()` — loads `PatientRecord.session_ids` from `view_model._db` for filter construction.
-- `src/dsclinic_gui/report_view_models.py`:
-  - `_active_patient_id: str` — patient currently linked to new sessions; cleared only by `set_active_patient("")`.
-  - `var_patients_index: list[dict]` — populated from `_db.patients.list_index()` on init.
-  - `on_patients_changed: EventEmitter` — fired on every `_refresh_patients_index()` call.
-  - `_refresh_patients_index()` — reloads patients index and emits `on_patients_changed`.
-  - `_link_session_to_patient()` — idempotently inserts `session_id` at head of `PatientRecord.session_ids` and re-saves.
-  - `_persist_session()` — now calls `_link_session_to_patient()` when `_active_patient_id` is set.
-  - `save_new_patient(full_name, date_of_birth)` — creates and persists `PatientRecord`, emits `on_patients_changed`.
-  - `set_active_patient(patient_id)` — sets `_active_patient_id`.
-  - `PatientRecord` imported from `models`.
-- `src/dsclinic_gui/styles.py` — `SidebarFormLabel.TLabel` added.
+- `src/providers/` — new package directory.
+- `src/providers/__init__.py` — exports `LLMProvider`, `ProviderType`, `ProviderRequest`, `ProviderResponse`.
+- `src/providers/base.py` — `ProviderType(StrEnum)`, `ProviderRequest(BaseModel)`, `ProviderResponse(BaseModel)`, `LLMProvider(ABC)` with abstract methods `analyze()`, `ask()`, `provider_type()`, `is_available()`.
+  - `ProviderRequest.documents: list[Any]` — intentionally untyped at the base: Gemini providers receive `list[genai_types.Part]`; Claude providers receive `list[dict[str, Any]]`. Concrete classes cast internally.
+  - `LLMProvider` startup-guard contract documented: subclasses must NOT raise in `__init__` when a key is absent — set `_available = False` and return early.
 
 ---
 
-## v2.8.0 Implementation Notes
+## v2.8.2 Implementation Notes
 
 Files to read before starting:
-- `src/dsclinic.py` — `DSClinic` class: replace `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` direct construction with `ProviderFactory.create()`.
-- `src/api_gemini/client.py` — `MedicalAnalyzerClient`: understand `initial_analysis_report_from_chat_stream()` and `ask_followup_question()` signatures before wrapping in `GeminiProvider`.
-- `src/api_claude/client.py` — `ClaudeAnalyzerClient`: same, for `ClaudeProvider`.
-- `src/models/patient.py` — `MedicalReportModel` is the return type of `analyze()`.
-- `docs/architecture.md` AD-19 — full `src/providers/` package structure and `is_available()` contract.
+- `src/api_gemini/client.py` — `MedicalAnalyzerClient`: `initial_analysis_report_from_chat_stream(documents: list[genai_types.Part], question: str)` and `ask_followup_question(question: str) -> str` (accumulates internally, returns full string).
+- `src/api_claude/client.py` — `ClaudeAnalyzerClient`: `initial_analysis_report_from_chat_stream(documents: list[dict[str, Any]], question: str)` and `ask_followup_stream(question: str) -> Iterator[str]` (yields chunks directly).
+- `src/models/ai.py` — `GeminiModelConfig`, `AIServiceConfig`, `ClaudeModelConfig`, `ClaudeAIServiceConfig`.
+- `src/dsclinic.py` — current `DSClinic.__init__` construction pattern to mirror in providers.
 
-Key decisions for v2.8.0:
-- `src/providers/base.py` — `ProviderType(StrEnum)`, `ProviderRequest(BaseModel)`, `ProviderResponse(BaseModel)`, `LLMProvider(ABC)`.
-- `GeminiProvider` and `ClaudeProvider` delegate to existing SDK clients — do not rewrite client logic.
-- `ProviderFactory.available_providers()` priority: GEMINI → CLAUDE (additional providers added in v2.9.0 / v2.10.0).
-- `DSClinic.get_initial_analysis_report()` and `ask_followup_question()` route through `self.active_provider`.
-- Default provider on startup: first available from `ProviderFactory.available_providers()`.
+Key decisions for v2.8.2:
+- `GeminiProvider.__init__` constructs `MedicalAnalyzerClient` using keyring + `app_settings` (same pattern as current `DSClinic.__init__`). Stores reference as `self._client`.
+- `GeminiProvider.analyze(request)` calls `self._client.initial_analysis_report_from_chat_stream(request.documents, request.question)`. Raises `RuntimeError` if result is `None`.
+- `GeminiProvider.ask(question)` wraps `self._client.ask_followup_question(question)` — the Gemini client accumulates internally; the provider wraps the single string in a one-shot `Iterator[str]` via `iter([result])`.
+- `ClaudeProvider.ask(question)` delegates directly to `self._client.ask_followup_stream(question)` — already an `Iterator[str]`.
+- `ClaudeProvider.analyze(request)` — note `documents` must be `list[dict[str, Any]]`; the provider documents this type requirement via assertion + type comment.
+- `is_available()` on both: `return self._client is not None and self._client.client is not None`.
 
 ---
 
@@ -118,12 +110,14 @@ Key decisions for v2.8.0:
 - `src/dsclinic_gui/session_history_view.py` — two-tab `ttk.Notebook`: Sessions (filter + load/new) + Patients (filter + new patient form).
 - `src/dsclinic_gui/report_view_models.py` — full patient + session management: `_active_patient_id`, `save_new_patient()`, `set_active_patient()`, `_link_session_to_patient()`, `load_session()`, `new_session()`.
 - `src/models/patient.py` — `PatientRecord`, `MedicalReport`, `MedicalReportModel`.
+- `src/providers/base.py` — `LLMProvider(ABC)`, `ProviderType`, `ProviderRequest`, `ProviderResponse` — complete.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.8.1** ✅ — `src/providers/` package + `base.py`: `LLMProvider` ABC, `ProviderType`, `ProviderRequest`, `ProviderResponse`.
 - **v2.7.4** ✅ — Patient list panel, inline new-patient form, patient→session linkage, session filter.
 - **v2.7.3** ✅ — `SessionHistoryView` sidebar, `load_session()`, `new_session()`, `on_sessions_changed`.
 - **v2.7.2** ✅ — `AppDatabase` wired; report + session auto-persist.
