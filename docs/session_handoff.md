@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.8.3 ✅ Complete — Next: v2.8.4
+## Current Status: v2.8.0 ✅ Complete — Next: v2.9.0
 
 | Version | Scope | Status |
 |---|---|---|
@@ -62,11 +62,11 @@ git push
 | v2.7.2 | Wire `AppDatabase` into `DSClinicViewModel` | ✅ Done |
 | v2.7.3 | Session history panel (View + ViewModel) | ✅ Done |
 | v2.7.4 | Patient list panel (View + ViewModel) | ✅ Done |
-| v2.8.1 | `LLMProvider` ABC + data contracts (`src/providers/base.py`) | ✅ Done |
-| v2.8.2 | `GeminiProvider` + `ClaudeProvider` concrete implementations | ✅ Done |
+| v2.8.1 | `LLMProvider` ABC + data contracts | ✅ Done |
+| v2.8.2 | `GeminiProvider` + `ClaudeProvider` | ✅ Done |
 | v2.8.3 | `ProviderFactory` + `__init__.py` exports | ✅ Done |
-| v2.8.4 | Refactor `DSClinic` to use `ProviderFactory` | ▶ Next |
-| v2.9.0 | Groq + Together + HuggingFace providers | Planned |
+| v2.8.4 | Refactor `DSClinic` to use `ProviderFactory` | ✅ Done |
+| v2.9.0 | Groq + Together + HuggingFace providers | ▶ Next |
 | v2.10.0 | Local Ollama provider | Planned |
 | v2.11.0 | BrandConfig + white-label + subscription | Planned |
 | v2.12.0 | Chat Session View rewrite | Planned |
@@ -76,54 +76,41 @@ git push
 
 ---
 
-## v2.8.3 Changes (completed 2026-09-02)
+## v2.8.4 Changes (completed 2026-09-02)
 
-- `src/providers/factory.py` — `ProviderFactory` with two `@staticmethod` methods:
-  - `create(provider_type)` — switch on `ProviderType`, lazy-import and construct the concrete provider. `GROQ`, `TOGETHER`, `HUGGINGFACE`, `OLLAMA` raise `NotImplementedError` (stubs until v2.9.x/v2.10.x).
-  - `available_providers()` — iterates `_PROVIDER_PRIORITY` list, constructs each provider, calls `is_available()`, catches `NotImplementedError` and any unexpected exception, returns ordered list of available `ProviderType` values.
-- `src/providers/__init__.py` — `ProviderFactory` added to exports and `__all__`.
-
----
-
-## v2.8.4 Implementation Notes
-
-Files to read before starting:
-- `src/dsclinic.py` — full current `DSClinic.__init__`, `get_initial_analysis_report()`, and `ask_followup_question()` — these three methods are the primary refactor targets.
-- `src/providers/factory.py` — `ProviderFactory.create()` and `available_providers()` signatures.
-- `src/providers/base.py` — `LLMProvider`, `ProviderRequest`, `ProviderType`.
-- `src/api_gemini/client.py` — understand what the existing `gemini_client` currently does in `get_initial_analysis_report()` so the `ProviderRequest` is built correctly.
-
-Key decisions for v2.8.4:
-- `DSClinic.__init__` drops all direct client construction (`MedicalAnalyzerClient`, `ClaudeAnalyzerClient`). Replaces with `self.active_provider: LLMProvider = ProviderFactory.create(first_available)`. If `available_providers()` is empty, log a warning and leave `active_provider` as `None` — do not crash on startup.
-- `set_active_provider(provider_type: ProviderType) -> None` — calls `ProviderFactory.create(provider_type)`, assigns to `self.active_provider`. Raises `ValueError` if the constructed provider is not available.
-- `get_initial_analysis_report()` — builds a `ProviderRequest` from `app_settings` and the loaded document parts, calls `self.active_provider.analyze(request)`. The document loading loop (anonymization, scrubbed file map) stays unchanged — only the final API call changes.
-- `ask_followup_question()` — calls `self.active_provider.ask(question)`, accumulates `Iterator[str]` chunks into a full string, returns it. Same return type as before.
-- Type annotation: `active_provider: LLMProvider | None` — `None` only during the window between startup and first key being set. All call sites guard with `if self.active_provider is None: raise RuntimeError(...)`.
+- `src/dsclinic.py` — full refactor to route through `ProviderFactory` / `LLMProvider`:
+  - All direct SDK client imports removed. Only `api_gemini.utils` retained for document loading (Gemini Part format — a future adapter layer will generalise this when needed).
+  - `DSClinic.__init__` — calls `ProviderFactory.available_providers()` and constructs the first available via `ProviderFactory.create()`. `active_provider: LLMProvider | None` attribute; `None` only when no key is configured.
+  - `set_active_provider(provider_type: ProviderType) -> None` — new method; validates `is_available()` before assigning; raises `ValueError` if unavailable.
+  - `get_initial_analysis_report()` — document loading loop unchanged; wraps loaded parts in `ProviderRequest`; delegates to `self.active_provider.analyze(request)`.
+  - `ask_followup_question()` — delegates to `self.active_provider.ask(question)`; accumulates `Iterator[str]` into full string for ViewModel compatibility.
 
 ---
 
-## v2.8.2 Changes (completed 2026-09-02)
+## v2.8.0 Summary (all sub-versions completed 2026-09-02)
 
-- `src/providers/gemini_provider.py` — `GeminiProvider(LLMProvider)`: delegates to `MedicalAnalyzerClient`; startup guard; `ask()` wraps accumulated string in `iter([result])`.
-- `src/providers/claude_provider.py` — `ClaudeProvider(LLMProvider)`: delegates to `ClaudeAnalyzerClient`; startup guard; `ask()` delegates to `ask_followup_stream()` directly.
+- `src/providers/base.py` — `LLMProvider(ABC)`, `ProviderType(StrEnum)`, `ProviderRequest`, `ProviderResponse`.
+- `src/providers/gemini_provider.py` — `GeminiProvider`: delegates to `MedicalAnalyzerClient`.
+- `src/providers/claude_provider.py` — `ClaudeProvider`: delegates to `ClaudeAnalyzerClient`.
+- `src/providers/factory.py` — `ProviderFactory.create()` + `available_providers()`.
+- `src/providers/__init__.py` — exports all five public symbols.
+- `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports.
 
 ---
 
 ## Key Existing Code Context
 
+- `src/providers/` — complete: `base.py`, `gemini_provider.py`, `claude_provider.py`, `factory.py`, `__init__.py`.
+- `src/dsclinic.py` — refactored: `active_provider: LLMProvider | None`, `set_active_provider()`, `get_initial_analysis_report()`, `ask_followup_question()` all route through the provider interface.
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` fully implemented.
-- `src/dsclinic_gui/session_history_view.py` — two-tab `ttk.Notebook`: Sessions (filter + load/new) + Patients (filter + new patient form).
 - `src/dsclinic_gui/report_view_models.py` — full patient + session management.
-- `src/providers/base.py` — `LLMProvider(ABC)`, `ProviderType`, `ProviderRequest`, `ProviderResponse` — complete.
-- `src/providers/gemini_provider.py` — `GeminiProvider` — complete.
-- `src/providers/claude_provider.py` — `ClaudeProvider` — complete.
-- `src/providers/factory.py` — `ProviderFactory` — complete.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.8.4** ✅ — `DSClinic` refactored to `ProviderFactory`; direct SDK client imports eliminated.
 - **v2.8.3** ✅ — `ProviderFactory` + updated `__init__.py` exports.
 - **v2.8.2** ✅ — `GeminiProvider` + `ClaudeProvider` concrete implementations.
 - **v2.8.1** ✅ — `src/providers/` package + `base.py`: `LLMProvider` ABC, `ProviderType`, `ProviderRequest`, `ProviderResponse`.

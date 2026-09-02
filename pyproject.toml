@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.8.3"
+version = "2.8.4"
 description = "Enterprise B2B Medical AI Analysis & Report Platform — ViTec"
 readme = "README.md"
 license = "MIT"

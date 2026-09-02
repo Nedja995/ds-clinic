@@ -18,8 +18,21 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.11.0] - Planned — Enterprise Multi-Brand / White-Label & Subscription Config
 ## [2.10.0] - Planned — Local Ollama Provider (16GB VRAM Optimized)
 ## [2.9.0] - Planned — Groq + Together AI + HuggingFace Cloud Providers
-## [2.8.0] - In Progress — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
+## [2.8.0] - Completed — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
 ## [2.7.0] - Completed — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.8.4] - 2026-09-02
+
+### Changed
+- `src/dsclinic.py` — full refactor to route through `ProviderFactory` / `LLMProvider` (AD-19):
+  - All direct SDK client imports (`api_gemini_client`, `api_claude_client`, model config types) removed. Only `api_gemini.utils` retained for document loading (Gemini Part format).
+  - `DSClinic.__init__` — drops direct `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` construction. Calls `ProviderFactory.available_providers()` and constructs the first available via `ProviderFactory.create()`. `active_provider: LLMProvider | None` attribute introduced; `None` only when no key is configured at startup.
+  - `DSClinic.set_active_provider(provider_type: ProviderType) -> None` — new method; constructs provider via factory, validates `is_available()`, raises `ValueError` if unavailable.
+  - `DSClinic.get_initial_analysis_report()` — document loading loop unchanged; builds `ProviderRequest` from loaded parts + `app_settings`; delegates to `self.active_provider.analyze(request)`.
+  - `DSClinic.ask_followup_question()` — delegates to `self.active_provider.ask(question)`; accumulates `Iterator[str]` chunks into full string for ViewModel compatibility.
+  - Module docstring added; inline comments explain the document-format coupling and whitespace-normalisation rationale.
 
 ---
 

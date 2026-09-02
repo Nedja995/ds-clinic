@@ -1,103 +1,138 @@
+"""
+src/dsclinic.py — DSClinic core application logic.
+
+Owns: DSClinic — provider lifecycle, document loading, analysis orchestration,
+      and follow-up Q&A routing.
+
+The provider-facing interface routes exclusively through LLMProvider / ProviderFactory
+(AD-19). Direct SDK client imports no longer exist in this module — all
+provider-specific knowledge is encapsulated in src/providers/.
+
+Does NOT own: UI threading, queue communication, or PDF rendering. Those belong
+to the ViewModel layer and pdf_maker.py respectively.
+"""
+
 import os
-import datetime
-import json
 from google.genai import types as genai_types
-from npy.core.utils import get_output_data_dirpath, get_input_data_dirpath
-from npy.core.fileutils import find_input_documents, make_output_filepath, open_file_from_filepath
+from npy.core.utils import get_output_data_dirpath
+from npy.core.fileutils import find_input_documents, make_output_filepath
 import pdf_maker
 from models import (
     app_settings,
-    get_credential,
-    MedicalReportModel,
-    GeminiModelConfig,
-    AIServiceConfig,
-    ClaudeModelConfig,
-    ClaudeAIServiceConfig,
     MedicalReport,
+    MedicalReportModel,
 )
-from api_gemini import client as api_gemini_client
 from api_gemini import utils as api_gemini_utils
-from api_claude import client as api_claude_client
-
+from providers import LLMProvider, ProviderFactory, ProviderRequest, ProviderType
 from npy.core.logger import setup_logger
 
 logger = setup_logger()
 
 
 class DSClinic:
-    """Glavna logika za DSClinic aplikaciju."""
+    """
+    Core application logic for DSClinic.
+
+    Manages the active LLMProvider, document loading/anonymization, and
+    delegates all AI calls through the LLMProvider interface. Provider
+    construction is handled by ProviderFactory — this class never imports
+    or instantiates SDK clients directly.
+
+    active_provider is None only during the brief startup window where no
+    provider key is configured. All call sites guard against this and raise
+    a RuntimeError with a user-readable Settings navigation hint.
+    """
 
     def __init__(self, model_name: str | None = None) -> None:
         self.input_dir = app_settings.input_dir
         self.output_dir = get_output_data_dirpath()
+        # model_name override is kept for CLI compatibility; providers read
+        # app_settings.ai_model_name internally by default.
         self.model_name = model_name or app_settings.ai_model_name
-        logger.info(f"Initializing DSClinic with model: {self.model_name}, input_dir: {self.input_dir}, output_dir: {self.output_dir}")
-
-        # ── API keys — sourced from OS keyring only (AD-11) ───────────────
-        _gemini_key = get_credential("gemini") or ""
-        if not _gemini_key:
-            logger.warning(
-                "Gemini API key is not set in OS keyring. "
-                "Open Settings → AI → Google API Key and save your key."
-            )
-
-        _anthropic_key = get_credential("anthropic") or ""
-        if not _anthropic_key:
-            logger.warning(
-                "Anthropic API key is not set in OS keyring. "
-                "Open Settings → AI → Anthropic API Key and save your key."
-            )
-
-        # ── Gemini client ─────────────────────────────────────────────────
-        self.client_config = AIServiceConfig(
-            api_key=_gemini_key,
-            model_settings=GeminiModelConfig(
-                model_name=self.model_name,
-                system_instruction=tuple(app_settings.ai_system_instructions),
-                thinking_level=app_settings.ai_thinking_level,
-                temperature=app_settings.ai_model_temperature,
-                top_p=app_settings.ai_model_top_p,
-                max_output_tokens=app_settings.ai_model_max_output_tokens,
-            )
+        logger.info(
+            f"[DSClinic] Initializing — model override: {self.model_name}, "
+            f"input_dir: {self.input_dir}"
         )
-        self.gemini_client = api_gemini_client.MedicalAnalyzerClient(config=self.client_config)
-
-        # ── Claude client — only instantiated when key is available ───────
-        self.claude_client: api_claude_client.ClaudeAnalyzerClient | None = None
-        if _anthropic_key:
-            try:
-                self.claude_config = ClaudeAIServiceConfig(
-                    api_key=_anthropic_key,
-                    model_settings=ClaudeModelConfig(
-                        model_name=app_settings.claude_model_name,
-                        temperature=app_settings.ai_model_temperature,
-                        top_p=app_settings.ai_model_top_p,
-                        max_output_tokens=app_settings.ai_model_max_output_tokens,
-                    )
-                )
-                self.claude_client = api_claude_client.ClaudeAnalyzerClient(config=self.claude_config)
-                logger.info("ClaudeAnalyzerClient initialized successfully.")
-            except Exception as e:
-                logger.warning(f"ClaudeAnalyzerClient failed to initialize: {e}")
-        else:
-            logger.warning("Claude client not initialized — Anthropic API key not set in keyring.")
 
         self.report: MedicalReport | None = None
 
-    def get_initial_analysis_report(self, scrubbed_files_map: dict[str, str] | None = None) -> MedicalReport:
-        """Glavna funkcija za analizu nalaza."""
-        logger.info("Starting initial analysis report generation...")
+        # ── Provider bootstrap — use highest-priority available provider ──
+        # Providers read their own keys from keyring; we never touch credentials here.
+        self.active_provider: LLMProvider | None = None
+        available = ProviderFactory.available_providers()
+        if available:
+            try:
+                self.active_provider = ProviderFactory.create(available[0])
+                logger.info(f"[DSClinic] Active provider: {available[0].value}")
+            except Exception as exc:
+                logger.warning(f"[DSClinic] Failed to construct default provider: {exc}")
+        else:
+            logger.warning(
+                "[DSClinic] No providers available at startup. "
+                "Set at least one API key in Settings → AI."
+            )
+
+    # ── Provider management ────────────────────────────────────────────────
+
+    def set_active_provider(self, provider_type: ProviderType) -> None:
+        """
+        Switch the active provider at runtime.
+
+        Raises ValueError when the requested provider is not available
+        (key absent, daemon not running, etc.) so the caller (e.g. the
+        provider selector in the chat toolbar — v2.12.2) can surface a
+        user-readable error without crashing.
+        """
+        provider = ProviderFactory.create(provider_type)
+        if not provider.is_available():
+            raise ValueError(
+                f"Provider '{provider_type.value}' is not available. "
+                "Check that the required API key is set in Settings → AI."
+            )
+        self.active_provider = provider
+        logger.info(f"[DSClinic] Active provider switched to: {provider_type.value}")
+
+    # ── Analysis ───────────────────────────────────────────────────────────
+
+    def get_initial_analysis_report(
+        self,
+        scrubbed_files_map: dict[str, str] | None = None,
+    ) -> MedicalReport:
+        """
+        Load documents, apply anonymization, build a ProviderRequest, and
+        run the initial structured analysis via the active provider.
+
+        Document loading produces genai_types.Part objects — this is
+        currently Gemini-format because api_gemini_utils owns the file →
+        Part conversion. When additional provider document formats are
+        needed (v2.9.x / v2.12.x), a document adapter layer will be
+        introduced. For now GeminiProvider and ClaudeProvider both receive
+        the same parts list; GeminiProvider uses them natively, and Claude
+        support via a different document format is a future concern.
+        """
+        if self.active_provider is None:
+            raise RuntimeError(
+                "No AI provider is available. "
+                "Set at least one API key in Settings → AI."
+            )
+
+        logger.info("[DSClinic] Starting initial analysis report generation...")
+
+        self.input_dir = app_settings.input_dir
         if not os.path.exists(self.input_dir):
             raise FileNotFoundError(f"Input directory not found: {self.input_dir}")
 
-        self.input_dir = app_settings.input_dir
         anonymization_enabled = app_settings.anonymization_on
-
         documents_filepaths = find_input_documents(self.input_dir)
         if not documents_filepaths:
-            logger.info(f"Files not found in input directory: {self.input_dir}")
+            logger.info(f"[DSClinic] No files found in input directory: {self.input_dir}")
 
+        # ── Document loading & anonymization ─────────────────────────────
+        # This loop is provider-agnostic at the DSClinic level: it produces
+        # a list of file parts that GeminiProvider understands natively.
+        # Future provider adapters will transform this list as needed.
         input_documents_parts: list[genai_types.Part] = []
+
         for doc_filepath in documents_filepaths:
             if "ANONIMIZOVANO" in doc_filepath or "_scrubbed" in doc_filepath:
                 continue
@@ -113,7 +148,7 @@ class DSClinic:
                         for file in os.listdir(anonymized_subfolder):
                             if file.startswith(f"{base}_scrubbed_page_") and file.lower().endswith('.jpg'):
                                 page_path = os.path.join(anonymized_subfolder, file)
-                                logger.info(f"PDF Page Mapping active: Loading {page_path} for Gemini")
+                                logger.info(f"[DSClinic] PDF anonymized page: {page_path}")
                                 part = api_gemini_utils.load_document_from_file(page_path)
                                 if part:
                                     input_documents_parts.append(part)
@@ -122,36 +157,53 @@ class DSClinic:
                 target_filepath = doc_filepath
                 if scrubbed_files_map and doc_filepath in scrubbed_files_map:
                     target_filepath = scrubbed_files_map[doc_filepath]
-                    logger.info(f"Anonymization map active: Swapping {doc_filepath} -> {target_filepath}")
+                    logger.info(f"[DSClinic] Anonymization map: {doc_filepath} → {target_filepath}")
             else:
                 target_filepath = doc_filepath
-                logger.info(f"Anonymization disabled by user: Loading original asset path {target_filepath}")
+                logger.info(f"[DSClinic] Anonymization disabled — loading original: {target_filepath}")
 
             part = api_gemini_utils.load_document_from_file(target_filepath)
             if part:
                 input_documents_parts.append(part)
 
+        # Normalise whitespace — keeps config.json readable as multiline text
+        # while keeping the API prompt compact and token-efficient (AD per GEMINI.md §3.D).
         raw_question = app_settings.ai_initial_task_description
         cleaned_question = " ".join(raw_question.split())
 
-        report_content: MedicalReportModel | None = self.gemini_client.initial_analysis_report_from_chat_stream(
+        request = ProviderRequest(
             documents=input_documents_parts,
             question=cleaned_question,
+            system_instructions=list(app_settings.ai_system_instructions),
+            temperature=app_settings.ai_model_temperature,
+            max_tokens=app_settings.ai_model_max_output_tokens,
         )
 
-        if report_content is None:
-            raise RuntimeError(
-                "Gemini returned an empty or unparseable response. "
-                "Check the logs for raw API output. The analysis cannot continue."
-            )
+        report_content: MedicalReportModel = self.active_provider.analyze(request)
 
         self.report = MedicalReport(content=report_content)
         return self.report
 
+    # ── Follow-up Q&A ─────────────────────────────────────────────────────
+
     def ask_followup_question(self, question: str) -> str:
+        """
+        Stream a follow-up question through the active provider and return
+        the accumulated full response string.
+
+        The Iterator[str] contract on LLMProvider.ask() allows the chat view
+        to consume chunks as they arrive in the future (v2.12.1). Here we
+        accumulate for compatibility with the existing ViewModel polling pattern.
+        """
+        if self.active_provider is None:
+            raise RuntimeError(
+                "No AI provider is available. "
+                "Set at least one API key in Settings → AI."
+            )
         if not self.report:
-            raise ValueError("No initial report available. Please run analysis first.")
-        result: str = self.gemini_client.ask_followup_question(question)
+            raise ValueError("No initial report available. Run analysis first.")
+
+        result: str = "".join(self.active_provider.ask(question))
         return result
 
 

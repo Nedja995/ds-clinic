@@ -325,20 +325,20 @@
 
 ---
 
-## v2.8.0 — `src/providers/` LLMProvider Abstraction (Gemini + Claude) 🔌 In Progress
+## v2.8.0 — `src/providers/` LLMProvider Abstraction (Gemini + Claude) ✅ Completed
 
-**Why:** Core architectural showpiece. Currently `DSClinic` is hard-coupled to `MedicalAnalyzerClient`. The interview pitch is: *"I designed a pluggable inference pipeline that hot-swaps between 6 providers without touching business logic."* Every provider milestone (v2.9.0, v2.10.0) and the Split-Horizon Architecture (AD-12) depend on this interface. See AD-19.
+**`LLMProvider` ABC, `ProviderFactory`, `GeminiProvider`, `ClaudeProvider` implemented. `DSClinic` routes all AI calls through the provider interface. Direct SDK client imports eliminated from `dsclinic.py`.**
 
 ---
 
-### v2.8.4 — Refactor `DSClinic` to Use `ProviderFactory`
+### v2.8.4 — Refactor `DSClinic` to Use `ProviderFactory` ✅ Completed
 
-- [ ] Replace direct `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` instantiation with `ProviderFactory.create(provider_type)`.
-- [ ] Add `active_provider: LLMProvider` attribute to `DSClinic`.
-- [ ] Add `set_active_provider(provider_type: ProviderType) -> None` method.
-- [ ] `get_initial_analysis_report()` → calls `self.active_provider.analyze(request)`.
-- [ ] `ask_followup_question()` → calls `self.active_provider.ask(question)`.
-- [ ] Default provider on startup: first available from `ProviderFactory.available_providers()`, priority: `GEMINI → CLAUDE → GROQ → TOGETHER → HUGGINGFACE → OLLAMA`.
+- [x] Replace direct `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` instantiation with `ProviderFactory.create(provider_type)`.
+- [x] Add `active_provider: LLMProvider | None` attribute to `DSClinic`.
+- [x] Add `set_active_provider(provider_type: ProviderType) -> None` method.
+- [x] `get_initial_analysis_report()` → builds `ProviderRequest`, calls `self.active_provider.analyze(request)`.
+- [x] `ask_followup_question()` → calls `self.active_provider.ask(question)`, accumulates `Iterator[str]` into full string.
+- [x] Default provider on startup: first available from `ProviderFactory.available_providers()`, priority: `GEMINI → CLAUDE → GROQ → TOGETHER → HUGGINGFACE → OLLAMA`.
 
 ---
 
