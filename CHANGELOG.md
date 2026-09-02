@@ -23,6 +23,15 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.8.2] - 2026-09-02
+
+### Added
+- `src/providers/gemini_provider.py` — `GeminiProvider(LLMProvider)`: delegates to `MedicalAnalyzerClient`; resolves key from keyring; `is_available()` checks both wrapper and SDK client; `ask()` wraps accumulated string in `iter([result])` to satisfy `Iterator[str]` contract.
+- `src/providers/claude_provider.py` — `ClaudeProvider(LLMProvider)`: delegates to `ClaudeAnalyzerClient`; resolves key from keyring; `ask()` delegates directly to `ask_followup_stream()` (already an `Iterator[str]`).
+- Both providers follow the startup-guard contract: no exception raised in `__init__` when key is absent — `_client` set to `None`, `is_available()` returns `False`.
+
+---
+
 ## [2.8.1] - 2026-09-02
 
 ### Added

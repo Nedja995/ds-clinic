@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.8.1 ✅ Complete — Next: v2.8.2
+## Current Status: v2.8.2 ✅ Complete — Next: v2.8.3
 
 | Version | Scope | Status |
 |---|---|---|
@@ -63,8 +63,8 @@ git push
 | v2.7.3 | Session history panel (View + ViewModel) | ✅ Done |
 | v2.7.4 | Patient list panel (View + ViewModel) | ✅ Done |
 | v2.8.1 | `LLMProvider` ABC + data contracts (`src/providers/base.py`) | ✅ Done |
-| v2.8.2 | `GeminiProvider` + `ClaudeProvider` concrete implementations | ▶ Next |
-| v2.8.3 | `ProviderFactory` + `__init__.py` exports | Planned |
+| v2.8.2 | `GeminiProvider` + `ClaudeProvider` concrete implementations | ✅ Done |
+| v2.8.3 | `ProviderFactory` + `__init__.py` exports | ▶ Next |
 | v2.8.4 | Refactor `DSClinic` to use `ProviderFactory` | Planned |
 | v2.9.0 | Groq + Together + HuggingFace providers | Planned |
 | v2.10.0 | Local Ollama provider | Planned |
@@ -73,6 +73,36 @@ git push
 | v2.13.0 | pytest coverage | Planned |
 | v2.14.0 | PII improvements + debug panel | Planned |
 | v2.15.0 | README case study + architecture diagrams | Planned |
+
+---
+
+## v2.8.2 Changes (completed 2026-09-02)
+
+- `src/providers/gemini_provider.py` — `GeminiProvider(LLMProvider)`:
+  - Constructs `MedicalAnalyzerClient` from keyring key + `app_settings` in `__init__`. Startup guard: `_client = None` if key absent, no exception raised.
+  - `analyze()` delegates to `_client.initial_analysis_report_from_chat_stream()`, raises `RuntimeError` on `None` result.
+  - `ask()` wraps `_client.ask_followup_question()` (returns `str`) in `iter([result])` to satisfy `Iterator[str]` contract without modifying the existing client.
+  - `is_available()` → `self._client is not None and self._client.client is not None`.
+- `src/providers/claude_provider.py` — `ClaudeProvider(LLMProvider)`:
+  - Same startup-guard pattern. Constructs `ClaudeAnalyzerClient` from keyring key + `app_settings`.
+  - `analyze()` delegates to `_client.initial_analysis_report_from_chat_stream()`, raises `RuntimeError` on `None`.
+  - `ask()` delegates directly to `_client.ask_followup_stream()` — already yields `Iterator[str]`.
+  - `is_available()` → `self._client is not None and self._client.client is not None`.
+
+---
+
+## v2.8.3 Implementation Notes
+
+Files to read before starting:
+- `src/providers/base.py` — `LLMProvider`, `ProviderType`, `ProviderRequest` — the interface `ProviderFactory` constructs against.
+- `src/providers/gemini_provider.py` — `GeminiProvider.__init__` signature (no args) — factory constructs by calling `GeminiProvider()`.
+- `src/providers/claude_provider.py` — `ClaudeProvider.__init__` signature (no args) — same pattern.
+
+Key decisions for v2.8.3:
+- `ProviderFactory` is a plain class with two `@staticmethod` methods — no instance needed.
+- `create(provider_type: ProviderType) -> LLMProvider` — switch on `ProviderType`, construct and return the appropriate concrete class. For `GROQ`/`TOGETHER`/`HUGGINGFACE`/`OLLAMA`: raise `NotImplementedError` with a message pointing to v2.9.0/v2.10.0 — these are stubs in v2.8.3.
+- `available_providers() -> list[ProviderType]` — iterate over the priority list `[GEMINI, CLAUDE, GROQ, TOGETHER, HUGGINGFACE, OLLAMA]`, construct each via `create()`, call `is_available()`, collect those that return `True`. For providers that raise `NotImplementedError` (v2.9.0+), catch and skip.
+- Update `src/providers/__init__.py` to also export `ProviderFactory`.
 
 ---
 
@@ -86,24 +116,6 @@ git push
 
 ---
 
-## v2.8.2 Implementation Notes
-
-Files to read before starting:
-- `src/api_gemini/client.py` — `MedicalAnalyzerClient`: `initial_analysis_report_from_chat_stream(documents: list[genai_types.Part], question: str)` and `ask_followup_question(question: str) -> str` (accumulates internally, returns full string).
-- `src/api_claude/client.py` — `ClaudeAnalyzerClient`: `initial_analysis_report_from_chat_stream(documents: list[dict[str, Any]], question: str)` and `ask_followup_stream(question: str) -> Iterator[str]` (yields chunks directly).
-- `src/models/ai.py` — `GeminiModelConfig`, `AIServiceConfig`, `ClaudeModelConfig`, `ClaudeAIServiceConfig`.
-- `src/dsclinic.py` — current `DSClinic.__init__` construction pattern to mirror in providers.
-
-Key decisions for v2.8.2:
-- `GeminiProvider.__init__` constructs `MedicalAnalyzerClient` using keyring + `app_settings` (same pattern as current `DSClinic.__init__`). Stores reference as `self._client`.
-- `GeminiProvider.analyze(request)` calls `self._client.initial_analysis_report_from_chat_stream(request.documents, request.question)`. Raises `RuntimeError` if result is `None`.
-- `GeminiProvider.ask(question)` wraps `self._client.ask_followup_question(question)` — the Gemini client accumulates internally; the provider wraps the single string in a one-shot `Iterator[str]` via `iter([result])`.
-- `ClaudeProvider.ask(question)` delegates directly to `self._client.ask_followup_stream(question)` — already an `Iterator[str]`.
-- `ClaudeProvider.analyze(request)` — note `documents` must be `list[dict[str, Any]]`; the provider documents this type requirement via assertion + type comment.
-- `is_available()` on both: `return self._client is not None and self._client.client is not None`.
-
----
-
 ## Key Existing Code Context
 
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` fully implemented.
@@ -111,12 +123,15 @@ Key decisions for v2.8.2:
 - `src/dsclinic_gui/report_view_models.py` — full patient + session management: `_active_patient_id`, `save_new_patient()`, `set_active_patient()`, `_link_session_to_patient()`, `load_session()`, `new_session()`.
 - `src/models/patient.py` — `PatientRecord`, `MedicalReport`, `MedicalReportModel`.
 - `src/providers/base.py` — `LLMProvider(ABC)`, `ProviderType`, `ProviderRequest`, `ProviderResponse` — complete.
+- `src/providers/gemini_provider.py` — `GeminiProvider` — complete.
+- `src/providers/claude_provider.py` — `ClaudeProvider` — complete.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.8.2** ✅ — `GeminiProvider` + `ClaudeProvider` concrete implementations.
 - **v2.8.1** ✅ — `src/providers/` package + `base.py`: `LLMProvider` ABC, `ProviderType`, `ProviderRequest`, `ProviderResponse`.
 - **v2.7.4** ✅ — Patient list panel, inline new-patient form, patient→session linkage, session filter.
 - **v2.7.3** ✅ — `SessionHistoryView` sidebar, `load_session()`, `new_session()`, `on_sessions_changed`.

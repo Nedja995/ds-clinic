@@ -331,6 +331,17 @@
 
 ---
 
+### v2.8.2 — `GeminiProvider` & `ClaudeProvider` Concrete Implementations ✅ Completed
+
+- [x] Implement `GeminiProvider(LLMProvider)` in `src/providers/gemini_provider.py`:
+  - [x] Delegates to existing `api_gemini/client.py::MedicalAnalyzerClient`.
+  - [x] `is_available()` → checks keyring key presence + client init status.
+- [x] Implement `ClaudeProvider(LLMProvider)` in `src/providers/claude_provider.py`:
+  - [x] Delegates to existing `api_claude/client.py::ClaudeAnalyzerClient`.
+  - [x] `is_available()` → checks keyring key + client init status.
+
+---
+
 ### v2.8.1 — `LLMProvider` Abstract Base & Data Contracts (`src/providers/base.py`) ✅ Completed
 
 - [x] Create `src/providers/` package with `__init__.py`.
@@ -342,17 +353,6 @@
   - [x] `ask(question: str) -> Iterator[str]`
   - [x] `provider_type() -> ProviderType`
   - [x] `is_available() -> bool`
-
----
-
-### v2.8.2 — `GeminiProvider` & `ClaudeProvider` Concrete Implementations
-
-- [ ] Implement `GeminiProvider(LLMProvider)` in `src/providers/gemini_provider.py`:
-  - [ ] Delegates to existing `api_gemini/client.py::MedicalAnalyzerClient`.
-  - [ ] `is_available()` → checks keyring key presence + client init status.
-- [ ] Implement `ClaudeProvider(LLMProvider)` in `src/providers/claude_provider.py`:
-  - [ ] Delegates to existing `api_claude/client.py::ClaudeAnalyzerClient`.
-  - [ ] `is_available()` → checks keyring key + client init status.
 
 ---
 
