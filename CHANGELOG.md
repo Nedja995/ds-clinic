@@ -19,7 +19,25 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.10.0] - Planned — Local Ollama Provider (16GB VRAM Optimized)
 ## [2.9.0] - Planned — Groq + Together AI + HuggingFace Cloud Providers
 ## [2.8.0] - Planned — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
-## [2.7.0] - In Progress — Patient Record as First-Class Entity & Session Persistence
+## [2.7.0] - Completed — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.7.4] - 2026-09-01
+
+### Added
+- `src/dsclinic_gui/session_history_view.py` — rewritten as two-tab `ttk.Notebook` sidebar:
+  - **Sessions tab:** `+ New Session` button, optional patient filter indicator label, scrollable `tk.Listbox`. Clicking a row calls `view_model.load_session()`. Filter applied when a patient is selected from the Patients tab.
+  - **Patients tab:** scrollable `tk.Listbox` listing all patients. Clicking a patient sets the session filter and switches to the Sessions tab (toggle-click clears filter). Inline "New Patient" form at the bottom: full name + date of birth fields + "Save Patient" button. Calls `view_model.save_new_patient()` on submit; clears fields on success. Empty-state labels on both lists.
+  - `_filter_patient_id` / `_filter_session_ids` View-local state drives the session filter — no ViewModel involvement required for filter state.
+  - `_load_patient_session_ids()` loads `PatientRecord.session_ids` from DB via `view_model._db` for filter construction.
+- `src/dsclinic_gui/report_view_models.py` — `var_patients_index`, `on_patients_changed` EventEmitter, `_active_patient_id: str`, `_refresh_patients_index()`, `save_new_patient()`, `set_active_patient()`.
+- `src/dsclinic_gui/report_view_models.py` — `_link_session_to_patient()`: idempotently appends `session_id` to `PatientRecord.session_ids` and re-saves whenever `_active_patient_id` is set during `_persist_session()`.
+- `src/dsclinic_gui/styles.py` — `SidebarFormLabel.TLabel` style for the "New Patient" section heading.
+
+### Changed
+- `src/dsclinic_gui/report_view_models.py` — `_persist_session()` now calls `_link_session_to_patient()` when `_active_patient_id` is set, then `_refresh_sessions_index()`.
+- `src/dsclinic_gui/report_view_models.py` — `PatientRecord` imported from `models`.
 
 ---
 

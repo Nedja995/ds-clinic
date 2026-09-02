@@ -16,6 +16,7 @@ from models import (
     MedicalReportModel,
     MedicalCriticalFindingModel,
     MedicalTherapyModel,
+    PatientRecord,
 )
 from models.ai import ChatMessage, ChatSessionModel
 from db import AppDatabase
@@ -60,6 +61,11 @@ class DSClinicViewModel:
         # the FINISHED handler can build the ChatMessage pair for persistence.
         self._pending_question: str = ""
 
+        # patient_id of the currently selected patient, or empty string when
+        # no patient is associated with the active session. Used by
+        # _persist_session() to link new sessions into PatientRecord.session_ids.
+        self._active_patient_id: str = ""
+
         # Handled manually for Text widgets
         self.therapy_text_content = self._model.content.recommended_therapy_and_advice
         self.findings: list[MedicalCriticalFindingModel] = self._model.content.critical_findings
@@ -74,6 +80,10 @@ class DSClinicViewModel:
         # The View reads this on on_sessions_changed to rebuild the sidebar list.
         # Each entry is the flat dict produced by JsonCollection.list_index().
         self.var_sessions_index: list[dict[str, Any]] = self._db.sessions.list_index()
+
+        # Patient index — same pattern as sessions. Each entry is the flat dict
+        # from JsonCollection.list_index() over the patients collection.
+        self.var_patients_index: list[dict[str, Any]] = self._db.patients.list_index()
 
         # Chat session (TODO: get rid of these)
         self.var_initial_question = tk.StringVar(value="")
@@ -97,8 +107,10 @@ class DSClinicViewModel:
         self.on_export_requested:   EventEmitter = EventEmitter()
         self.on_export_succeeded:   EventEmitter = EventEmitter()
         # Fired whenever var_sessions_index is refreshed — SessionHistoryView
-        # subscribes to rebuild its list without coupling to on_vm_data_changed.
+        # subscribes to rebuild its session list without coupling to on_vm_data_changed.
         self.on_sessions_changed:   EventEmitter = EventEmitter()
+        # Fired whenever var_patients_index is refreshed — patient tab subscribes.
+        self.on_patients_changed:   EventEmitter = EventEmitter()
 
         self.dsclinicapp = DSClinic(model_name=app_settings.ai_model_name)
 
@@ -136,10 +148,10 @@ class DSClinicViewModel:
     def _persist_session(self) -> None:
         """Re-save the current ChatSessionModel after any mutation.
 
-        Called after analysis completion and after each Q&A exchange so the
-        session is always recoverable from disk. Also refreshes the sidebar index.
+        If _active_patient_id is set, the session_id is appended to that
+        patient's session_ids list so the patient → session link is maintained
+        (AD-18). Also refreshes both sidebar indexes.
         """
-        # Keep session.report in sync with the current model state.
         self._session.report = self._model
         try:
             self._db.sessions.save(self._session.session_id, self._session)
@@ -147,7 +159,32 @@ class DSClinicViewModel:
         except (OSError, Exception) as e:
             logger.error("Failed to auto-save session %r: %s", self._session.session_id, e, exc_info=True)
 
+        # Link session into the active patient record if one is selected.
+        if self._active_patient_id:
+            self._link_session_to_patient(self._session.session_id, self._active_patient_id)
+
         self._refresh_sessions_index()
+
+    def _link_session_to_patient(self, session_id: str, patient_id: str) -> None:
+        """Append session_id to PatientRecord.session_ids if not already present.
+
+        Idempotent — safe to call on every _persist_session() invocation.
+        """
+        try:
+            patient = self._db.patients.load(patient_id)
+            if patient is None:
+                logger.warning("Cannot link session: patient %r not found.", patient_id)
+                return
+            if session_id not in patient.session_ids:
+                patient.session_ids.insert(0, session_id)
+                self._db.patients.save(patient_id, patient)
+                logger.debug("Linked session %r to patient %r.", session_id, patient_id)
+                self._refresh_patients_index()
+        except (OSError, Exception) as e:
+            logger.error(
+                "Failed to link session %r to patient %r: %s",
+                session_id, patient_id, e, exc_info=True,
+            )
 
     def _refresh_sessions_index(self) -> None:
         """Reload the flat session index from disk and notify the sidebar."""
@@ -157,6 +194,53 @@ class DSClinicViewModel:
             logger.error("Failed to refresh sessions index: %s", e, exc_info=True)
             self.var_sessions_index = []
         self.on_sessions_changed.emit()
+
+    def _refresh_patients_index(self) -> None:
+        """Reload the flat patient index from disk and notify the patient tab."""
+        try:
+            self.var_patients_index = self._db.patients.list_index()
+        except (OSError, Exception) as e:
+            logger.error("Failed to refresh patients index: %s", e, exc_info=True)
+            self.var_patients_index = []
+        self.on_patients_changed.emit()
+
+    # ── Patient management ────────────────────────────────────────────────────
+
+    def save_new_patient(self, full_name: str, date_of_birth: str) -> None:
+        """Create and persist a new PatientRecord.
+
+        full_name must be non-empty — caller is responsible for validation
+        before invoking. Emits on_patients_changed on success.
+        """
+        full_name = full_name.strip()
+        if not full_name:
+            logger.warning("save_new_patient called with empty full_name — ignored.")
+            return
+
+        patient = PatientRecord(
+            full_name=full_name,
+            date_of_birth=date_of_birth.strip(),
+        )
+        try:
+            self._db.patients.save(patient.patient_id, patient)
+            logger.info("New patient %r (%r) saved.", patient.patient_id, patient.full_name)
+        except (OSError, Exception) as e:
+            logger.error("Failed to save new patient: %s", e, exc_info=True)
+            self.on_show_error_message.emit(ErrorMessageEvent(
+                title="Save Failed",
+                message=f"Could not save patient record: {e}",
+            ))
+            return
+
+        self._refresh_patients_index()
+
+    def set_active_patient(self, patient_id: str) -> None:
+        """Mark a patient as active so subsequent sessions are linked to them.
+
+        Passing an empty string clears the active patient (no linkage).
+        """
+        self._active_patient_id = patient_id
+        logger.debug("Active patient set to %r.", patient_id or "(none)")
 
     # ── Session management ────────────────────────────────────────────────────
 
@@ -198,7 +282,8 @@ class DSClinicViewModel:
         """Reset all state to defaults and start a fresh session.
 
         Does not persist anything — the new session is saved to disk only after
-        the first analysis completes.
+        the first analysis completes. Does not clear _active_patient_id so the
+        user's patient selection persists across new sessions.
         """
         if self.var_is_analyzing.get():
             logger.warning("Cannot start new session while analysis is running.")

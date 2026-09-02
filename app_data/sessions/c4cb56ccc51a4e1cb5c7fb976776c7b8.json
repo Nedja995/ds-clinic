@@ -1,0 +1,36 @@
+{
+  "session_id": "c4cb56ccc51a4e1cb5c7fb976776c7b8",
+  "model_settings": {
+    "model_name": "gemini-3-pro-preview",
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_output_tokens": 65535,
+    "thinking_level": "HIGH",
+    "system_instruction": [
+      "You are an expert medical data analyst using equally both holistic and traditional medical data.",
+      "Always highlight severe abnormalities."
+    ]
+  },
+  "report": {
+    "report_id": "2e1f243584f44743bc07fa0a95a3b531",
+    "report_date": "02.09.2026.",
+    "input_dir": "D:\\__STORAGE\\__DEV\\__PROJECTS\\DSKlinika\\ds-clinic_03_04_2026\\ULAZ",
+    "content": {
+      "patient_name": "Muhammed Shahid Kasimvilla Kasim",
+      "recommended_therapy_and_advice": "Rezultati kompletne krvne slike (KKS) pokazuju blago odstupanje u parametrima crvenih krvnih zrnaca, konkretno blago snižene vrednosti MCV (srednja zapremina eritrocita) i MCH (srednja količina hemoglobina u eritrocitu). Ovo može ukazivati na blagu mikrocitnu hipohromnu anemiju, koja je najčešće povezana sa deficitom gvožđa. Preporučuje se konsultacija sa izabranim lekarom radi provere nivoa feritina, serumskog gvožđa i TIBC-a kako bi se potvrdio uzrok. Savetuje se ishrana bogata gvožđem (crveno meso, mahunarke, tamnozeleno lisnato povrće) uz adekvatan unos vitamina C radi bolje apsorpcije. Ostali parametri, uključujući broj belih krvnih zrnaca i trombocita, su u granicama normale, što je dobar znak. Nije potrebna hitna intervencija, ali je preporučljivo praćenje stanja kroz dodatne laboratorijske analize.",
+      "critical_findings": [
+        {
+          "expertsko_misljenje": "Blago snižene vrednosti MCV i MCH ukazuju na mikrocitnu hipohromnu sliku, što često ukazuje na početni stadijum anemije uzrokovane nedostatkom gvožđa. Nije alarmantno, ali zahteva dalju dijagnostiku.",
+          "parametar_and_value": "MCV 80.30 fL (referentni opseg 83-101)"
+        },
+        {
+          "expertsko_misljenje": "Snižena vrednost MCH ukazuje na smanjenu količinu hemoglobina po eritrocitu, što je u korelaciji sa nalazom MCV i podržava sumnju na blagu anemiju.",
+          "parametar_and_value": "MCH 26.70 Pg (referentni opseg 27-32)"
+        }
+      ]
+    },
+    "therapies": [],
+    "chat_responses": []
+  },
+  "chat_history": []
+}

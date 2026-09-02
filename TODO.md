@@ -376,9 +376,18 @@
 
 ---
 
-## v2.7.0 — Patient Record as First-Class Entity & Session Persistence 📋 In Progress
+## v2.7.0 — Patient Record as First-Class Entity & Session Persistence ✅ Completed
 
-**Why:** `AppDatabase` (sessions, reports, ai_profiles) and `JsonCollection[T]` are fully implemented in `src/db/` but never wired to any ViewModel. Sessions are never saved. Reports are never persisted. A `Patient` model is missing entirely — currently a patient is only a name string inside `MedicalReport`. This is the data foundation every subsequent milestone depends on. See AD-18.
+**AppDatabase fully wired. Reports and sessions auto-persisted. PatientRecord is a first-class entity with a full CRUD sidebar (Sessions + Patients tabs). Session→Patient linkage complete.**
+
+---
+
+### v2.7.4 — Patient List Panel (View + ViewModel) ✅ Completed
+
+- [x] Add `var_patients_index: list[dict]` to ViewModel, populated from `self._db.patients.list_index()`.
+- [x] Build a patient list panel listing all patients (name, created_at, session count).
+- [x] Clicking a patient filters the session history panel to show only their sessions.
+- [x] Add a "New Patient" form: full name, date of birth → creates `PatientRecord` and saves to `_db.patients`.
 
 ---
 
@@ -407,15 +416,6 @@
 - [x] Add `patients: JsonCollection[PatientRecord]` collection to `AppDatabase` at `app_data/patients/`.
 - [x] Index fields for patients: `patient_id`, `full_name`, `created_at`.
 - [x] Export `PatientRecord` from `src/models/__init__.py`.
-
----
-
-### v2.7.4 — Patient List Panel (View + ViewModel)
-
-- [ ] Add `var_patients_index: list[dict]` to ViewModel, populated from `self._db.patients.list_index()`.
-- [ ] Build a patient list panel listing all patients (name, created_at, session count).
-- [ ] Clicking a patient filters the session history panel to show only their sessions.
-- [ ] Add a "New Patient" form: full name, date of birth → creates `PatientRecord` and saves to `_db.patients`.
 
 ---
 

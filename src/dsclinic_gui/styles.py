@@ -73,6 +73,9 @@ def build_styles():
     s.configure("SidebarEmpty.TLabel",
                 background=SIDEBAR_BG, foreground=SUBTLE,
                 font=FS)
+    s.configure("SidebarFormLabel.TLabel",
+                background=SIDEBAR_BG, foreground=TEXT,
+                font=FB)
 
     # Chat message styles
     s.configure("ChatUser.TFrame", background=ACCENT_LT)
