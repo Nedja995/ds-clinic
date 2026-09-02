@@ -26,7 +26,6 @@ class ProviderType(StrEnum):
 
     Priority order for ProviderFactory.available_providers():
     GEMINI → CLAUDE → GROQ → TOGETHER → HUGGINGFACE → OLLAMA
-    (v2.9.0 and v2.10.0 add the remaining entries.)
     """
 
     GEMINI = "gemini"
@@ -41,13 +40,25 @@ class ProviderRequest(BaseModel):
     """
     Provider-agnostic analysis request.
 
-    `documents` is intentionally typed as list[Any] — Gemini providers receive
-    list[genai_types.Part]; Claude providers receive list[dict[str, Any]].
-    Each concrete provider casts internally. Mixing types in one request is
-    undefined behaviour — callers must ensure homogeneity.
+    `documents` carries binary file parts for multimodal providers (Gemini,
+    Claude). Text-only providers (Groq, Together, HuggingFace, Ollama) cannot
+    consume binary parts — callers must pre-extract document text and supply it
+    via `context`. Passing non-empty `documents` to a text-only provider is a
+    no-op: the provider logs a warning and falls back to `context`.
+
+    Split-Horizon usage (AD-12):
+      - Layer 1 (extraction / text-only providers): populate `context` with
+        OCR-extracted or scrubbed text; leave `documents` empty.
+      - Layer 2 (cloud reasoning, multimodal providers): populate `documents`
+        with file Parts; leave `context` empty or use it for structured JSON
+        produced by Layer 1.
     """
 
     documents: list[Any] = Field(default_factory=list)
+    # Pre-extracted text for text-only providers, or structured JSON from
+    # Layer 1 passed to Layer 2 as additional context. Empty string means
+    # the provider should rely solely on `documents` (multimodal path).
+    context: str = Field(default="")
     question: str = Field(default="")
     system_instructions: list[str] = Field(default_factory=list)
     temperature: float = Field(default=1.0)

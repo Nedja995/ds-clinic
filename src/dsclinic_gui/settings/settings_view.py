@@ -24,7 +24,7 @@ from npy.core import utils
 class SettingsWindow(tk.Toplevel):
 
     _WIDTH  = 640
-    _HEIGHT = 860  # increased to accommodate three credential fields
+    _HEIGHT = 1020  # increased to accommodate six credential fields
     _MIN_WIDTH = 400
     _MIN_HEIGHT = 400
 
@@ -190,9 +190,14 @@ class SettingsWindow(tk.Toplevel):
         self._sync_text_widget(self._sys_instr_text, self.view_model.var_system_instructions_text)
 
         # ── API Credentials (OS keyring — never written to disk) ──────────────
+        # Multimodal cloud providers
         self._credential_field(panel, "Google API Key",    self.view_model.var_google_api_key)
         self._credential_field(panel, "Anthropic API Key", self.view_model.var_anthropic_api_key)
         self._credential_field(panel, "Google Project ID", self.view_model.var_google_project_id)
+        # OpenAI-compatible cloud providers (text-only, Split-Horizon Layer 1/2)
+        self._credential_field(panel, "Groq API Key",        self.view_model.var_groq_api_key)
+        self._credential_field(panel, "Together AI API Key", self.view_model.var_together_api_key)
+        self._credential_field(panel, "HuggingFace API Key", self.view_model.var_huggingface_api_key)
 
     # ─────────────────────────────────────────────────────────────────────────
     # General Section

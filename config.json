@@ -116,6 +116,42 @@
         "claude-3-5-haiku-20241022": "claude-3-5-haiku-20241022",
         "claude-3-opus-20240229": "claude-3-opus-20240229"
     },
+    "groq_initial_model_config": {
+        "name": "llama-3.3-70b-versatile",
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "max_output_tokens": 8192
+    },
+    "groq_supported_models": {
+        "llama-3.3-70b-versatile": "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant": "llama-3.1-8b-instant",
+        "llama-3.1-70b-versatile": "llama-3.1-70b-versatile",
+        "gemma2-9b-it": "gemma2-9b-it"
+    },
+    "together_initial_model_config": {
+        "name": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "max_output_tokens": 8192
+    },
+    "together_supported_models": {
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "meta-llama/Llama-3.1-8B-Instruct-Turbo": "meta-llama/Llama-3.1-8B-Instruct-Turbo",
+        "mistralai/Mistral-7B-Instruct-v0.3": "mistralai/Mistral-7B-Instruct-v0.3",
+        "mistralai/Mixtral-8x7B-Instruct-v0.1": "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    },
+    "huggingface_initial_model_config": {
+        "name": "meta-llama/Llama-3.3-70B-Instruct",
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "max_output_tokens": 4096
+    },
+    "huggingface_supported_models": {
+        "meta-llama/Llama-3.3-70B-Instruct": "meta-llama/Llama-3.3-70B-Instruct",
+        "meta-llama/Llama-3.1-8B-Instruct": "meta-llama/Llama-3.1-8B-Instruct",
+        "mistralai/Mistral-7B-Instruct-v0.3": "mistralai/Mistral-7B-Instruct-v0.3",
+        "HuggingFaceH4/zephyr-7b-beta": "HuggingFaceH4/zephyr-7b-beta"
+    },
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "rezime+uzrok_problema+uzrok_problema_detaljno+strucno_misljenje_dijagnoza_summarized+preporucena_terapija_i_savet_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza+uzrok_problema",

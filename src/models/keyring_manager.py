@@ -13,6 +13,9 @@ Credential keys (logical name → keyring username):
     "gemini"            → "gemini_api_key"
     "anthropic"         → "anthropic_api_key"
     "google_project_id" → "google_project_id"
+    "groq"              → "groq_api_key"
+    "together"          → "together_api_key"
+    "huggingface"       → "huggingface_api_key"
 
 See: docs/architecture.md AD-11
 """
@@ -30,6 +33,10 @@ _CREDENTIAL_KEYS: dict[str, str] = {
     "gemini":            "gemini_api_key",
     "anthropic":         "anthropic_api_key",
     "google_project_id": "google_project_id",
+    # v2.9.1 — OpenAI-compatible cloud providers (text-only, Split-Horizon Layer 1/2)
+    "groq":              "groq_api_key",
+    "together":          "together_api_key",
+    "huggingface":       "huggingface_api_key",
 }
 
 

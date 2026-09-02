@@ -16,8 +16,6 @@ from npy.core.logger import setup_logger
 logger = setup_logger()
 
 # Priority order enforced by available_providers(). Lower index = higher priority.
-# Providers added in v2.9.0 and v2.10.0 are registered here as stubs so the
-# priority ordering is established once and never reordered later.
 _PROVIDER_PRIORITY: list[ProviderType] = [
     ProviderType.GEMINI,
     ProviderType.CLAUDE,
@@ -38,10 +36,8 @@ class ProviderFactory:
       is_available() returns True at the current moment (keys in keyring,
       daemons running, etc.).
 
-    Future providers (GROQ, TOGETHER, HUGGINGFACE, OLLAMA) raise
-    NotImplementedError from create() until their sub-versions are implemented.
-    available_providers() catches and skips these gracefully so the UI is
-    never broken by an unimplemented backend.
+    OLLAMA raises NotImplementedError until v2.10.x is implemented.
+    available_providers() catches and skips it gracefully.
     """
 
     @staticmethod
@@ -49,12 +45,11 @@ class ProviderFactory:
         """
         Construct and return a provider instance for the given ProviderType.
 
-        Raises NotImplementedError for backends not yet implemented (v2.9.0+).
+        Imports are lazy (inside the method) to keep SDK dependencies deferred —
+        only the requested provider's SDK is imported when that provider is first used.
         Concrete provider __init__ never raises on missing credentials — check
         is_available() on the returned instance before use.
         """
-        # Import inside the method to avoid circular imports and to keep SDK
-        # dependencies lazy — only the requested provider's SDK is imported.
         if provider_type == ProviderType.GEMINI:
             from providers.gemini_provider import GeminiProvider
             return GeminiProvider()
@@ -64,27 +59,23 @@ class ProviderFactory:
             return ClaudeProvider()
 
         if provider_type == ProviderType.GROQ:
-            raise NotImplementedError(
-                "GroqProvider is not yet implemented. Planned for v2.9.2."
-            )
+            from providers.groq_provider import GroqProvider
+            return GroqProvider()
 
         if provider_type == ProviderType.TOGETHER:
-            raise NotImplementedError(
-                "TogetherProvider is not yet implemented. Planned for v2.9.3."
-            )
+            from providers.together_provider import TogetherProvider
+            return TogetherProvider()
 
         if provider_type == ProviderType.HUGGINGFACE:
-            raise NotImplementedError(
-                "HuggingFaceProvider is not yet implemented. Planned for v2.9.4."
-            )
+            from providers.huggingface_provider import HuggingFaceProvider
+            return HuggingFaceProvider()
 
         if provider_type == ProviderType.OLLAMA:
             raise NotImplementedError(
                 "OllamaProvider is not yet implemented. Planned for v2.10.2."
             )
 
-        # Exhaustive match — if a new ProviderType is added without a branch,
-        # this surfaces it immediately rather than silently returning None.
+        # Exhaustive match — surfaces any new ProviderType added without a branch.
         raise ValueError(f"Unknown ProviderType: {provider_type!r}")
 
     @staticmethod
@@ -110,7 +101,7 @@ class ProviderFactory:
                 else:
                     logger.debug(f"[ProviderFactory] {provider_type.value}: not available (key absent or init failed)")
             except NotImplementedError:
-                # Expected for backends planned in future sub-versions.
+                # Expected for OLLAMA until v2.10.x.
                 logger.debug(f"[ProviderFactory] {provider_type.value}: not yet implemented — skipping")
             except Exception as exc:
                 logger.warning(f"[ProviderFactory] {provider_type.value}: unexpected error during availability check: {exc}")

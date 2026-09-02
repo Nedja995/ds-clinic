@@ -33,6 +33,11 @@ class AppSettings(BaseSettings):
 
     claude_supported_models: Dict[str, str] = Field(default_factory=dict)
 
+    # v2.9.1 — OpenAI-compatible provider model lists (read from config.json)
+    groq_supported_models: Dict[str, str] = Field(default_factory=dict)
+    together_supported_models: Dict[str, str] = Field(default_factory=dict)
+    huggingface_supported_models: Dict[str, str] = Field(default_factory=dict)
+
     # ── 2. WRITABLE CLINICIAN PREFERENCES (settings.json overrides) ──
     language_code: str = "sr"
     anonymization_on: bool = False
@@ -54,7 +59,7 @@ class AppSettings(BaseSettings):
     # API keys are in OS keyring via keyring_manager.py — never stored here
     google_project_location: str = "us-central1"
 
-    # Models & System Prompts
+    # Gemini model config
     ai_model_name: str = "gemini-2.5-flash"
     ai_model_temperature: float = 1.0
     ai_model_top_p: float = 0.95
@@ -62,7 +67,13 @@ class AppSettings(BaseSettings):
     ai_model_top_k: int = 64
     ai_thinking_level: str = "default"
 
+    # Claude model config
     claude_model_name: str = "claude-3-5-sonnet-20241022"
+
+    # v2.9.1 — active model name for each OpenAI-compatible provider
+    groq_model_name: str = "llama-3.3-70b-versatile"
+    together_model_name: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    huggingface_model_name: str = "meta-llama/Llama-3.3-70B-Instruct"
 
     ai_initial_task_description: str = ""
     ai_system_instructions: List[str] = Field(default_factory=list)
@@ -161,6 +172,19 @@ class AppSettings(BaseSettings):
                 merged_data["claude_model_name"] = claude_cfg.get("name", "claude-3-5-sonnet-20241022")
                 merged_data["claude_supported_models"] = config_defaults.get("claude_supported_models", {})
 
+                # v2.9.1 — OpenAI-compatible provider model lists and defaults
+                groq_cfg = config_defaults.get("groq_initial_model_config", {})
+                merged_data["groq_model_name"] = groq_cfg.get("name", "llama-3.3-70b-versatile")
+                merged_data["groq_supported_models"] = config_defaults.get("groq_supported_models", {})
+
+                together_cfg = config_defaults.get("together_initial_model_config", {})
+                merged_data["together_model_name"] = together_cfg.get("name", "meta-llama/Llama-3.3-70B-Instruct-Turbo")
+                merged_data["together_supported_models"] = config_defaults.get("together_supported_models", {})
+
+                hf_cfg = config_defaults.get("huggingface_initial_model_config", {})
+                merged_data["huggingface_model_name"] = hf_cfg.get("name", "meta-llama/Llama-3.3-70B-Instruct")
+                merged_data["huggingface_supported_models"] = config_defaults.get("huggingface_supported_models", {})
+
             except Exception as e:
                 logger.error(f"Failed to read static config.json defaults: {e}")
 
@@ -212,6 +236,9 @@ class AppSettings(BaseSettings):
             "ai_initial_task_key",
             "ai_task_descriptions",
             "claude_supported_models",
+            "groq_supported_models",
+            "together_supported_models",
+            "huggingface_supported_models",
             "app_name",
             "app_version",
             # Secrets — stored in OS keyring only, never written to any file (AD-11)

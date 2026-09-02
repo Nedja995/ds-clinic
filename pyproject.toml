@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.8.4"
+version = "2.9.1"
 description = "Enterprise B2B Medical AI Analysis & Report Platform — ViTec"
 readme = "README.md"
 license = "MIT"
@@ -35,6 +35,8 @@ claude = [
 local = [
     "ollama>=0.3",
 ]
+# openai SDK covers Groq, Together AI, and HuggingFace router — all expose
+# OpenAI-compatible /v1/chat/completions endpoints (AD-19, v2.9.x).
 providers = [
     "openai>=1.50",
 ]

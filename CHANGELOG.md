@@ -17,9 +17,57 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.12.0] - Planned — Chat Session View Rewrite + New Features
 ## [2.11.0] - Planned — Enterprise Multi-Brand / White-Label & Subscription Config
 ## [2.10.0] - Planned — Local Ollama Provider (16GB VRAM Optimized)
-## [2.9.0] - Planned — Groq + Together AI + HuggingFace Cloud Providers
+## [2.9.0] - Completed — Groq + Together AI + HuggingFace Cloud Providers
 ## [2.8.0] - Completed — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
 ## [2.7.0] - Completed — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.9.4] - 2026-09-02
+
+### Changed
+- `src/providers/factory.py` — replaced `NotImplementedError` stubs for `GROQ`, `TOGETHER`, `HUGGINGFACE` with lazy imports of their concrete provider classes. `OLLAMA` stub retained (planned v2.10.2). Updated module docstring.
+- `src/providers/__init__.py` — no change to exports; re-written for consistency.
+
+---
+
+## [2.9.3] - 2026-09-02
+
+### Added
+- `src/providers/groq_provider.py` — `GroqProvider(OpenAICompatibleProvider)`: `_BASE_URL="https://api.groq.com/openai/v1"`, `_CREDENTIAL_NAME="groq"`, `_model_name()` returns `app_settings.groq_model_name`.
+- `src/providers/together_provider.py` — `TogetherProvider(OpenAICompatibleProvider)`: `_BASE_URL="https://api.together.xyz/v1"`, `_CREDENTIAL_NAME="together"`, `_model_name()` returns `app_settings.together_model_name`.
+- `src/providers/huggingface_provider.py` — `HuggingFaceProvider(OpenAICompatibleProvider)`: `_BASE_URL="https://router.huggingface.co/v1"`, `_CREDENTIAL_NAME="huggingface"`, `_model_name()` returns `app_settings.huggingface_model_name`. `is_available()` key-only check per AD-16 (no startup network ping).
+
+---
+
+## [2.9.2] - 2026-09-02
+
+### Added
+- `src/providers/openai_compatible_provider.py` — `OpenAICompatibleProvider(LLMProvider)`: shared concrete base for all OpenAI-compatible `/v1/chat/completions` backends.
+  - Parameterised via `_BASE_URL` and `_CREDENTIAL_NAME` class attributes — subclasses supply these and nothing else.
+  - `__init__`: resolves key from keyring via `_CREDENTIAL_NAME`; constructs `openai.OpenAI(base_url=_BASE_URL, api_key=...)`. Startup-guard: `_client = None` when key absent, no exception raised.
+  - `analyze(request)`: text-only — `request.documents` ignored with warning (Split-Horizon constraint, AD-12). Builds system prompt from `request.system_instructions` + `_JSON_SCHEMA_SUFFIX`. Builds user message from `request.context` + `request.question`. Seeds `_chat_history`. Calls `client.chat.completions.create()`. Strips markdown fences from response. Parses into `MedicalReportModel` via `model_validate_json()`. Raises `RuntimeError` on API or parse failure.
+  - `ask(question)`: appends question to `_chat_history`, streams via `stream=True`, yields chunks, appends accumulated response to history after generator exhausted.
+  - `_stream_and_record()`: inner generator that yields chunks and records history atomically on exhaustion.
+  - Catches `APIConnectionError`, `APIStatusError`, `APITimeoutError` and wraps as `RuntimeError`.
+
+---
+
+## [2.9.1] - 2026-09-02
+
+### Added
+- `src/providers/base.py` — `ProviderRequest.context: str` field added. Carries pre-extracted document text for text-only providers (Groq, Together, HuggingFace, Ollama). Multimodal providers (Gemini, Claude) use `documents`; text-only providers use `context`. Split-Horizon boundary made explicit in data model (AD-12).
+- `config.json` — three new provider config sections:
+  - `groq_initial_model_config` (`llama-3.3-70b-versatile`), `groq_supported_models` (4 models).
+  - `together_initial_model_config` (`meta-llama/Llama-3.3-70B-Instruct-Turbo`), `together_supported_models` (4 models).
+  - `huggingface_initial_model_config` (`meta-llama/Llama-3.3-70B-Instruct`), `huggingface_supported_models` (4 models).
+
+### Changed
+- `src/models/keyring_manager.py` — added `"groq"` → `"groq_api_key"`, `"together"` → `"together_api_key"`, `"huggingface"` → `"huggingface_api_key"` to `_CREDENTIAL_KEYS`. Module docstring updated.
+- `src/models/settings.py` — added `groq_supported_models`, `together_supported_models`, `huggingface_supported_models` dict fields; `groq_model_name`, `together_model_name`, `huggingface_model_name` string fields. `load_unified()` reads all six from `config.json`. `save_unified()` excludes the three supported-model dicts from written JSON.
+- `src/dsclinic_gui/settings/settings_view_model.py` — added `var_groq_api_key`, `var_together_api_key`, `var_huggingface_api_key` `tk.StringVar` vars; `update_from_config()` refreshes all three from keyring; `save_to_config()` writes all three via `set_credential()`.
+- `src/dsclinic_gui/settings/settings_view.py` — added three `_credential_field()` calls for Groq, Together AI, and HuggingFace below the existing cloud provider fields. `_HEIGHT` bumped from 860 to 1020.
+- `pyproject.toml` — version bumped to `2.9.1`; `providers` optional extra comment updated to explain single `openai` SDK covers all three new backends.
 
 ---
 
@@ -102,7 +150,7 @@ See [TODO.md](TODO.md) for planned versions.
 ### Changed
 - `src/dsclinic_gui/main_container.py` — three-pane layout: `SessionHistoryView` (weight=2) added as leftmost pane; `MedicalReportView` weight reduced from 8 to 6 to preserve proportional feel. Module and class docstrings added.
 - `src/dsclinic_gui/report_view_models.py` — `_persist_session()` now calls `_refresh_sessions_index()` after every save so the sidebar stays current.
-- `pyproject.toml` — `session_history_view.py` and `main_container.py` added to `[tool.mypy]` exclude list (View-layer files, deferred to rewrite milestones).
+- `src/dsclinic_gui/report_view_models.py` — `PatientRecord` imported from `models`.
 
 ---
 

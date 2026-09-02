@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.8.0 ✅ Complete — Next: v2.9.0
+## Current Status: v2.9.0 ✅ Complete — Next: v2.10.0
 
 | Version | Scope | Status |
 |---|---|---|
@@ -66,7 +66,10 @@ git push
 | v2.8.2 | `GeminiProvider` + `ClaudeProvider` | ✅ Done |
 | v2.8.3 | `ProviderFactory` + `__init__.py` exports | ✅ Done |
 | v2.8.4 | Refactor `DSClinic` to use `ProviderFactory` | ✅ Done |
-| v2.9.0 | Groq + Together + HuggingFace providers | ▶ Next |
+| v2.9.1 | Credential & config infra for new providers | ✅ Done |
+| v2.9.2 | `OpenAICompatibleProvider` base class | ✅ Done |
+| v2.9.3 | `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider` | ✅ Done |
+| v2.9.4 | Register new providers in `ProviderFactory` | ✅ Done |
 | v2.10.0 | Local Ollama provider | Planned |
 | v2.11.0 | BrandConfig + white-label + subscription | Planned |
 | v2.12.0 | Chat Session View rewrite | Planned |
@@ -76,32 +79,38 @@ git push
 
 ---
 
-## v2.8.4 Changes (completed 2026-09-02)
+## v2.9.0 Changes (completed 2026-09-02)
 
-- `src/dsclinic.py` — full refactor to route through `ProviderFactory` / `LLMProvider`:
-  - All direct SDK client imports removed. Only `api_gemini.utils` retained for document loading (Gemini Part format — a future adapter layer will generalise this when needed).
-  - `DSClinic.__init__` — calls `ProviderFactory.available_providers()` and constructs the first available via `ProviderFactory.create()`. `active_provider: LLMProvider | None` attribute; `None` only when no key is configured.
-  - `set_active_provider(provider_type: ProviderType) -> None` — new method; validates `is_available()` before assigning; raises `ValueError` if unavailable.
-  - `get_initial_analysis_report()` — document loading loop unchanged; wraps loaded parts in `ProviderRequest`; delegates to `self.active_provider.analyze(request)`.
-  - `ask_followup_question()` — delegates to `self.active_provider.ask(question)`; accumulates `Iterator[str]` into full string for ViewModel compatibility.
+### Architecture decision (Option A — confirmed by developer)
+`ProviderRequest.context: str` field added to `base.py`. Text-only providers (Groq, Together, HuggingFace, Ollama) cannot consume binary `documents` — callers must pre-extract text into `context`. This makes the Split-Horizon Layer 1/2 boundary explicit in the data model (AD-12).
 
----
+### v2.9.1
+- `src/models/keyring_manager.py` — added `"groq"`, `"together"`, `"huggingface"` to `_CREDENTIAL_KEYS`.
+- `src/providers/base.py` — `ProviderRequest.context: str` field added with full docstring explaining Split-Horizon usage.
+- `src/models/settings.py` — `groq_model_name`, `together_model_name`, `huggingface_model_name` fields; `groq_supported_models`, `together_supported_models`, `huggingface_supported_models` dicts; all wired in `load_unified()` and excluded from `save_unified()`.
+- `config.json` — `groq_initial_model_config` + `groq_supported_models`, `together_initial_model_config` + `together_supported_models`, `huggingface_initial_model_config` + `huggingface_supported_models` added.
+- `src/dsclinic_gui/settings/settings_view_model.py` — `var_groq_api_key`, `var_together_api_key`, `var_huggingface_api_key`; all wired in `update_from_config()` and `save_to_config()`.
+- `src/dsclinic_gui/settings/settings_view.py` — three new `_credential_field()` calls; `_HEIGHT` bumped to 1020.
+- `pyproject.toml` — version bumped to `2.9.1`.
 
-## v2.8.0 Summary (all sub-versions completed 2026-09-02)
+### v2.9.2
+- `src/providers/openai_compatible_provider.py` — `OpenAICompatibleProvider(LLMProvider)` shared base. Parameterised by `_BASE_URL` / `_CREDENTIAL_NAME`. `analyze()`: text-only, warns on `documents`, enforces JSON schema via `_JSON_SCHEMA_SUFFIX`, strips markdown fences, parses `MedicalReportModel`. `ask()`: streaming via `_stream_and_record()` generator that records history on exhaustion. Catches all OpenAI SDK errors → `RuntimeError`.
 
-- `src/providers/base.py` — `LLMProvider(ABC)`, `ProviderType(StrEnum)`, `ProviderRequest`, `ProviderResponse`.
-- `src/providers/gemini_provider.py` — `GeminiProvider`: delegates to `MedicalAnalyzerClient`.
-- `src/providers/claude_provider.py` — `ClaudeProvider`: delegates to `ClaudeAnalyzerClient`.
-- `src/providers/factory.py` — `ProviderFactory.create()` + `available_providers()`.
-- `src/providers/__init__.py` — exports all five public symbols.
-- `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports.
+### v2.9.3
+- `src/providers/groq_provider.py` — `GroqProvider`: `_BASE_URL="https://api.groq.com/openai/v1"`.
+- `src/providers/together_provider.py` — `TogetherProvider`: `_BASE_URL="https://api.together.xyz/v1"`.
+- `src/providers/huggingface_provider.py` — `HuggingFaceProvider`: `_BASE_URL="https://router.huggingface.co/v1"`. Key-only `is_available()` per AD-16.
+
+### v2.9.4
+- `src/providers/factory.py` — `NotImplementedError` stubs for GROQ, TOGETHER, HUGGINGFACE replaced with lazy imports of concrete classes. OLLAMA stub retained.
 
 ---
 
 ## Key Existing Code Context
 
-- `src/providers/` — complete: `base.py`, `gemini_provider.py`, `claude_provider.py`, `factory.py`, `__init__.py`.
-- `src/dsclinic.py` — refactored: `active_provider: LLMProvider | None`, `set_active_provider()`, `get_initial_analysis_report()`, `ask_followup_question()` all route through the provider interface.
+- `src/providers/` — complete: `base.py`, `gemini_provider.py`, `claude_provider.py`, `openai_compatible_provider.py`, `groq_provider.py`, `together_provider.py`, `huggingface_provider.py`, `factory.py`, `__init__.py`.
+- `src/providers/base.py` — `ProviderRequest` now has `context: str` field for text-only providers.
+- `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports. Document loading produces `genai_types.Part` list — text-only providers receive empty `documents` and rely on `context`.
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` fully implemented.
 - `src/dsclinic_gui/report_view_models.py` — full patient + session management.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
@@ -110,6 +119,10 @@ git push
 
 ## Previously Completed
 
+- **v2.9.4** ✅ — `ProviderFactory` stubs replaced; all 5 implemented providers fully registered.
+- **v2.9.3** ✅ — `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider` concrete subclasses.
+- **v2.9.2** ✅ — `OpenAICompatibleProvider` shared base; single `openai` SDK covers all three backends.
+- **v2.9.1** ✅ — Credential infra, `AppSettings`, Settings UI, `config.json`, `ProviderRequest.context`.
 - **v2.8.4** ✅ — `DSClinic` refactored to `ProviderFactory`; direct SDK client imports eliminated.
 - **v2.8.3** ✅ — `ProviderFactory` + updated `__init__.py` exports.
 - **v2.8.2** ✅ — `GeminiProvider` + `ClaudeProvider` concrete implementations.

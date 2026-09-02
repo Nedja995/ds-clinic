@@ -46,9 +46,13 @@ class SettingsViewModel:
         self.var_system_instructions_text = tk.StringVar(value="".join(app_settings.ai_system_instructions))
 
         # ── API Credentials — read from OS keyring only (AD-11) ───────────────
-        self.var_google_api_key    = tk.StringVar(value=get_credential("gemini") or "")
-        self.var_anthropic_api_key = tk.StringVar(value=get_credential("anthropic") or "")
-        self.var_google_project_id = tk.StringVar(value=get_credential("google_project_id") or "")
+        self.var_google_api_key      = tk.StringVar(value=get_credential("gemini") or "")
+        self.var_anthropic_api_key   = tk.StringVar(value=get_credential("anthropic") or "")
+        self.var_google_project_id   = tk.StringVar(value=get_credential("google_project_id") or "")
+        # v2.9.1 — OpenAI-compatible cloud providers
+        self.var_groq_api_key        = tk.StringVar(value=get_credential("groq") or "")
+        self.var_together_api_key    = tk.StringVar(value=get_credential("together") or "")
+        self.var_huggingface_api_key = tk.StringVar(value=get_credential("huggingface") or "")
 
         # ── App General ───────────────────────────────────────────────────────
         self.var_support_email = tk.StringVar(value="nprm1555@gmail.com")
@@ -86,6 +90,9 @@ class SettingsViewModel:
         self.var_google_api_key.set(get_credential("gemini") or "")
         self.var_anthropic_api_key.set(get_credential("anthropic") or "")
         self.var_google_project_id.set(get_credential("google_project_id") or "")
+        self.var_groq_api_key.set(get_credential("groq") or "")
+        self.var_together_api_key.set(get_credential("together") or "")
+        self.var_huggingface_api_key.set(get_credential("huggingface") or "")
 
     def save_to_config(self) -> None:
         """Persist settings to app_settings + disk, and credentials to OS keyring."""
@@ -124,6 +131,9 @@ class SettingsViewModel:
         set_credential("gemini",            self.var_google_api_key.get())
         set_credential("anthropic",         self.var_anthropic_api_key.get())
         set_credential("google_project_id", self.var_google_project_id.get())
+        set_credential("groq",              self.var_groq_api_key.get())
+        set_credential("together",          self.var_together_api_key.get())
+        set_credential("huggingface",       self.var_huggingface_api_key.get())
 
     # ── Validation ────────────────────────────────────────────────────────────
 
