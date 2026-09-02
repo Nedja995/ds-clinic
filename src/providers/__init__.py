@@ -7,10 +7,12 @@ these symbols — never with SDK-specific client classes directly.
 """
 
 from providers.base import LLMProvider, ProviderType, ProviderRequest, ProviderResponse
+from providers.factory import ProviderFactory
 
 __all__ = [
     "LLMProvider",
     "ProviderType",
     "ProviderRequest",
     "ProviderResponse",
+    "ProviderFactory",
 ]

@@ -23,6 +23,18 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.8.3] - 2026-09-02
+
+### Added
+- `src/providers/factory.py` — `ProviderFactory` with two static methods:
+  - `create(provider_type: ProviderType) -> LLMProvider` — constructs the concrete provider for the given type; raises `NotImplementedError` for `GROQ`, `TOGETHER`, `HUGGINGFACE`, `OLLAMA` (planned in v2.9.x / v2.10.x). Imports are lazy (inside the method) to keep SDK dependencies deferred.
+  - `available_providers() -> list[ProviderType]` — iterates `_PROVIDER_PRIORITY` (`GEMINI → CLAUDE → GROQ → TOGETHER → HUGGINGFACE → OLLAMA`), constructs each, calls `is_available()`, returns those that are `True`. `NotImplementedError` and unexpected exceptions are caught and skipped — UI is never broken by an unimplemented backend.
+
+### Changed
+- `src/providers/__init__.py` — added `ProviderFactory` to exports and `__all__`.
+
+---
+
 ## [2.8.2] - 2026-09-02
 
 ### Added

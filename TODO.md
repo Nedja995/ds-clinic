@@ -331,6 +331,26 @@
 
 ---
 
+### v2.8.4 — Refactor `DSClinic` to Use `ProviderFactory`
+
+- [ ] Replace direct `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` instantiation with `ProviderFactory.create(provider_type)`.
+- [ ] Add `active_provider: LLMProvider` attribute to `DSClinic`.
+- [ ] Add `set_active_provider(provider_type: ProviderType) -> None` method.
+- [ ] `get_initial_analysis_report()` → calls `self.active_provider.analyze(request)`.
+- [ ] `ask_followup_question()` → calls `self.active_provider.ask(question)`.
+- [ ] Default provider on startup: first available from `ProviderFactory.available_providers()`, priority: `GEMINI → CLAUDE → GROQ → TOGETHER → HUGGINGFACE → OLLAMA`.
+
+---
+
+### v2.8.3 — `ProviderFactory` (`src/providers/factory.py`) ✅ Completed
+
+- [x] Implement `ProviderFactory`:
+  - [x] `create(provider_type: ProviderType) -> LLMProvider` — constructs provider; raises `NotImplementedError` for v2.9.x/v2.10.x backends (stub). Lazy imports per provider type to keep SDK dependencies deferred.
+  - [x] `available_providers() -> list[ProviderType]` — iterates `_PROVIDER_PRIORITY`, skips `NotImplementedError` and unexpected exceptions; returns ordered list of available types.
+- [x] Export `ProviderFactory` from `src/providers/__init__.py`.
+
+---
+
 ### v2.8.2 — `GeminiProvider` & `ClaudeProvider` Concrete Implementations ✅ Completed
 
 - [x] Implement `GeminiProvider(LLMProvider)` in `src/providers/gemini_provider.py`:
@@ -353,26 +373,6 @@
   - [x] `ask(question: str) -> Iterator[str]`
   - [x] `provider_type() -> ProviderType`
   - [x] `is_available() -> bool`
-
----
-
-### v2.8.3 — `ProviderFactory` (`src/providers/factory.py`)
-
-- [ ] Implement `ProviderFactory`:
-  - [ ] `create(provider_type: ProviderType, ...) -> LLMProvider` — constructs provider from keyring + app_settings.
-  - [ ] `available_providers() -> list[ProviderType]` — returns all providers where `is_available()` is `True`.
-- [ ] Export `LLMProvider`, `ProviderFactory`, `ProviderType`, `ProviderRequest`, `ProviderResponse` from `src/providers/__init__.py`.
-
----
-
-### v2.8.4 — Refactor `DSClinic` to Use `ProviderFactory`
-
-- [ ] Replace direct `MedicalAnalyzerClient` / `ClaudeAnalyzerClient` instantiation with `ProviderFactory.create(provider_type)`.
-- [ ] Add `active_provider: LLMProvider` attribute to `DSClinic`.
-- [ ] Add `set_active_provider(provider_type: ProviderType) -> None` method.
-- [ ] `get_initial_analysis_report()` → calls `self.active_provider.analyze(request)`.
-- [ ] `ask_followup_question()` → calls `self.active_provider.ask(question)`.
-- [ ] Default provider on startup: first available from `ProviderFactory.available_providers()`, priority: `GEMINI → CLAUDE → GROQ → TOGETHER → HUGGINGFACE → OLLAMA`.
 
 ---
 
