@@ -16,10 +16,55 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.13.0] - Planned — pytest Coverage
 ## [2.12.0] - Planned — Chat Session View Rewrite + New Features
 ## [2.11.0] - Planned — Enterprise Multi-Brand / White-Label & Subscription Config
-## [2.10.0] - Planned — Local Ollama Provider (16GB VRAM Optimized)
+## [2.10.0] - Completed — Local Ollama Provider (16GB VRAM Optimized)
 ## [2.9.0] - Completed — Groq + Together AI + HuggingFace Cloud Providers
 ## [2.8.0] - Completed — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
 ## [2.7.0] - Completed — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.10.4] - 2026-09-03
+
+### Changed
+- `src/providers/factory.py` — replaced `NotImplementedError` stub for `OLLAMA` with lazy import of `OllamaProvider`. `NotImplementedError` catch removed from `available_providers()` (no longer needed — all six providers implemented). Module docstring updated to reflect v2.10.4 completion.
+
+---
+
+## [2.10.3] - 2026-09-03
+
+### Added
+- `src/providers/ollama_provider.py` — `OllamaProvider._ensure_model_loaded()`:
+  - Unloads the previously active model via `keep_alive=0` before loading a new one — prevents VRAM thrashing on 16 GB budget (AD-13).
+  - Checks `ollama.list()` for local model presence; calls `ollama.pull()` only when model is absent — pull runs once on first use, not at startup.
+  - Logs VRAM decisions at `DEBUG` level: unload events, pull events, active model changes.
+  - `_loaded_model: str` instance attribute tracks last loaded model for unload targeting.
+
+---
+
+## [2.10.2] - 2026-09-03
+
+### Added
+- `src/providers/ollama_provider.py` — `OllamaProvider(LLMProvider)` concrete implementation:
+  - `__init__`: lazy-imports `ollama`; constructs `ollama.Client(host=app_settings.ollama_base_url)`; pings daemon via `list()` — `_available = True` only when daemon responds. Startup-guard: no exception raised when daemon is down or SDK not installed.
+  - `provider_type()` → `ProviderType.OLLAMA`.
+  - `is_available()` → `self._available`.
+  - `analyze()`: text-only (documents ignored with warning per AD-12); builds system prompt with `_JSON_SCHEMA_SUFFIX`; seeds `_chat_history`; calls `client.chat()`; strips markdown fences; parses `MedicalReportModel`. Raises `RuntimeError` on API or parse failure.
+  - `ask()`: appends question to history; streams via `client.chat(stream=True)`; yields chunks; appends accumulated response to history after generator exhaustion.
+  - `_model_name()`: returns `app_settings.ollama_model_name`.
+  - `_JSON_SCHEMA_SUFFIX`: mirrors `openai_compatible_provider.py` for uniform structured output contract across all providers.
+
+---
+
+## [2.10.1] - 2026-09-03
+
+### Added
+- `config.json` — `ollama_initial_model_config` (`llama3.2-vision:q4_0`, `base_url`) and `ollama_supported_models` (5 quantized models: `llama3.2-vision:q4_0`, `llama3.2-vision:q8_0`, `medgemma:q4_0`, `llama3.1:8b-q4_0`, `mistral:7b-q4_0`).
+- `src/models/settings.py` — `ollama_model_name: str` and `ollama_base_url: str` writable fields; `ollama_supported_models: Dict[str, str]` static field. `load_unified()` reads all three from `ollama_initial_model_config` / `ollama_supported_models` in `config.json`. `save_unified()` excludes `ollama_supported_models` (static) but persists `ollama_model_name` and `ollama_base_url` (user prefs).
+- `src/dsclinic_gui/settings/settings_view_model.py` — `var_ollama_base_url`, `var_ollama_model_name` `tk.StringVar` vars; `ollama_supported_models` list. `update_from_config()` refreshes both from `app_settings`. `save_to_config()` writes both to `app_settings` before `save_unified()`.
+- `src/dsclinic_gui/settings/settings_view.py` — new `_build_local_ai_section()` method renders "LOCAL AI (OLLAMA)" card: plain (unmasked) base URL entry with hint label; model combobox populated from `ollama_supported_models`; quantization hint label referencing AD-13. `_setup_ui()` calls `_build_local_ai_section()` between AI and General sections. `_HEIGHT` bumped from 1020 to 1160.
+
+### Changed
+- `pyproject.toml` — version bumped to `2.10.1`; `local` optional extra comment updated to reference AD-13 and v2.10.x.
 
 ---
 

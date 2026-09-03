@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.9.1"
+version = "2.10.4"
 description = "Enterprise B2B Medical AI Analysis & Report Platform — ViTec"
 readme = "README.md"
 license = "MIT"
@@ -33,6 +33,7 @@ claude = [
     "anthropic>=0.40",
 ]
 local = [
+    # ollama SDK covers the local Ollama daemon (AD-13, v2.10.x).
     "ollama>=0.3",
 ]
 # openai SDK covers Groq, Together AI, and HuggingFace router — all expose

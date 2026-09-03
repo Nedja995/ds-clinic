@@ -38,6 +38,9 @@ class AppSettings(BaseSettings):
     together_supported_models: Dict[str, str] = Field(default_factory=dict)
     huggingface_supported_models: Dict[str, str] = Field(default_factory=dict)
 
+    # v2.10.1 — Ollama local provider model list (read from config.json)
+    ollama_supported_models: Dict[str, str] = Field(default_factory=dict)
+
     # ── 2. WRITABLE CLINICIAN PREFERENCES (settings.json overrides) ──
     language_code: str = "sr"
     anonymization_on: bool = False
@@ -74,6 +77,10 @@ class AppSettings(BaseSettings):
     groq_model_name: str = "llama-3.3-70b-versatile"
     together_model_name: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
     huggingface_model_name: str = "meta-llama/Llama-3.3-70B-Instruct"
+
+    # v2.10.1 — Ollama local provider config (not secrets — stored in settings.json)
+    ollama_model_name: str = "llama3.2-vision:q4_0"
+    ollama_base_url: str = "http://localhost:11434"
 
     ai_initial_task_description: str = ""
     ai_system_instructions: List[str] = Field(default_factory=list)
@@ -185,6 +192,13 @@ class AppSettings(BaseSettings):
                 merged_data["huggingface_model_name"] = hf_cfg.get("name", "meta-llama/Llama-3.3-70B-Instruct")
                 merged_data["huggingface_supported_models"] = config_defaults.get("huggingface_supported_models", {})
 
+                # v2.10.1 — Ollama local provider: model list from config.json;
+                # base_url and active model name are writable user prefs (settings.json).
+                ollama_cfg = config_defaults.get("ollama_initial_model_config", {})
+                merged_data["ollama_model_name"] = ollama_cfg.get("name", "llama3.2-vision:q4_0")
+                merged_data["ollama_base_url"] = ollama_cfg.get("base_url", "http://localhost:11434")
+                merged_data["ollama_supported_models"] = config_defaults.get("ollama_supported_models", {})
+
             except Exception as e:
                 logger.error(f"Failed to read static config.json defaults: {e}")
 
@@ -239,6 +253,8 @@ class AppSettings(BaseSettings):
             "groq_supported_models",
             "together_supported_models",
             "huggingface_supported_models",
+            # Ollama model list is static config — base_url and model_name ARE persisted (user prefs)
+            "ollama_supported_models",
             "app_name",
             "app_version",
             # Secrets — stored in OS keyring only, never written to any file (AD-11)

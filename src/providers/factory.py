@@ -16,6 +16,8 @@ from npy.core.logger import setup_logger
 logger = setup_logger()
 
 # Priority order enforced by available_providers(). Lower index = higher priority.
+# Cloud providers first; Ollama last — local inference is the privacy-first fallback,
+# not the default, unless no cloud key is configured (Split-Horizon AD-12).
 _PROVIDER_PRIORITY: list[ProviderType] = [
     ProviderType.GEMINI,
     ProviderType.CLAUDE,
@@ -36,8 +38,7 @@ class ProviderFactory:
       is_available() returns True at the current moment (keys in keyring,
       daemons running, etc.).
 
-    OLLAMA raises NotImplementedError until v2.10.x is implemented.
-    available_providers() catches and skips it gracefully.
+    All six providers are fully implemented as of v2.10.4.
     """
 
     @staticmethod
@@ -71,9 +72,10 @@ class ProviderFactory:
             return HuggingFaceProvider()
 
         if provider_type == ProviderType.OLLAMA:
-            raise NotImplementedError(
-                "OllamaProvider is not yet implemented. Planned for v2.10.2."
-            )
+            # v2.10.4: OllamaProvider fully implemented (AD-13).
+            # is_available() pings the local daemon — no API key required.
+            from providers.ollama_provider import OllamaProvider
+            return OllamaProvider()
 
         # Exhaustive match — surfaces any new ProviderType added without a branch.
         raise ValueError(f"Unknown ProviderType: {provider_type!r}")
@@ -87,8 +89,7 @@ class ProviderFactory:
         Priority follows _PROVIDER_PRIORITY. The first entry is the recommended
         default for DSClinic.set_active_provider() on startup.
 
-        Never raises — NotImplementedError (unimplemented backends) and any
-        unexpected exception are caught and logged, then skipped.
+        Never raises — any unexpected exception is caught and logged, then skipped.
         """
         available: list[ProviderType] = []
 
@@ -99,10 +100,7 @@ class ProviderFactory:
                     available.append(provider_type)
                     logger.debug(f"[ProviderFactory] {provider_type.value}: available")
                 else:
-                    logger.debug(f"[ProviderFactory] {provider_type.value}: not available (key absent or init failed)")
-            except NotImplementedError:
-                # Expected for OLLAMA until v2.10.x.
-                logger.debug(f"[ProviderFactory] {provider_type.value}: not yet implemented — skipping")
+                    logger.debug(f"[ProviderFactory] {provider_type.value}: not available (key absent, init failed, or daemon not running)")
             except Exception as exc:
                 logger.warning(f"[ProviderFactory] {provider_type.value}: unexpected error during availability check: {exc}")
 

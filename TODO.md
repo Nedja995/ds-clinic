@@ -119,6 +119,8 @@
 - [ ] Test `DSClinic.set_active_provider()` switches correctly.
 - [ ] Test `OpenAICompatibleProvider.analyze()` with mocked `openai.OpenAI` client — verify JSON strip, `model_validate_json`, and `RuntimeError` on parse failure.
 - [ ] Test `OpenAICompatibleProvider.ask()` streaming: verify chunks yielded and history appended after exhaustion.
+- [ ] Test `OllamaProvider.is_available()` returns `False` when daemon not reachable (mocked `ollama.Client.list()` raising).
+- [ ] Test `OllamaProvider._ensure_model_loaded()` calls `pull()` when model absent from `list()` response.
 
 ---
 
@@ -235,44 +237,44 @@
 
 ---
 
-## v2.10.0 — Local Ollama Provider (16GB VRAM Optimized) 🖥️ Planned
+## v2.10.0 — Local Ollama Provider (16GB VRAM Optimized) 🖥️ ✅ Completed
 
-**Why:** The most complex provider and the biggest EU interview differentiator. Demonstrates edge hardware optimization — running quantized medical LLMs on consumer hardware within a 16GB VRAM budget. See AD-13.
-
----
-
-### v2.10.1 — Ollama Infrastructure & Config
-
-- [ ] Add `ollama` SDK to `pyproject.toml` optional extras (`local`).
-- [ ] Add `ollama_base_url: str = "http://localhost:11434"` to `AppSettings` (not keyring — not a secret).
-- [ ] Add `ollama_supported_models` list to `config.json` (e.g. `llama3.2-vision:q4_0`, `medgemma:q4_0`).
-- [ ] Add Ollama base URL entry field (plain, unmasked) to Settings UI under a new "Local AI" section.
+**`OllamaProvider` fully implemented. Daemon ping availability check (no API key required). Load-on-demand model pulling. Sequential VRAM guard via model unloading before switching. Streaming chat. Config infrastructure wired into AppSettings, config.json, SettingsViewModel, and Settings UI. ProviderFactory stub replaced.**
 
 ---
 
-### v2.10.2 — `OllamaProvider` Core Implementation
+### v2.10.4 — Register Ollama in `ProviderFactory` ✅ Completed
 
-- [ ] Implement `OllamaProvider(LLMProvider)` in `src/providers/ollama_provider.py`.
-- [ ] `is_available()` → ping `ollama.list()` — returns `True` only if daemon is running.
-- [ ] `analyze()` → uses vision-capable model for document OCR + extraction into `MedicalReportModel` JSON.
-- [ ] `ask()` → streaming text response via `ollama.chat(stream=True)`.
-
----
-
-### v2.10.3 — Load-on-Demand & VRAM Sequential Guard
-
-- [ ] Model pulled via `ollama.pull()` only when first needed — not at startup.
-- [ ] Before loading a new model: unload previous via model swap to prevent VRAM thrashing.
-- [ ] 4-bit quantization enforced via model name tag (e.g. `llama3.2-vision:q4_0`) — Ollama handles quantization automatically.
-- [ ] Log VRAM optimization decisions at `DEBUG` level for portfolio demo visibility.
+- [x] `ProviderType.OLLAMA` already in `base.py`.
+- [x] Update `ProviderFactory.create()` to construct `OllamaProvider` (replace `NotImplementedError`).
+- [x] `ProviderFactory.available_providers()` — Ollama listed last in priority order (already in `_PROVIDER_PRIORITY`). `NotImplementedError` catch removed (all six providers now implemented).
 
 ---
 
-### v2.10.4 — Register Ollama in `ProviderFactory`
+### v2.10.3 — Load-on-Demand & VRAM Sequential Guard ✅ Completed
 
-- [ ] Add `ProviderType.OLLAMA` already in `base.py`.
-- [ ] Update `ProviderFactory.create()` to construct `OllamaProvider` (replace `NotImplementedError`).
-- [ ] `ProviderFactory.available_providers()` — Ollama listed last in priority order (already in `_PROVIDER_PRIORITY`).
+- [x] Model pulled via `ollama.pull()` only when first needed — not at startup.
+- [x] Before loading a new model: unload previous via `keep_alive=0` to prevent VRAM thrashing.
+- [x] 4-bit quantization enforced via model name tag (e.g. `llama3.2-vision:q4_0`) — Ollama handles quantization automatically.
+- [x] Log VRAM optimization decisions at `DEBUG` level for portfolio demo visibility.
+
+---
+
+### v2.10.2 — `OllamaProvider` Core Implementation ✅ Completed
+
+- [x] Implement `OllamaProvider(LLMProvider)` in `src/providers/ollama_provider.py`.
+- [x] `is_available()` → ping `ollama.list()` — returns `True` only if daemon is running.
+- [x] `analyze()` → uses vision-capable model for document OCR + extraction into `MedicalReportModel` JSON.
+- [x] `ask()` → streaming text response via `ollama.chat(stream=True)`.
+
+---
+
+### v2.10.1 — Ollama Infrastructure & Config ✅ Completed
+
+- [x] Add `ollama` SDK to `pyproject.toml` optional extras (`local`).
+- [x] Add `ollama_base_url: str = "http://localhost:11434"` to `AppSettings` (not keyring — not a secret).
+- [x] Add `ollama_supported_models` list to `config.json` (e.g. `llama3.2-vision:q4_0`, `medgemma:q4_0`).
+- [x] Add Ollama base URL entry field (plain, unmasked) to Settings UI under a new "Local AI" section.
 
 ---
 
@@ -461,7 +463,6 @@
 - [x] `var_google_project_id = tk.StringVar(value=get_credential("google_project_id") or "")` added.
 - [x] `update_from_config()` refreshes all three from keyring.
 - [x] `save_to_config()` writes all three via `set_credential(...)`. Does **not** write via `save_unified()`.
-- [x] `app_settings.google_api_key` assignment removed from `save_to_config()`.
 - [x] `get_credential`, `set_credential` imported from `models`.
 
 ---

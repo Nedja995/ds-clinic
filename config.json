@@ -152,6 +152,17 @@
         "mistralai/Mistral-7B-Instruct-v0.3": "mistralai/Mistral-7B-Instruct-v0.3",
         "HuggingFaceH4/zephyr-7b-beta": "HuggingFaceH4/zephyr-7b-beta"
     },
+    "ollama_initial_model_config": {
+        "name": "llama3.2-vision:q4_0",
+        "base_url": "http://localhost:11434"
+    },
+    "ollama_supported_models": {
+        "llama3.2-vision:q4_0": "llama3.2-vision:q4_0",
+        "llama3.2-vision:q8_0": "llama3.2-vision:q8_0",
+        "medgemma:q4_0": "medgemma:q4_0",
+        "llama3.1:8b-q4_0": "llama3.1:8b-q4_0",
+        "mistral:7b-q4_0": "mistral:7b-q4_0"
+    },
     "MAPIRANJE": {
         "PREPORUCENA_TERAPIJA_I_SAVET": "rezime+uzrok_problema+uzrok_problema_detaljno+strucno_misljenje_dijagnoza_summarized+preporucena_terapija_i_savet_summarized",
         "EXPERTSKO_MISLJENJE": "misljenje_i_dijagnoza+uzrok_problema",

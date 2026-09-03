@@ -24,7 +24,7 @@ from npy.core import utils
 class SettingsWindow(tk.Toplevel):
 
     _WIDTH  = 640
-    _HEIGHT = 1020  # increased to accommodate six credential fields
+    _HEIGHT = 1160  # v2.10.1: bumped to accommodate Local AI section
     _MIN_WIDTH = 400
     _MIN_HEIGHT = 400
 
@@ -79,6 +79,7 @@ class SettingsWindow(tk.Toplevel):
         self._build_scroll_area()
         self._build_patient_data_section()
         self._build_ai_section()
+        self._build_local_ai_section()
         self._build_general_section()
         self._build_support_section()
         self._finalize_scroll()
@@ -136,7 +137,7 @@ class SettingsWindow(tk.Toplevel):
             ttk.Checkbutton(row, text="Anonymize Custom Texts", variable=self.view_model.var_anonymization_custom_texts_on).pack(side="left", padx=(4, 0))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # AI Section
+    # AI Section (cloud providers)
     # ─────────────────────────────────────────────────────────────────────────
 
     def _build_ai_section(self) -> None:
@@ -198,6 +199,43 @@ class SettingsWindow(tk.Toplevel):
         self._credential_field(panel, "Groq API Key",        self.view_model.var_groq_api_key)
         self._credential_field(panel, "Together AI API Key", self.view_model.var_together_api_key)
         self._credential_field(panel, "HuggingFace API Key", self.view_model.var_huggingface_api_key)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Local AI Section (Ollama — v2.10.1)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _build_local_ai_section(self) -> None:
+        """
+        Ollama connection config. Not secrets — stored in app_settings / settings.json,
+        not the OS keyring. Base URL is plain text so the user can point to a remote
+        Ollama host (e.g. a Proxmox LXC container) without masking.
+        """
+        local = self._card("Local AI (Ollama)")
+
+        # Daemon base URL — plain, unmasked entry (AD-13)
+        self._entry_field(local, "Ollama Base URL", self.view_model.var_ollama_base_url)
+        ttk.Label(
+            local,
+            text="Default: http://localhost:11434  —  Ollama must be running for this provider to be available.",
+            background=PANEL, foreground=SUBTLE, font=FS,
+        ).pack(anchor="w", pady=(0, 8))
+
+        # Active model — combobox populated from ollama_supported_models in config.json
+        model_frame = ttk.Frame(local, style="Panel.TFrame", padding=(0, 0, 0, 6))
+        model_frame.pack(fill="x")
+        ttk.Label(model_frame, text="Model", style="FormLabel.TLabel").pack(anchor="w")
+        ttk.Combobox(
+            model_frame,
+            textvariable=self.view_model.var_ollama_model_name,
+            values=self.view_model.ollama_supported_models,
+            state="readonly",
+            font=FI,
+        ).pack(fill="x", pady=(2, 0))
+        ttk.Label(
+            model_frame,
+            text="Model tag controls quantization — e.g. llama3.2-vision:q4_0 fits in 16 GB VRAM (AD-13).",
+            background=PANEL, foreground=SUBTLE, font=FS,
+        ).pack(anchor="w", pady=(2, 0))
 
     # ─────────────────────────────────────────────────────────────────────────
     # General Section

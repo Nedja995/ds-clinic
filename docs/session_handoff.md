@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.9.0 ✅ Complete — Next: v2.10.0
+## Current Status: v2.10.0 ✅ Complete — Next: v2.11.0
 
 | Version | Scope | Status |
 |---|---|---|
@@ -70,7 +70,10 @@ git push
 | v2.9.2 | `OpenAICompatibleProvider` base class | ✅ Done |
 | v2.9.3 | `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider` | ✅ Done |
 | v2.9.4 | Register new providers in `ProviderFactory` | ✅ Done |
-| v2.10.0 | Local Ollama provider | Planned |
+| v2.10.1 | Ollama infra & config | ✅ Done |
+| v2.10.2 | `OllamaProvider` core implementation | ✅ Done |
+| v2.10.3 | Load-on-demand & VRAM sequential guard | ✅ Done |
+| v2.10.4 | Register Ollama in `ProviderFactory` | ✅ Done |
 | v2.11.0 | BrandConfig + white-label + subscription | Planned |
 | v2.12.0 | Chat Session View rewrite | Planned |
 | v2.13.0 | pytest coverage | Planned |
@@ -79,37 +82,38 @@ git push
 
 ---
 
-## v2.9.0 Changes (completed 2026-09-02)
+## v2.10.0 Changes (completed 2026-09-03)
 
-### Architecture decision (Option A — confirmed by developer)
-`ProviderRequest.context: str` field added to `base.py`. Text-only providers (Groq, Together, HuggingFace, Ollama) cannot consume binary `documents` — callers must pre-extract text into `context`. This makes the Split-Horizon Layer 1/2 boundary explicit in the data model (AD-12).
+### Architecture
+All six `LLMProvider` backends are now fully implemented. `ProviderFactory` has no stubs remaining.
 
-### v2.9.1
-- `src/models/keyring_manager.py` — added `"groq"`, `"together"`, `"huggingface"` to `_CREDENTIAL_KEYS`.
-- `src/providers/base.py` — `ProviderRequest.context: str` field added with full docstring explaining Split-Horizon usage.
-- `src/models/settings.py` — `groq_model_name`, `together_model_name`, `huggingface_model_name` fields; `groq_supported_models`, `together_supported_models`, `huggingface_supported_models` dicts; all wired in `load_unified()` and excluded from `save_unified()`.
-- `config.json` — `groq_initial_model_config` + `groq_supported_models`, `together_initial_model_config` + `together_supported_models`, `huggingface_initial_model_config` + `huggingface_supported_models` added.
-- `src/dsclinic_gui/settings/settings_view_model.py` — `var_groq_api_key`, `var_together_api_key`, `var_huggingface_api_key`; all wired in `update_from_config()` and `save_to_config()`.
-- `src/dsclinic_gui/settings/settings_view.py` — three new `_credential_field()` calls; `_HEIGHT` bumped to 1020.
-- `pyproject.toml` — version bumped to `2.9.1`.
+### v2.10.1
+- `config.json` — `ollama_initial_model_config` (`llama3.2-vision:q4_0`, `base_url`) and `ollama_supported_models` (5 quantized model tags) added.
+- `src/models/settings.py` — `ollama_model_name: str`, `ollama_base_url: str` writable fields; `ollama_supported_models: Dict[str, str]` static field. All wired in `load_unified()`. `save_unified()` excludes `ollama_supported_models` (static) but persists `ollama_model_name` and `ollama_base_url` (user prefs, not secrets).
+- `src/dsclinic_gui/settings/settings_view_model.py` — `var_ollama_base_url`, `var_ollama_model_name` `tk.StringVar`; `ollama_supported_models` list. Wired in `update_from_config()` and `save_to_config()`.
+- `src/dsclinic_gui/settings/settings_view.py` — new `_build_local_ai_section()` renders "LOCAL AI (OLLAMA)" card: plain base URL entry + hint; model combobox from `ollama_supported_models`. `_HEIGHT` bumped to 1160.
+- `pyproject.toml` — version bumped to `2.10.1`.
 
-### v2.9.2
-- `src/providers/openai_compatible_provider.py` — `OpenAICompatibleProvider(LLMProvider)` shared base. Parameterised by `_BASE_URL` / `_CREDENTIAL_NAME`. `analyze()`: text-only, warns on `documents`, enforces JSON schema via `_JSON_SCHEMA_SUFFIX`, strips markdown fences, parses `MedicalReportModel`. `ask()`: streaming via `_stream_and_record()` generator that records history on exhaustion. Catches all OpenAI SDK errors → `RuntimeError`.
+### v2.10.2 + v2.10.3
+- `src/providers/ollama_provider.py` — `OllamaProvider(LLMProvider)` fully implemented:
+  - `__init__`: lazy `import ollama`; `ollama.Client(host=ollama_base_url)`; daemon ping via `list()`. Startup-guard: `_available = False` when daemon down or SDK absent.
+  - `is_available()` → `self._available`.
+  - `analyze()`: text-only; `_JSON_SCHEMA_SUFFIX` enforced; `ollama.Client.chat()`; markdown fence strip; `MedicalReportModel.model_validate_json()`.
+  - `ask()`: streaming via `client.chat(stream=True)`; `_stream_and_record()` generator; history appended on exhaustion.
+  - `_ensure_model_loaded()`: unloads previous model via `keep_alive=0` before loading new one (VRAM guard, AD-13); pulls model via `ollama.pull()` only when absent from `list()`.
+  - DEBUG logging of all VRAM decisions (unload, pull, active model).
 
-### v2.9.3
-- `src/providers/groq_provider.py` — `GroqProvider`: `_BASE_URL="https://api.groq.com/openai/v1"`.
-- `src/providers/together_provider.py` — `TogetherProvider`: `_BASE_URL="https://api.together.xyz/v1"`.
-- `src/providers/huggingface_provider.py` — `HuggingFaceProvider`: `_BASE_URL="https://router.huggingface.co/v1"`. Key-only `is_available()` per AD-16.
-
-### v2.9.4
-- `src/providers/factory.py` — `NotImplementedError` stubs for GROQ, TOGETHER, HUGGINGFACE replaced with lazy imports of concrete classes. OLLAMA stub retained.
+### v2.10.4
+- `src/providers/factory.py` — `OLLAMA` `NotImplementedError` stub replaced with lazy `OllamaProvider` import. `NotImplementedError` catch removed from `available_providers()`. Module docstring updated.
+- `pyproject.toml` — version bumped to `2.10.4`.
 
 ---
 
 ## Key Existing Code Context
 
-- `src/providers/` — complete: `base.py`, `gemini_provider.py`, `claude_provider.py`, `openai_compatible_provider.py`, `groq_provider.py`, `together_provider.py`, `huggingface_provider.py`, `factory.py`, `__init__.py`.
-- `src/providers/base.py` — `ProviderRequest` now has `context: str` field for text-only providers.
+- `src/providers/` — complete: `base.py`, `gemini_provider.py`, `claude_provider.py`, `openai_compatible_provider.py`, `groq_provider.py`, `together_provider.py`, `huggingface_provider.py`, `ollama_provider.py`, `factory.py`, `__init__.py`. All six providers fully implemented. No stubs remaining.
+- `src/providers/ollama_provider.py` — `OllamaProvider`: daemon-ping availability, load-on-demand with VRAM guard, streaming chat, text-only (vision multimodal deferred to v2.14.3).
+- `src/providers/base.py` — `ProviderRequest` has `context: str` field for text-only providers.
 - `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports. Document loading produces `genai_types.Part` list — text-only providers receive empty `documents` and rely on `context`.
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` fully implemented.
 - `src/dsclinic_gui/report_view_models.py` — full patient + session management.
@@ -119,7 +123,11 @@ git push
 
 ## Previously Completed
 
-- **v2.9.4** ✅ — `ProviderFactory` stubs replaced; all 5 implemented providers fully registered.
+- **v2.10.4** ✅ — `ProviderFactory` `OLLAMA` stub replaced; all 6 providers registered and reachable.
+- **v2.10.3** ✅ — Load-on-demand pull + VRAM sequential guard in `_ensure_model_loaded()`.
+- **v2.10.2** ✅ — `OllamaProvider` core: init, analyze, ask, streaming.
+- **v2.10.1** ✅ — Ollama config infra: `config.json`, `AppSettings`, `SettingsViewModel`, `SettingsWindow`.
+- **v2.9.4** ✅ — `ProviderFactory` stubs replaced; all 5 cloud providers fully registered.
 - **v2.9.3** ✅ — `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider` concrete subclasses.
 - **v2.9.2** ✅ — `OpenAICompatibleProvider` shared base; single `openai` SDK covers all three backends.
 - **v2.9.1** ✅ — Credential infra, `AppSettings`, Settings UI, `config.json`, `ProviderRequest.context`.

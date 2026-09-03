@@ -6,6 +6,9 @@ Intentional tk.* exceptions: tk.StringVar / tk.DoubleVar / tk.BooleanVar – alw
 
 API keys are read from and written to the OS keyring only (AD-11).
 They are never read from app_settings or written via save_unified().
+
+Ollama connection config (base_url, model_name) is NOT a secret — stored
+in app_settings and persisted to settings.json via save_unified() (AD-13).
 """
 import re
 import tkinter as tk
@@ -54,6 +57,11 @@ class SettingsViewModel:
         self.var_together_api_key    = tk.StringVar(value=get_credential("together") or "")
         self.var_huggingface_api_key = tk.StringVar(value=get_credential("huggingface") or "")
 
+        # v2.10.1 — Ollama local provider (not secrets — read from app_settings)
+        self.var_ollama_base_url   = tk.StringVar(value=app_settings.ollama_base_url)
+        self.var_ollama_model_name = tk.StringVar(value=app_settings.ollama_model_name)
+        self.ollama_supported_models = list(app_settings.ollama_supported_models.keys())
+
         # ── App General ───────────────────────────────────────────────────────
         self.var_support_email = tk.StringVar(value="nprm1555@gmail.com")
         self.var_app_version   = tk.StringVar(value=app_settings.app_version)
@@ -94,6 +102,10 @@ class SettingsViewModel:
         self.var_together_api_key.set(get_credential("together") or "")
         self.var_huggingface_api_key.set(get_credential("huggingface") or "")
 
+        # Ollama — re-read from app_settings (persisted to settings.json, not keyring)
+        self.var_ollama_base_url.set(app_settings.ollama_base_url)
+        self.var_ollama_model_name.set(app_settings.ollama_model_name)
+
     def save_to_config(self) -> None:
         """Persist settings to app_settings + disk, and credentials to OS keyring."""
         _lang_val = self.var_app_language.get()
@@ -123,6 +135,10 @@ class SettingsViewModel:
         app_settings.ai_response_critical_findings              = self.var_critical_findings_prompt.get()
         app_settings.ai_response_critical_finding_experts_opinion = self.var_expert_opinion_label.get()
         app_settings.ai_response_critical_finding_param_and_value = self.var_parameter_value_label.get()
+
+        # v2.10.1 — Ollama user prefs written to app_settings before save_unified()
+        app_settings.ollama_base_url   = self.var_ollama_base_url.get().strip()
+        app_settings.ollama_model_name = self.var_ollama_model_name.get()
 
         # Persist non-secret settings to disk
         app_settings.save_unified()
