@@ -15,11 +15,25 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.14.0] - Planned — PII Anonymization Improvements + Debug Panel
 ## [2.13.0] - Planned — pytest Coverage
 ## [2.12.0] - Planned — Chat Session View Rewrite + New Features
-## [2.11.0] - In Progress — Enterprise Multi-Brand / White-Label & Subscription Config
+## [2.11.0] - Completed — Enterprise Multi-Brand / White-Label & Subscription Config
 ## [2.10.0] - Completed — Local Ollama Provider (16GB VRAM Optimized)
 ## [2.9.0] - Completed — Groq + Together AI + HuggingFace Cloud Providers
 ## [2.8.0] - Completed — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
 ## [2.7.0] - Completed — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.11.5] - 2026-09-04
+
+### Added
+- `src/dsclinic_gui/report_view_models.py`:
+  - `from models.brand import brand_config` import added.
+  - `_TRIAL_DAILY_LIMIT: int = 3` module-level constant — maximum analyses per day on the trial tier.
+  - `_start_analysis()`: trial-tier session limit gate added before any worker thread is launched. Calls `brand_config.is_feature_allowed("unlimited_sessions")`; when `False`, counts today's sessions from `_db.sessions.list_index()` filtered by ISO date prefix. If count ≥ `_TRIAL_DAILY_LIMIT`, emits `on_show_error_message` with upgrade prompt and returns without launching analysis. Standard and enterprise tiers skip the check entirely (zero overhead). `OSError` on index read caught and logged; count defaults to 0 so a DB failure never silently blocks analysis.
+- `src/providers/factory.py` — `available_providers()`: enterprise stub block added at top of method. Lazy-imports `brand_config` inside try/except; calls `is_feature_allowed("custom_models")` and logs a `DEBUG` message when the enterprise tier is active. `except Exception: pass` ensures no provider discovery is ever blocked by a brand config import failure.
+
+### Changed
+- `pyproject.toml` — version bumped to `2.11.5`.
 
 ---
 

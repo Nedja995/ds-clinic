@@ -19,6 +19,7 @@ from models import (
     PatientRecord,
 )
 from models.ai import ChatMessage, ChatSessionModel
+from models.brand import brand_config
 from db import AppDatabase
 from dsclinic import DSClinic
 from pdf_maker import generate_report_pdf_at_filepath
@@ -27,6 +28,10 @@ from models import TaskStatus, ProgressEvent
 from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
 
 logger = setup_logger()
+
+# Maximum analyses per day on the trial subscription tier.
+# Enforced in _start_analysis() via is_feature_allowed("unlimited_sessions").
+_TRIAL_DAILY_LIMIT: int = 3
 
 
 # ── Events ─────────────────────────────────────────────────────────────
@@ -360,7 +365,39 @@ class DSClinicViewModel:
         self.var_status_detail.set("Cancelling analysis...")
 
     def _start_analysis(self) -> None:
-        """Starts analysis in a background thread."""
+        """Starts analysis in a background thread.
+
+        On the trial tier, enforces a daily session cap before launching.
+        Standard and enterprise tiers bypass the cap entirely.
+        """
+        # Trial tier: count today's sessions and block if limit reached (AD-20).
+        # is_feature_allowed() is a no-op for standard/enterprise — no overhead.
+        if not brand_config.is_feature_allowed("unlimited_sessions"):
+            today_str = datetime.date.today().isoformat()
+            try:
+                all_sessions = self._db.sessions.list_index()
+                todays_count = sum(
+                    1 for s in all_sessions
+                    if str(s.get("created_at", "")).startswith(today_str)
+                )
+            except (OSError, Exception) as e:
+                logger.warning("Could not count today's sessions for trial limit check: %s", e)
+                todays_count = 0
+
+            if todays_count >= _TRIAL_DAILY_LIMIT:
+                self.on_show_error_message.emit(ErrorMessageEvent(
+                    title="Trial Limit Reached",
+                    message=(
+                        f"Your trial plan allows {_TRIAL_DAILY_LIMIT} analyses per day. "
+                        "Upgrade to Standard or Enterprise to remove this limit."
+                    ),
+                ))
+                logger.info(
+                    "Trial daily limit reached (%d/%d) — analysis blocked.",
+                    todays_count, _TRIAL_DAILY_LIMIT,
+                )
+                return
+
         self.var_is_analyzing.set(True)
         self.var_btn_analyze_text.set("Cancel")
         self.var_status_title.set("Running")

@@ -187,18 +187,18 @@
 
 ---
 
-## v2.11.0 — Enterprise Multi-Brand / White-Label & Subscription Config 🏢 In Progress
+## v2.11.0 — Enterprise Multi-Brand / White-Label & Subscription Config 🏢 ✅ Completed
 
-**Why:** What makes DSClinic a real B2B SaaS product rather than a single-clinic tool. Two delivery modes: white-labeled per-client builds and a subscription SaaS app. See AD-04 and AD-20.
+**BrandConfig model, brand.json, dynamic PDF branding, dynamic GUI branding, Clinic Profile settings section, and subscription tier enforcement all complete.**
 
 ---
 
-### v2.11.5 — Subscription Tier Enforcement Stubs
+### v2.11.5 — Subscription Tier Enforcement Stubs ✅ Completed
 
-- [ ] `trial`: PDF watermark active (v2.11.2), session limit warning after N analyses per day.
-- [ ] `standard`: No watermark, unlimited sessions.
-- [ ] `enterprise`: Stub only — multi-user and custom model support flagged as future milestone.
-- [ ] Tier check implemented as a single `is_feature_allowed(feature: str) -> bool` gate function.
+- [x] `trial`: PDF watermark active (v2.11.2). Daily session limit enforced in `_start_analysis()` via `is_feature_allowed("unlimited_sessions")` — blocks analysis with upgrade prompt when count ≥ `_TRIAL_DAILY_LIMIT` (3).
+- [x] `standard`: No watermark, unlimited sessions — `is_feature_allowed("unlimited_sessions")` returns `True`, gate skipped.
+- [x] `enterprise`: Stub in `ProviderFactory.available_providers()` — logs `DEBUG` message when `is_feature_allowed("custom_models")` is `True`.
+- [x] Tier check implemented via the existing `is_feature_allowed(feature: str) -> bool` gate in `BrandConfig` (v2.11.1).
 
 ---
 

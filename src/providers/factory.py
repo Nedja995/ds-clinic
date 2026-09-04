@@ -93,6 +93,16 @@ class ProviderFactory:
         """
         available: list[ProviderType] = []
 
+        # Enterprise stub: log availability of gated routing features.
+        # is_feature_allowed() returns False for non-enterprise tiers with a
+        # DEBUG log — no behaviour change, but visible in debug-mode logs (AD-20).
+        try:
+            from models.brand import brand_config as _bc
+            if _bc.is_feature_allowed("custom_models"):
+                logger.debug("[ProviderFactory] Enterprise: custom model provider routing available.")
+        except Exception:
+            pass
+
         for provider_type in _PROVIDER_PRIORITY:
             try:
                 provider = ProviderFactory.create(provider_type)
