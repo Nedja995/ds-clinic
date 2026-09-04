@@ -20,6 +20,11 @@
   "ai_model_top_k": 64,
   "ai_thinking_level": "HIGH",
   "claude_model_name": "claude-3-5-sonnet-20241022",
+  "groq_model_name": "llama-3.3-70b-versatile",
+  "together_model_name": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+  "huggingface_model_name": "meta-llama/Llama-3.3-70B-Instruct",
+  "ollama_model_name": "llama3.2-vision:q4_0",
+  "ollama_base_url": "http://localhost:11434",
   "ai_initial_task_description": "Analyze given medical documents like labaratory results, holistic results and other medical reports, and answer questions about medical conditions, issues, causses of issues, treatments, and general health advice. \nHighlight severe abnormalities. \nProvide accurate and concise information. \nIf you dont know the answer, state that you dont know. \nAlways respond in Serbian lanugage. \nIMPORTANT PRIVACY NOTICE: \n- Parts of these documents have been automatically blacked out using a local PII (Personally Identifiable Information) redactor to protect patient privacy. \n- Solid black rectangles hide administrative data such as patient names, precise residential addresses, or government identification numbers (JMBG/LBO). - Do not attempt to guess or reconstruct the redacted personal info. \n- Ignore these black blocks completely and focus 100% of your clinical attention on the visible diagnostic data, laboratory metrics, structural values, and reference ranges to form your medical analysis report.",
   "ai_system_instructions": [
     "You are an expert medical data analyst using medical data (tradicional, holistic, western, eastern, etc..) from input documents. "
@@ -28,5 +33,5 @@
   "ai_response_critical_findings": "List of all critical or notable medical findings with expert opinions and raw parameter values.",
   "ai_response_critical_finding_experts_opinion": "Expert opinion, diagnosis, explanation of the problem, and its cause. Highlight severity if applicable.",
   "ai_response_critical_finding_param_and_value": "The specific medical parameter and its measured value (e.g., 'Glucose 7.8 mmol/L' or 'D=0.004').",
-  "input_dir": "D:/__STORAGE/__DEV/__PROJECTS/DSKlinika/ds-clinic_03_04_2026/ULAZ/mohamed"
+  "input_dir": "D:/__STORAGE/__DEV/__PROJECTS/DSKlinika/ds-clinic_03_04_2026/ULAZ/Ana Betz"
 }

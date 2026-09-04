@@ -1,0 +1,36 @@
+{
+  "session_id": "e426f837990044f9a41e89cf568df471",
+  "model_settings": {
+    "model_name": "gemini-3-pro-preview",
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_output_tokens": 65535,
+    "thinking_level": "HIGH",
+    "system_instruction": [
+      "You are an expert medical data analyst using equally both holistic and traditional medical data.",
+      "Always highlight severe abnormalities."
+    ]
+  },
+  "report": {
+    "report_id": "b54eb95c93e64f57bf656245426c3c7e",
+    "report_date": "02.09.2026.",
+    "input_dir": "D:\\__STORAGE\\__DEV\\__PROJECTS\\DSKlinika\\ds-clinic_03_04_2026\\ULAZ",
+    "content": {
+      "patient_name": "Ana Betz",
+      "recommended_therapy_and_advice": "Rezultati kompletne krvne slike ukazuju na blagu anemiju, s obzirom na blago snižene vrednosti eritrocita (RBC) i hematokrita (HCT), dok je hemoglobin na donjoj granici normale. Ostali parametri, uključujući leukocite i trombocite, su u granicama normale. Preporučuje se konsultacija sa izabranim lekarom radi utvrđivanja uzroka blage anemije (npr. provera nivoa gvožđa, feritina i vitamina B12). Savetuje se ishrana bogata gvožđem (crveno meso, spanać, mahunarke) i vitaminom C radi bolje apsorpcije. Potrebno je pratiti simptome poput umora ili vrtoglavice i ponoviti analize prema preporuci lekara.",
+      "critical_findings": [
+        {
+          "expertsko_misljenje": "Blago snižen broj eritrocita, što može ukazivati na početni stadijum anemije ili blagu anemiju. Vrednost je neznatno ispod referentnog opsega.",
+          "parametar_and_value": "RBC 3.3 10^6/uL"
+        },
+        {
+          "expertsko_misljenje": "Blago snižen hematokrit, što je u korelaciji sa smanjenim brojem eritrocita i ukazuje na smanjen volumen crvenih krvnih zrnaca u krvi.",
+          "parametar_and_value": "HCT 36 %"
+        }
+      ]
+    },
+    "therapies": [],
+    "chat_responses": []
+  },
+  "chat_history": []
+}

@@ -1,0 +1,21 @@
+{
+  "report_id": "c40c918834764a8c9d656ffe25a14dba",
+  "report_date": "04.09.2026.",
+  "input_dir": "D:\\__STORAGE\\__DEV\\__PROJECTS\\DSKlinika\\ds-clinic_03_04_2026\\ULAZ",
+  "content": {
+    "patient_name": "Ana Betz",
+    "recommended_therapy_and_advice": "Rezultati kompletne krvne slike ukazuju na blagu anemiju, s obzirom na blago snižene vrednosti eritrocita (RBC) i hematokrita (HCT), dok je hemoglobin na donjoj granici normale. Ovo stanje može biti uzrokovano blagim nedostatkom gvožđa, vitamina B12 ili folne kiseline. Preporučuje se konsultacija sa lekarom radi daljeg ispitivanja nivoa feritina, gvožđa i vitamina u krvi. Savetuje se ishrana bogata namirnicama koje sadrže gvožđe (crveno meso, spanać, mahunarke) i vitamin C radi bolje apsorpcije. Potrebno je pratiti simptome poput umora ili vrtoglavice i ponoviti analize prema preporuci lekara.",
+    "critical_findings": [
+      {
+        "expertsko_misljenje": "Blago snižen broj eritrocita ukazuje na potencijalnu anemiju blagog stepena.",
+        "parametar_and_value": "RBC 3.3 10^6/uL"
+      },
+      {
+        "expertsko_misljenje": "Blago snižen hematokrit, što je u korelaciji sa smanjenim brojem eritrocita.",
+        "parametar_and_value": "HCT 36 %"
+      }
+    ]
+  },
+  "therapies": [],
+  "chat_responses": []
+}
