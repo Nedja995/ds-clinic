@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.11.3 ✅ Complete — Next: v2.11.4
+## Current Status: v2.11.4 ✅ Complete — Next: v2.11.5
 
 | Version | Scope | Status |
 |---|---|---|
@@ -77,8 +77,8 @@ git push
 | v2.11.1 | `BrandConfig` model & loader | ✅ Done |
 | v2.11.2 | Dynamic PDF report branding | ✅ Done |
 | v2.11.3 | Dynamic GUI branding | ✅ Done |
-| v2.11.4 | Clinic Profile settings section | Next |
-| v2.11.5 | Subscription tier enforcement stubs | Planned |
+| v2.11.4 | Clinic Profile settings section | ✅ Done |
+| v2.11.5 | Subscription tier enforcement stubs | Next |
 | v2.12.0 | Chat Session View rewrite | Planned |
 | v2.13.0 | pytest coverage | Planned |
 | v2.14.0 | PII improvements + debug panel | Planned |
@@ -86,112 +86,83 @@ git push
 
 ---
 
-## v2.11.3 Changes (completed 2026-09-04)
+## v2.11.4 Changes (completed 2026-09-04)
 
 ### Changed
-- `src/dsclinic_gui/dsclinic_gui_app.py` — `self.title()` → `brand_config.clinic_name`; `brand_config` imported.
-- `src/dsclinic_gui/report_view.py` — `_build_toolbar()`: branded identity block on right side of toolbar:
-  - `ttk.Label` showing `clinic_name · clinic_subtitle` (subtitle omitted when empty).
-  - Logo: `PIL.Image.open()` → resize 22×22 → `ImageTk.PhotoImage`; ref stored on `self._toolbar_logo_image` (GC guard); whole block try/except skipped on error.
-  - `PIL` and `brand_config` imports added.
-- `pyproject.toml` — version bumped to `2.11.3`.
-
-### Design note
-`brand_config` imported directly in View files — it is presentation-layer configuration, not business logic. ViewModel layer must never import it (MVVM boundary).
+- `src/dsclinic_gui/settings/settings_view_model.py`:
+  - `brand_config` imported from `models.brand`.
+  - 7 clinic profile `tk.StringVar` vars + `on_pick_logo_file` delegate.
+  - `update_from_config()` refreshes clinic profile from `brand_config`.
+  - `save_to_config()` mutates `brand_config` fields and calls `brand_config.save()`.
+- `src/dsclinic_gui/settings/settings_view.py`:
+  - `_build_clinic_profile_section()` — "CLINIC PROFILE" card, first in scroll area.
+  - `_on_logo_pick()` — `filedialog.askopenfilename`, sets `var_logo_path`.
+  - `on_pick_logo_file` delegate wired in `__init__` before `_setup_ui()`.
+  - `_HEIGHT` 1160 → 1380.
+- `pyproject.toml` — version bumped to `2.11.4`.
 
 ---
 
-## v2.11.4 Implementation Notes (for next session)
+## v2.11.5 Implementation Notes (for next session)
 
-### Target files
-- `src/dsclinic_gui/settings/settings_view_model.py` — add `BrandConfig`-backed vars and save logic.
-- `src/dsclinic_gui/settings/settings_view.py` — add "Clinic Profile" card with entry fields + logo picker + tier label.
+### Scope
+Subscription tier enforcement stubs. `brand_config.is_feature_allowed()` is already implemented in `src/models/brand.py` — this sub-version wires it into application behaviour.
 
-### ViewModel changes (`settings_view_model.py`)
-Add at end of `__init__` (after existing vars):
-```python
-# v2.11.4 — Clinic profile vars (read from brand_config, written to brand.json)
-self.var_clinic_name         = tk.StringVar(value=brand_config.clinic_name)
-self.var_clinic_subtitle     = tk.StringVar(value=brand_config.clinic_subtitle)
-self.var_clinic_address      = tk.StringVar(value=brand_config.clinic_address)
-self.var_report_header_text  = tk.StringVar(value=brand_config.report_header_text)
-self.var_report_footer_text  = tk.StringVar(value=brand_config.report_footer_text)
-self.var_logo_path           = tk.StringVar(value=brand_config.logo_path)
-self.var_subscription_tier   = tk.StringVar(value=brand_config.subscription_tier)
-# Delegate set by View — called when logo picker button is clicked (MVVM: no filedialog in VM)
-self.on_pick_logo_file: Callable[[], None] | None = None
-```
+### Changes needed
 
-Add save logic in `save_to_config()` before `app_settings.save_unified()`:
-```python
-# Persist clinic profile to brand.json — separate from app_settings (AD-20)
-brand_config.clinic_name        = self.var_clinic_name.get().strip()
-brand_config.clinic_subtitle    = self.var_clinic_subtitle.get().strip()
-brand_config.clinic_address     = self.var_clinic_address.get().strip()
-brand_config.report_header_text = self.var_report_header_text.get().strip()
-brand_config.report_footer_text = self.var_report_footer_text.get().strip()
-brand_config.logo_path          = self.var_logo_path.get().strip()
-try:
-    brand_config.save()
-except OSError as exc:
-    logger.error(f"Failed to save brand.json: {exc}")
-```
+**Trial tier — session limit warning (`src/dsclinic_gui/report_view_models.py`)**
+- Add a session counter check in `toggle_analysis()` (or the worker launch path).
+- `brand_config.is_feature_allowed("unlimited_sessions")` → if `False`, check count of today's sessions from `_db.sessions.list_index()` filtered by today's date. If count ≥ `_TRIAL_DAILY_LIMIT` (e.g. 3), emit `on_show_error_message` with a tier upgrade message and return without launching analysis.
+- `_TRIAL_DAILY_LIMIT = 3` module-level constant in `report_view_models.py`.
 
-Add `update_from_config()` refresh for brand vars (at end of the method):
-```python
-self.var_clinic_name.set(brand_config.clinic_name)
-self.var_clinic_subtitle.set(brand_config.clinic_subtitle)
-self.var_clinic_address.set(brand_config.clinic_address)
-self.var_report_header_text.set(brand_config.report_header_text)
-self.var_report_footer_text.set(brand_config.report_footer_text)
-self.var_logo_path.set(brand_config.logo_path)
-self.var_subscription_tier.set(brand_config.subscription_tier)
-```
+**Standard / Enterprise — no action needed** (both allow `unlimited_sessions`).
 
-Import needed: `from models.brand import brand_config` at top of `settings_view_model.py`.
+**Enterprise stub — `is_feature_allowed("multi_user")` / `"custom_models"`**
+- Add `is_enterprise_feature_stub(feature: str) -> bool` to `src/models/brand.py` — not needed, `is_feature_allowed()` already returns `False` for enterprise features on non-enterprise tiers with a DEBUG log. No additional code needed unless a UI gate is required.
+- For the portfolio demo: add a `DEBUG`-level log in `ProviderFactory.available_providers()` when `brand_config.subscription_tier == "enterprise"` — `"[Enterprise] Custom model provider routing available"`. This makes the stub visible in logs without affecting behaviour.
 
-### View changes (`settings_view.py`)
-- New `_build_clinic_profile_section()` method — call it in `_setup_ui()` between `_build_patient_data_section()` and `_build_ai_section()`.
-- Uses existing `_entry_field()` helper for all text fields.
-- Logo picker row: `ttk.Entry` (bound to `var_logo_path`, read-only `state="readonly"`) + `ttk.Button("Browse…")`. Button `command` calls `self._on_logo_pick()` which runs `filedialog.askopenfilename` and sets `view_model.var_logo_path` — file dialog stays in View, ViewModel holds the path string.
-- Subscription tier: read-only `ttk.Label` bound to `view_model.var_subscription_tier` with `SUBTLE` foreground.
-- `_HEIGHT` bump: +180 px to accommodate the new card.
-- Import needed: `from models.brand import brand_config` NOT needed in view — all data flows through ViewModel vars.
+**Watermark already active** — done in v2.11.2. No changes needed.
+
+### Files to touch
+- `src/dsclinic_gui/report_view_models.py` — session limit gate in analysis launch path.
+- `src/providers/factory.py` — enterprise DEBUG log stub (one line).
+- `pyproject.toml`, `CHANGELOG.md`, `TODO.md`, `session_handoff.md` — standard doc updates.
 
 ---
 
 ## Key Existing Code Context
 
-- `src/models/brand.py` — `BrandConfig`, `brand_config` singleton, `is_feature_allowed()`, color helpers, `save()`.
-- `src/pdf_maker.py` — fully branded via `brand_config` as of v2.11.2.
+- `src/models/brand.py` — `BrandConfig`, `brand_config`, `is_feature_allowed()`, `_TIER_FEATURES`, `save()`.
+- `src/dsclinic_gui/settings/settings_view_model.py` — full clinic profile vars + save/refresh wired.
+- `src/dsclinic_gui/settings/settings_view.py` — "CLINIC PROFILE" card with logo picker and tier label.
+- `src/pdf_maker.py` — fully branded, watermark on trial tier.
 - `src/dsclinic_gui/dsclinic_gui_app.py` — window title from `brand_config.clinic_name`.
-- `src/dsclinic_gui/report_view.py` — toolbar shows `clinic_name · clinic_subtitle` + logo (22×22).
-- `src/dsclinic_gui/settings/settings_view.py` — existing card pattern: `_card(title)` → returns content `ttk.Frame`. `_entry_field()`, `_credential_field()`, `_text_field()` helpers available.
-- `src/dsclinic_gui/settings/settings_view_model.py` — existing `save_to_config()` and `update_from_config()` pattern to follow.
-- PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
+- `src/dsclinic_gui/report_view.py` — toolbar shows `clinic_name · clinic_subtitle` + 22×22 logo.
+- `src/providers/` — all six providers implemented, no stubs.
 
 ---
 
 ## Previously Completed
 
+- **v2.11.4** ✅ — Clinic Profile settings section; brand.json editable from UI.
 - **v2.11.3** ✅ — Window title + toolbar branding from `brand_config`; logo in toolbar.
-- **v2.11.2** ✅ — `pdf_maker.py` fully branded via `brand_config`; watermark; logo optional.
+- **v2.11.2** ✅ — `pdf_maker.py` fully branded; watermark on trial; logo optional.
 - **v2.11.1** ✅ — `BrandConfig` model, `brand_config` singleton, `brand.json` default file.
-- **v2.10.4** ✅ — `ProviderFactory` `OLLAMA` stub replaced; all 6 providers registered and reachable.
-- **v2.10.3** ✅ — Load-on-demand pull + VRAM sequential guard in `_ensure_model_loaded()`.
+- **v2.10.4** ✅ — `ProviderFactory` `OLLAMA` stub replaced; all 6 providers registered.
+- **v2.10.3** ✅ — Load-on-demand pull + VRAM sequential guard.
 - **v2.10.2** ✅ — `OllamaProvider` core: init, analyze, ask, streaming.
-- **v2.10.1** ✅ — Ollama config infra: `config.json`, `AppSettings`, `SettingsViewModel`, `SettingsWindow`.
-- **v2.9.4** ✅ — `ProviderFactory` stubs replaced; all 5 cloud providers fully registered.
-- **v2.9.3** ✅ — `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider` concrete subclasses.
-- **v2.9.2** ✅ — `OpenAICompatibleProvider` shared base; single `openai` SDK covers all three backends.
-- **v2.9.1** ✅ — Credential infra, `AppSettings`, Settings UI, `config.json`, `ProviderRequest.context`.
-- **v2.8.4** ✅ — `DSClinic` refactored to `ProviderFactory`; direct SDK client imports eliminated.
-- **v2.8.3** ✅ — `ProviderFactory` + updated `__init__.py` exports.
-- **v2.8.2** ✅ — `GeminiProvider` + `ClaudeProvider` concrete implementations.
-- **v2.8.1** ✅ — `src/providers/` package + `base.py`: `LLMProvider` ABC, `ProviderType`, `ProviderRequest`, `ProviderResponse`.
-- **v2.7.4** ✅ — Patient list panel, inline new-patient form, patient→session linkage, session filter.
-- **v2.7.3** ✅ — `SessionHistoryView` sidebar, `load_session()`, `new_session()`, `on_sessions_changed`.
-- **v2.7.2** ✅ — `AppDatabase` wired; report + session auto-persist.
-- **v2.7.1** ✅ — `PatientRecord` model, `AppDatabase.patients` collection.
-- **v2.6.0** ✅ — Credentials to OS keyring, `settings.ini` deleted.
-- **v2.5.0** ✅ — MVVM audit, error handling, `mypy --strict` clean, `uv` migration.
+- **v2.10.1** ✅ — Ollama config infra.
+- **v2.9.4** ✅ — All 5 cloud providers registered in `ProviderFactory`.
+- **v2.9.3** ✅ — `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider`.
+- **v2.9.2** ✅ — `OpenAICompatibleProvider` shared base.
+- **v2.9.1** ✅ — Credential infra, `AppSettings`, Settings UI, `config.json`.
+- **v2.8.4** ✅ — `DSClinic` refactored to `ProviderFactory`.
+- **v2.8.3** ✅ — `ProviderFactory` + `__init__.py` exports.
+- **v2.8.2** ✅ — `GeminiProvider` + `ClaudeProvider`.
+- **v2.8.1** ✅ — `src/providers/` package + `base.py`.
+- **v2.7.4** ✅ — Patient list panel, session linkage.
+- **v2.7.3** ✅ — `SessionHistoryView` sidebar.
+- **v2.7.2** ✅ — `AppDatabase` wired.
+- **v2.7.1** ✅ — `PatientRecord` model.
+- **v2.6.0** ✅ — Credentials to OS keyring.
+- **v2.5.0** ✅ — MVVM audit, error handling, `mypy --strict`, `uv` migration.

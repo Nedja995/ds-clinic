@@ -9,10 +9,20 @@ They are never read from app_settings or written via save_unified().
 
 Ollama connection config (base_url, model_name) is NOT a secret — stored
 in app_settings and persisted to settings.json via save_unified() (AD-13).
+
+Clinic profile fields (clinic_name, logo_path, etc.) are sourced from
+brand_config and persisted to brand.json via brand_config.save() (AD-20).
+They are never mixed into app_settings or settings.json.
 """
+import logging
 import re
 import tkinter as tk
+from typing import Callable, Optional
+
 from models import app_settings, get_credential, set_credential
+from models.brand import brand_config
+
+logger = logging.getLogger(__name__)
 
 
 class SettingsViewModel:
@@ -58,9 +68,22 @@ class SettingsViewModel:
         self.var_huggingface_api_key = tk.StringVar(value=get_credential("huggingface") or "")
 
         # v2.10.1 — Ollama local provider (not secrets — read from app_settings)
-        self.var_ollama_base_url   = tk.StringVar(value=app_settings.ollama_base_url)
-        self.var_ollama_model_name = tk.StringVar(value=app_settings.ollama_model_name)
+        self.var_ollama_base_url     = tk.StringVar(value=app_settings.ollama_base_url)
+        self.var_ollama_model_name   = tk.StringVar(value=app_settings.ollama_model_name)
         self.ollama_supported_models = list(app_settings.ollama_supported_models.keys())
+
+        # ── Clinic Profile — sourced from brand_config, saved to brand.json ───
+        # Kept strictly separate from app_settings / settings.json (AD-20).
+        self.var_clinic_name        = tk.StringVar(value=brand_config.clinic_name)
+        self.var_clinic_subtitle    = tk.StringVar(value=brand_config.clinic_subtitle)
+        self.var_clinic_address     = tk.StringVar(value=brand_config.clinic_address)
+        self.var_report_header_text = tk.StringVar(value=brand_config.report_header_text)
+        self.var_report_footer_text = tk.StringVar(value=brand_config.report_footer_text)
+        self.var_logo_path          = tk.StringVar(value=brand_config.logo_path)
+        # Read-only display — subscription tier is not editable via the UI
+        self.var_subscription_tier  = tk.StringVar(value=brand_config.subscription_tier)
+        # Delegate set by the View so the VM never opens a file dialog directly
+        self.on_pick_logo_file: Optional[Callable[[], None]] = None
 
         # ── App General ───────────────────────────────────────────────────────
         self.var_support_email = tk.StringVar(value="nprm1555@gmail.com")
@@ -68,7 +91,7 @@ class SettingsViewModel:
         self.var_email_valid   = tk.BooleanVar(value=True)
 
     def update_from_config(self) -> None:
-        """Refresh all vars from app_settings and OS keyring."""
+        """Refresh all vars from app_settings, OS keyring, and brand_config."""
         self.var_app_language.set(app_settings.language_code)
 
         self.var_anonymization_on.set(app_settings.anonymization_on)
@@ -106,8 +129,18 @@ class SettingsViewModel:
         self.var_ollama_base_url.set(app_settings.ollama_base_url)
         self.var_ollama_model_name.set(app_settings.ollama_model_name)
 
+        # Clinic profile — re-read from brand_config (persisted to brand.json)
+        self.var_clinic_name.set(brand_config.clinic_name)
+        self.var_clinic_subtitle.set(brand_config.clinic_subtitle)
+        self.var_clinic_address.set(brand_config.clinic_address)
+        self.var_report_header_text.set(brand_config.report_header_text)
+        self.var_report_footer_text.set(brand_config.report_footer_text)
+        self.var_logo_path.set(brand_config.logo_path)
+        self.var_subscription_tier.set(brand_config.subscription_tier)
+
     def save_to_config(self) -> None:
-        """Persist settings to app_settings + disk, and credentials to OS keyring."""
+        """Persist settings to app_settings + disk, credentials to OS keyring,
+        and clinic profile to brand.json via brand_config.save()."""
         _lang_val = self.var_app_language.get()
         _lang_mapping = {"English": "en", "Srpski": "sr", "Español": "es"}
         app_settings.language_code = _lang_mapping.get(_lang_val, _lang_val)
@@ -150,6 +183,19 @@ class SettingsViewModel:
         set_credential("groq",              self.var_groq_api_key.get())
         set_credential("together",          self.var_together_api_key.get())
         set_credential("huggingface",       self.var_huggingface_api_key.get())
+
+        # v2.11.4 — Clinic profile: mutate the global brand_config singleton then
+        # persist to brand.json. Kept strictly separate from app_settings (AD-20).
+        brand_config.clinic_name        = self.var_clinic_name.get().strip()
+        brand_config.clinic_subtitle    = self.var_clinic_subtitle.get().strip()
+        brand_config.clinic_address     = self.var_clinic_address.get().strip()
+        brand_config.report_header_text = self.var_report_header_text.get().strip()
+        brand_config.report_footer_text = self.var_report_footer_text.get().strip()
+        brand_config.logo_path          = self.var_logo_path.get().strip()
+        try:
+            brand_config.save()
+        except OSError as exc:
+            logger.error(f"Failed to save brand.json: {exc}")
 
     # ── Validation ────────────────────────────────────────────────────────────
 

@@ -202,13 +202,14 @@
 
 ---
 
-### v2.11.4 — Clinic Profile Settings Section
+### v2.11.4 — Clinic Profile Settings Section ✅ Completed
 
-- [ ] New "Clinic Profile" card in `settings_view.py`.
-- [ ] Entry fields: Clinic Name, Subtitle, Address, Report Header Text, Report Footer Text.
-- [ ] Logo file picker: View shows `filedialog.askopenfilename` via delegate callback; ViewModel holds path string.
-- [ ] Save writes to `brand.json` via `BrandConfig` save method.
-- [ ] Subscription tier display (read-only label for now).
+- [x] New "Clinic Profile" card in `settings_view.py` — placed first in the scroll area.
+- [x] Entry fields: Clinic Name, Subtitle, Address, Report Header Text, Report Footer Text.
+- [x] Logo file picker: readonly `ttk.Entry` (path display) + "Browse…" button; `_on_logo_pick()` opens `filedialog.askopenfilename` in the View; ViewModel holds path `tk.StringVar` only.
+- [x] Save writes all clinic profile fields to `brand_config` singleton then calls `brand_config.save()` — atomic write to `brand.json`.
+- [x] Subscription tier display (read-only `ttk.Label` bound to `var_subscription_tier`).
+- [x] `_HEIGHT` bumped to 1380 px.
 
 ---
 

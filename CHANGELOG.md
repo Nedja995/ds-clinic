@@ -23,6 +23,31 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.11.4] - 2026-09-04
+
+### Added
+- `src/dsclinic_gui/settings/settings_view.py` — `_build_clinic_profile_section()`: new "CLINIC PROFILE" card placed first in the settings scroll area:
+  - Entry fields for `clinic_name`, `clinic_subtitle`, `clinic_address`, `report_header_text`, `report_footer_text` via existing `_entry_field()` helper.
+  - Logo picker row: readonly `ttk.Entry` (displays current path) + "Browse…" `ttk.Button` that calls `_on_logo_pick()`. File dialog stays in View; ViewModel receives the path string only (MVVM AD-01).
+  - `_on_logo_pick()` method: `filedialog.askopenfilename` filtered to PNG/ICO/JPG; sets `view_model.var_logo_path` on selection.
+  - Subscription tier: read-only `ttk.Label` bound to `var_subscription_tier` with `ACCENT` foreground.
+  - `_setup_ui()`: `_build_clinic_profile_section()` inserted before `_build_patient_data_section()`.
+  - `__init__`: `view_model.on_pick_logo_file = self._on_logo_pick` wired before `_setup_ui()` call.
+  - `_HEIGHT` bumped from 1160 to 1380 (+220 px).
+  - `filedialog` added to imports.
+
+### Changed
+- `src/dsclinic_gui/settings/settings_view_model.py`:
+  - `from models.brand import brand_config` import added.
+  - `logging` and `Optional`, `Callable` imports added.
+  - `__init__`: seven new `tk.StringVar` vars for clinic profile fields sourced from `brand_config`: `var_clinic_name`, `var_clinic_subtitle`, `var_clinic_address`, `var_report_header_text`, `var_report_footer_text`, `var_logo_path`, `var_subscription_tier` (read-only). `on_pick_logo_file: Optional[Callable[[], None]] = None` delegate attribute added.
+  - `update_from_config()`: clinic profile vars refreshed from `brand_config` at end of method.
+  - `save_to_config()`: clinic profile fields written to `brand_config` singleton fields then `brand_config.save()` called (atomic write to `brand.json`); wrapped in `try/except OSError` with `logger.error`.
+  - Module docstring updated to document `brand_config` / `brand.json` ownership.
+- `pyproject.toml` — version bumped to `2.11.4`.
+
+---
+
 ## [2.11.3] - 2026-09-04
 
 ### Changed

@@ -9,7 +9,7 @@ Intentional tk.* exceptions (documented):
   - tk.StringVar / tk.DoubleVar / tk.BooleanVar – always tk
 """
 import tkinter as tk
-from tkinter import Frame, ttk, scrolledtext
+from tkinter import Frame, ttk, scrolledtext, filedialog
 
 from dsclinic_gui.styles import (
     BG, PANEL, TOOLBAR, WHITE, ACCENT, BORDER,
@@ -23,11 +23,10 @@ from npy.core import utils
 
 class SettingsWindow(tk.Toplevel):
 
-    _WIDTH  = 640
-    _HEIGHT = 1160  # v2.10.1: bumped to accommodate Local AI section
-    _MIN_WIDTH = 400
+    _WIDTH     = 640
+    _HEIGHT    = 1380  # v2.11.4: bumped +220 to accommodate Clinic Profile card
+    _MIN_WIDTH  = 400
     _MIN_HEIGHT = 400
-
 
     def __init__(self, master: tk.Misc, **kwargs) -> None:
         super().__init__(master, **kwargs)
@@ -48,6 +47,10 @@ class SettingsWindow(tk.Toplevel):
             default_lang=initial_lang,
             save_config_callback=self.save_config_language
         )
+
+        # Wire the logo picker delegate before _setup_ui so the button can
+        # reference it immediately — filedialog belongs in the View (MVVM).
+        self.view_model.on_pick_logo_file = self._on_logo_pick
 
         self._setup_ui()
         self.view_model.update_from_config()
@@ -77,6 +80,7 @@ class SettingsWindow(tk.Toplevel):
     def _setup_ui(self) -> None:
         self._build_toolbar()
         self._build_scroll_area()
+        self._build_clinic_profile_section()   # v2.11.4 — first card, most visible
         self._build_patient_data_section()
         self._build_ai_section()
         self._build_local_ai_section()
@@ -124,6 +128,72 @@ class SettingsWindow(tk.Toplevel):
         frame = ttk.Frame(parent, style="Panel.TFrame", padding=(0, 0, 0, 0))
         frame.pack(fill="x", pady=(0, 0))
         return frame
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Clinic Profile Section (v2.11.4)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _build_clinic_profile_section(self) -> None:
+        """
+        Clinic identity fields backed by brand_config / brand.json (AD-20).
+        Placed first so white-label clients see it immediately on opening Settings.
+        Subscription tier is read-only — not editable via UI in v2.11.x.
+        """
+        card = self._card("Clinic Profile")
+
+        self._entry_field(card, "Clinic Name",        self.view_model.var_clinic_name)
+        self._entry_field(card, "Subtitle",            self.view_model.var_clinic_subtitle)
+        self._entry_field(card, "Address",             self.view_model.var_clinic_address)
+        self._entry_field(card, "Report Header Text",  self.view_model.var_report_header_text)
+        self._entry_field(card, "Report Footer Text",  self.view_model.var_report_footer_text)
+
+        # Logo picker — Entry (readonly display) + Browse button.
+        # filedialog is invoked by the View via _on_logo_pick(); ViewModel holds
+        # only the resulting path string, never the dialog itself (MVVM AD-01).
+        logo_frame = ttk.Frame(card, style="Panel.TFrame", padding=(0, 0, 0, 6))
+        logo_frame.pack(fill="x")
+        ttk.Label(logo_frame, text="Logo File", style="FormLabel.TLabel").pack(anchor="w")
+        picker_row = ttk.Frame(logo_frame, style="Panel.TFrame")
+        picker_row.pack(fill="x", pady=(2, 0))
+        ttk.Entry(
+            picker_row,
+            textvariable=self.view_model.var_logo_path,
+            state="readonly",
+            font=FI,
+        ).pack(side="left", fill="x", expand=True)
+        ttk.Button(
+            picker_row,
+            text="Browse…",
+            style="Accent.TButton",
+            command=self._on_logo_pick,
+        ).pack(side="left", padx=(6, 0))
+        ttk.Label(
+            logo_frame,
+            text="PNG or ICO — shown in toolbar and PDF header.",
+            background=PANEL, foreground=SUBTLE, font=FS,
+        ).pack(anchor="w", pady=(2, 0))
+
+        # Subscription tier — read-only informational row
+        tier_row = ttk.Frame(card, style="Panel.TFrame", padding=(0, 4, 0, 0))
+        tier_row.pack(fill="x")
+        ttk.Label(tier_row, text="Subscription Tier", style="FormLabel.TLabel").pack(side="left")
+        ttk.Label(
+            tier_row,
+            textvariable=self.view_model.var_subscription_tier,
+            background=PANEL, foreground=ACCENT, font=FSB,
+        ).pack(side="left", padx=(8, 0))
+
+    def _on_logo_pick(self) -> None:
+        """
+        Opens the OS file picker for logo selection.
+        Stays in the View — ViewModel receives only the selected path string.
+        """
+        path = filedialog.askopenfilename(
+            title="Select Logo Image",
+            filetypes=[("Image files", "*.png *.ico *.jpg *.jpeg"), ("All files", "*.*")],
+        )
+        if path:
+            self.view_model.var_logo_path.set(path)
 
     # ─────────────────────────────────────────────────────────────────────────
     # Patient Data Section
@@ -191,11 +261,9 @@ class SettingsWindow(tk.Toplevel):
         self._sync_text_widget(self._sys_instr_text, self.view_model.var_system_instructions_text)
 
         # ── API Credentials (OS keyring — never written to disk) ──────────────
-        # Multimodal cloud providers
-        self._credential_field(panel, "Google API Key",    self.view_model.var_google_api_key)
-        self._credential_field(panel, "Anthropic API Key", self.view_model.var_anthropic_api_key)
-        self._credential_field(panel, "Google Project ID", self.view_model.var_google_project_id)
-        # OpenAI-compatible cloud providers (text-only, Split-Horizon Layer 1/2)
+        self._credential_field(panel, "Google API Key",      self.view_model.var_google_api_key)
+        self._credential_field(panel, "Anthropic API Key",   self.view_model.var_anthropic_api_key)
+        self._credential_field(panel, "Google Project ID",   self.view_model.var_google_project_id)
         self._credential_field(panel, "Groq API Key",        self.view_model.var_groq_api_key)
         self._credential_field(panel, "Together AI API Key", self.view_model.var_together_api_key)
         self._credential_field(panel, "HuggingFace API Key", self.view_model.var_huggingface_api_key)
@@ -212,7 +280,6 @@ class SettingsWindow(tk.Toplevel):
         """
         local = self._card("Local AI (Ollama)")
 
-        # Daemon base URL — plain, unmasked entry (AD-13)
         self._entry_field(local, "Ollama Base URL", self.view_model.var_ollama_base_url)
         ttk.Label(
             local,
@@ -220,7 +287,6 @@ class SettingsWindow(tk.Toplevel):
             background=PANEL, foreground=SUBTLE, font=FS,
         ).pack(anchor="w", pady=(0, 8))
 
-        # Active model — combobox populated from ollama_supported_models in config.json
         model_frame = ttk.Frame(local, style="Panel.TFrame", padding=(0, 0, 0, 6))
         model_frame.pack(fill="x")
         ttk.Label(model_frame, text="Model", style="FormLabel.TLabel").pack(anchor="w")
