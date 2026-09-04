@@ -1,0 +1,12 @@
+{
+  "clinic_name": "MedAI - ViTec",
+  "clinic_subtitle": "Medical AI Analysis Platform",
+  "clinic_address": "",
+  "logo_path": "resources/logo.png",
+  "primary_color": "#003366",
+  "secondary_color": "#ebebeb",
+  "report_header_text": "",
+  "report_footer_text": "NAPOMENA: Rezultati su holistički uvid. Za medicinske dijagnoze konsultujte svog lekara.",
+  "report_consent_text": "SAGLASNOST: Pacijent je upoznat sa metodom, preporučenom terapijom i istu u potpunosti prihvata.",
+  "subscription_tier": "standard"
+}

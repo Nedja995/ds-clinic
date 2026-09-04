@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.10.0 ✅ Complete — Next: v2.11.0
+## Current Status: v2.11.1 ✅ Complete — Next: v2.11.2
 
 | Version | Scope | Status |
 |---|---|---|
@@ -74,7 +74,11 @@ git push
 | v2.10.2 | `OllamaProvider` core implementation | ✅ Done |
 | v2.10.3 | Load-on-demand & VRAM sequential guard | ✅ Done |
 | v2.10.4 | Register Ollama in `ProviderFactory` | ✅ Done |
-| v2.11.0 | BrandConfig + white-label + subscription | Planned |
+| v2.11.1 | `BrandConfig` model & loader | ✅ Done |
+| v2.11.2 | Dynamic PDF report branding | Next |
+| v2.11.3 | Dynamic GUI branding | Planned |
+| v2.11.4 | Clinic Profile settings section | Planned |
+| v2.11.5 | Subscription tier enforcement stubs | Planned |
 | v2.12.0 | Chat Session View rewrite | Planned |
 | v2.13.0 | pytest coverage | Planned |
 | v2.14.0 | PII improvements + debug panel | Planned |
@@ -82,47 +86,71 @@ git push
 
 ---
 
-## v2.10.0 Changes (completed 2026-09-03)
+## v2.11.1 Changes (completed 2026-09-04)
 
-### Architecture
-All six `LLMProvider` backends are now fully implemented. `ProviderFactory` has no stubs remaining.
+### New Files
+- `src/models/brand.py` — `BrandConfig(BaseModel)` with full field set, `load()`, `save()`, `resolved_logo_path()`, `is_feature_allowed()`, `primary_color_rgb()`, `secondary_color_rgb()`. `_hex_to_rgb()` helper. `brand_config` singleton initialized on import.
+- `brand.json` — default deployable config at project root: `"MedAI - ViTec"`, `"standard"` tier.
 
-### v2.10.1
-- `config.json` — `ollama_initial_model_config` (`llama3.2-vision:q4_0`, `base_url`) and `ollama_supported_models` (5 quantized model tags) added.
-- `src/models/settings.py` — `ollama_model_name: str`, `ollama_base_url: str` writable fields; `ollama_supported_models: Dict[str, str]` static field. All wired in `load_unified()`. `save_unified()` excludes `ollama_supported_models` (static) but persists `ollama_model_name` and `ollama_base_url` (user prefs, not secrets).
-- `src/dsclinic_gui/settings/settings_view_model.py` — `var_ollama_base_url`, `var_ollama_model_name` `tk.StringVar`; `ollama_supported_models` list. Wired in `update_from_config()` and `save_to_config()`.
-- `src/dsclinic_gui/settings/settings_view.py` — new `_build_local_ai_section()` renders "LOCAL AI (OLLAMA)" card: plain base URL entry + hint; model combobox from `ollama_supported_models`. `_HEIGHT` bumped to 1160.
-- `pyproject.toml` — version bumped to `2.10.1`.
+### Changed
+- `src/models/__init__.py` — `BrandConfig` and `brand_config` exported.
+- `pyproject.toml` — version bumped to `2.11.1`.
 
-### v2.10.2 + v2.10.3
-- `src/providers/ollama_provider.py` — `OllamaProvider(LLMProvider)` fully implemented:
-  - `__init__`: lazy `import ollama`; `ollama.Client(host=ollama_base_url)`; daemon ping via `list()`. Startup-guard: `_available = False` when daemon down or SDK absent.
-  - `is_available()` → `self._available`.
-  - `analyze()`: text-only; `_JSON_SCHEMA_SUFFIX` enforced; `ollama.Client.chat()`; markdown fence strip; `MedicalReportModel.model_validate_json()`.
-  - `ask()`: streaming via `client.chat(stream=True)`; `_stream_and_record()` generator; history appended on exhaustion.
-  - `_ensure_model_loaded()`: unloads previous model via `keep_alive=0` before loading new one (VRAM guard, AD-13); pulls model via `ollama.pull()` only when absent from `list()`.
-  - DEBUG logging of all VRAM decisions (unload, pull, active model).
+### Key design decisions
+- `brand.json` resolved via `get_base_dir_path()` — works in both dev (project root) and frozen PyInstaller build (executable dir). AD-09.
+- `BrandConfig` has NO dependency on `AppSettings` and vice versa — clean separation per AD-20.
+- `is_feature_allowed()` uses `_TIER_FEATURES` dict; enterprise is a superset of standard; unknown features default `False` (safe by default).
+- `primary_color` / `secondary_color` drive PDF only in v2.11.x — GUI theme color support deferred.
+- Default `clinic_name` is `"MedAI - ViTec"` (the enterprise product name, not the original single-clinic hardcoded string).
 
-### v2.10.4
-- `src/providers/factory.py` — `OLLAMA` `NotImplementedError` stub replaced with lazy `OllamaProvider` import. `NotImplementedError` catch removed from `available_providers()`. Module docstring updated.
-- `pyproject.toml` — version bumped to `2.10.4`.
+---
+
+## v2.11.2 Implementation Notes (for next session)
+
+### Target: `pdf_maker.py` — replace all hardcoded branding with `brand_config` reads
+
+Key changes:
+- Import `brand_config` from `models` at the top of `pdf_maker.py`.
+- `LOGO_PATH` constant: replace the current `utils.get_resource_filepath("logo.png")` (which raises on missing file) with `brand_config.resolved_logo_path()` — returns empty string gracefully when logo absent.
+- `HolisticReport.__init__`: remove the `if not os.path.exists(LOGO_PATH): raise Exception(...)` guard — logo rendering is now optional, not fatal.
+- `draw_header()`: replace hardcoded `"HOLISTIČKI CENTAR DAR PRIRODE"` title string with `brand_config.clinic_name`. Replace `set_text_color(0, 51, 102)` with `brand_config.primary_color_rgb()` unpacked. Logo render: use `brand_config.resolved_logo_path()` — skip if empty.
+- `draw_footer_section()`: replace hardcoded consent/note strings with `brand_config.report_consent_text` and `brand_config.report_footer_text`.
+- Trial watermark: add `_draw_watermark(self)` method on `HolisticReport`. Called from `create_report_pdf()` when `brand_config.is_feature_allowed("no_watermark")` is `False`. Watermark is diagonal text across the page center using `FPDF.rotate()` + `cell()` in light gray.
+- `draw_patient_info()`: if `brand_config.report_header_text` is non-empty, render it as a subtitle line below the clinic name in the header.
+- `set_fill_color` for table headers: use `brand_config.secondary_color_rgb()`.
+- `pdf_maker.py` is in the `mypy` exclude list — no type annotation burden, but keep the `brand_config` import clean.
+
+### Watermark implementation sketch
+```python
+def _draw_watermark(self) -> None:
+    # Diagonal "TRIAL" stamp — rendered behind content using transparency trick
+    # (FPDF2 doesn't support true alpha; use light gray color as visual cue)
+    self.set_font(FONT_BOLD, "", 60)
+    self.set_text_color(220, 220, 220)
+    with self.rotation(45, x=self.w / 2, y=self.h / 2):
+        self.text(x=self.w / 2 - 60, y=self.h / 2, txt="TRIAL")
+    self.set_text_color(0, 0, 0)  # reset
+```
 
 ---
 
 ## Key Existing Code Context
 
+- `src/models/brand.py` — NEW: `BrandConfig`, `brand_config` singleton, `is_feature_allowed()`, color helpers.
 - `src/providers/` — complete: `base.py`, `gemini_provider.py`, `claude_provider.py`, `openai_compatible_provider.py`, `groq_provider.py`, `together_provider.py`, `huggingface_provider.py`, `ollama_provider.py`, `factory.py`, `__init__.py`. All six providers fully implemented. No stubs remaining.
 - `src/providers/ollama_provider.py` — `OllamaProvider`: daemon-ping availability, load-on-demand with VRAM guard, streaming chat, text-only (vision multimodal deferred to v2.14.3).
 - `src/providers/base.py` — `ProviderRequest` has `context: str` field for text-only providers.
 - `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports. Document loading produces `genai_types.Part` list — text-only providers receive empty `documents` and rely on `context`.
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` fully implemented.
 - `src/dsclinic_gui/report_view_models.py` — full patient + session management.
+- `src/pdf_maker.py` — all clinic branding currently hardcoded; target for v2.11.2.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.11.1** ✅ — `BrandConfig` model, `brand_config` singleton, `brand.json` default file.
 - **v2.10.4** ✅ — `ProviderFactory` `OLLAMA` stub replaced; all 6 providers registered and reachable.
 - **v2.10.3** ✅ — Load-on-demand pull + VRAM sequential guard in `_ensure_model_loaded()`.
 - **v2.10.2** ✅ — `OllamaProvider` core: init, analyze, ask, streaming.

@@ -28,3 +28,7 @@ from models.keyring_manager import (
     set_credential,
     delete_credential,
 )
+from models.brand import (
+    BrandConfig,
+    brand_config,
+)

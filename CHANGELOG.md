@@ -15,11 +15,30 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.14.0] - Planned — PII Anonymization Improvements + Debug Panel
 ## [2.13.0] - Planned — pytest Coverage
 ## [2.12.0] - Planned — Chat Session View Rewrite + New Features
-## [2.11.0] - Planned — Enterprise Multi-Brand / White-Label & Subscription Config
+## [2.11.0] - In Progress — Enterprise Multi-Brand / White-Label & Subscription Config
 ## [2.10.0] - Completed — Local Ollama Provider (16GB VRAM Optimized)
 ## [2.9.0] - Completed — Groq + Together AI + HuggingFace Cloud Providers
 ## [2.8.0] - Completed — `src/providers/` LLMProvider Abstraction (Gemini + Claude)
 ## [2.7.0] - Completed — Patient Record as First-Class Entity & Session Persistence
+
+---
+
+## [2.11.1] - 2026-09-04
+
+### Added
+- `src/models/brand.py` — `BrandConfig(BaseModel)` with fields: `clinic_name`, `clinic_subtitle`, `clinic_address`, `logo_path`, `primary_color`, `secondary_color`, `report_header_text`, `report_footer_text`, `report_consent_text`, `subscription_tier` (`"trial"` / `"standard"` / `"enterprise"`).
+  - `BrandConfig.load()` — reads `brand.json` from executable root via `get_base_dir_path()`; falls back to built-in defaults silently when file absent.
+  - `BrandConfig.save()` — atomic write to `brand.json` via `.tmp` swap; used by Settings UI in v2.11.4.
+  - `BrandConfig.resolved_logo_path()` — resolves relative logo paths against executable root (AD-09); returns empty string when file not found so callers skip rendering safely.
+  - `BrandConfig.is_feature_allowed(feature)` — subscription tier gate; `_TIER_FEATURES` dict maps tier → allowed feature set; logs denied features at DEBUG level.
+  - `BrandConfig.primary_color_rgb()` / `secondary_color_rgb()` — parse hex color strings to `(R, G, B)` tuples for FPDF.
+  - `_hex_to_rgb()` — module-level helper; falls back to `(0, 51, 102)` on parse error.
+  - `brand_config` singleton initialized on import.
+- `brand.json` — default deployable config file at project root with `"MedAI - ViTec"` branding and `"standard"` subscription tier.
+- `src/models/__init__.py` — `BrandConfig` and `brand_config` exported.
+
+### Changed
+- `pyproject.toml` — version bumped to `2.11.1`.
 
 ---
 

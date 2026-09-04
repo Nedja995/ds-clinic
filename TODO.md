@@ -187,34 +187,18 @@
 
 ---
 
-## v2.11.0 — Enterprise Multi-Brand / White-Label & Subscription Config 🏢 Planned
+## v2.11.0 — Enterprise Multi-Brand / White-Label & Subscription Config 🏢 In Progress
 
 **Why:** What makes DSClinic a real B2B SaaS product rather than a single-clinic tool. Two delivery modes: white-labeled per-client builds and a subscription SaaS app. See AD-04 and AD-20.
 
 ---
 
-### v2.11.1 — `BrandConfig` Model & Loader (`src/models/brand.py`)
+### v2.11.5 — Subscription Tier Enforcement Stubs
 
-- [ ] Define `BrandConfig(BaseModel)` with fields: `clinic_name: str`, `clinic_subtitle: str`, `clinic_address: str`, `logo_path: str`, `primary_color: str`, `secondary_color: str`, `report_header_text: str`, `report_footer_text: str`, `subscription_tier: str` (`"trial"` / `"standard"` / `"enterprise"`).
-- [ ] Load from `brand.json` adjacent to executable. Fall back to defaults if absent.
-- [ ] Export `brand_config` singleton from `src/models/__init__.py`.
-
----
-
-### v2.11.2 — Dynamic PDF Report Branding
-
-- [ ] `pdf_maker.py` reads `brand_config` at generation time for logo, clinic name, header/footer text.
-- [ ] Logo path resolved relative to executable directory (portable layout, AD-09).
-- [ ] PDF color scheme driven by `brand_config.primary_color`.
-- [ ] Trial tier: add watermark text overlay to every page.
-
----
-
-### v2.11.3 — Dynamic GUI Branding
-
-- [ ] Window title = `brand_config.clinic_name`.
-- [ ] Toolbar/header label = `brand_config.clinic_name` + `brand_config.clinic_subtitle`.
-- [ ] Logo image shown in main panel header if `brand_config.logo_path` resolves to an existing file.
+- [ ] `trial`: PDF watermark active (v2.11.2), session limit warning after N analyses per day.
+- [ ] `standard`: No watermark, unlimited sessions.
+- [ ] `enterprise`: Stub only — multi-user and custom model support flagged as future milestone.
+- [ ] Tier check implemented as a single `is_feature_allowed(feature: str) -> bool` gate function.
 
 ---
 
@@ -228,12 +212,34 @@
 
 ---
 
-### v2.11.5 — Subscription Tier Enforcement Stubs
+### v2.11.3 — Dynamic GUI Branding
 
-- [ ] `trial`: PDF watermark active (v2.11.2), session limit warning after N analyses per day.
-- [ ] `standard`: No watermark, unlimited sessions.
-- [ ] `enterprise`: Stub only — multi-user and custom model support flagged as future milestone.
-- [ ] Tier check implemented as a single `is_feature_allowed(feature: str) -> bool` gate function.
+- [ ] Window title = `brand_config.clinic_name`.
+- [ ] Toolbar/header label = `brand_config.clinic_name` + `brand_config.clinic_subtitle`.
+- [ ] Logo image shown in main panel header if `brand_config.logo_path` resolves to an existing file.
+
+---
+
+### v2.11.2 — Dynamic PDF Report Branding
+
+- [ ] `pdf_maker.py` reads `brand_config` at generation time for logo, clinic name, header/footer text.
+- [ ] Logo path resolved relative to executable directory (AD-09).
+- [ ] PDF color scheme driven by `brand_config.primary_color`.
+- [ ] Trial tier: add watermark text overlay to every page.
+
+---
+
+### v2.11.1 — `BrandConfig` Model & Loader (`src/models/brand.py`) ✅ Completed
+
+- [x] Define `BrandConfig(BaseModel)` with fields: `clinic_name: str`, `clinic_subtitle: str`, `clinic_address: str`, `logo_path: str`, `primary_color: str`, `secondary_color: str`, `report_header_text: str`, `report_footer_text: str`, `report_consent_text: str`, `subscription_tier: str` (`"trial"` / `"standard"` / `"enterprise"`).
+- [x] Load from `brand.json` adjacent to executable. Fall back to defaults if absent.
+- [x] `BrandConfig.save()` — atomic write to `brand.json` via `.tmp` swap.
+- [x] `BrandConfig.resolved_logo_path()` — resolves relative paths against executable root (AD-09); returns empty string when file not found.
+- [x] `BrandConfig.is_feature_allowed(feature: str) -> bool` — subscription tier gate via `_TIER_FEATURES` dict.
+- [x] `BrandConfig.primary_color_rgb()` / `secondary_color_rgb()` — hex to `(R, G, B)` tuple for FPDF.
+- [x] `_hex_to_rgb()` module-level helper with fallback to `(0, 51, 102)`.
+- [x] `brand_config` singleton exported from `src/models/__init__.py`.
+- [x] `brand.json` default file written at project root with `"MedAI - ViTec"` branding and `"standard"` tier.
 
 ---
 
