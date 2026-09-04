@@ -220,12 +220,14 @@
 
 ---
 
-### v2.11.2 — Dynamic PDF Report Branding
+### v2.11.2 — Dynamic PDF Report Branding ✅ Completed
 
-- [ ] `pdf_maker.py` reads `brand_config` at generation time for logo, clinic name, header/footer text.
-- [ ] Logo path resolved relative to executable directory (AD-09).
-- [ ] PDF color scheme driven by `brand_config.primary_color`.
-- [ ] Trial tier: add watermark text overlay to every page.
+- [x] `pdf_maker.py` reads `brand_config` at generation time for logo, clinic name, header/footer text.
+- [x] Logo path resolved relative to executable directory (AD-09).
+- [x] PDF color scheme driven by `brand_config.primary_color` (header text) and `brand_config.secondary_color` (table fills).
+- [x] Trial tier: diagonal `"TRIAL"` watermark stamped on every page via `draw_watermark()` when `is_feature_allowed("no_watermark")` is `False`.
+- [x] `LOGO_PATH` module constant removed — logo is now optional, not fatal on missing file.
+- [x] Optional `report_header_text` subtitle line rendered below clinic name when non-empty.
 
 ---
 

@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.11.1 ✅ Complete — Next: v2.11.2
+## Current Status: v2.11.2 ✅ Complete — Next: v2.11.3
 
 | Version | Scope | Status |
 |---|---|---|
@@ -75,8 +75,8 @@ git push
 | v2.10.3 | Load-on-demand & VRAM sequential guard | ✅ Done |
 | v2.10.4 | Register Ollama in `ProviderFactory` | ✅ Done |
 | v2.11.1 | `BrandConfig` model & loader | ✅ Done |
-| v2.11.2 | Dynamic PDF report branding | Next |
-| v2.11.3 | Dynamic GUI branding | Planned |
+| v2.11.2 | Dynamic PDF report branding | ✅ Done |
+| v2.11.3 | Dynamic GUI branding | Next |
 | v2.11.4 | Clinic Profile settings section | Planned |
 | v2.11.5 | Subscription tier enforcement stubs | Planned |
 | v2.12.0 | Chat Session View rewrite | Planned |
@@ -86,70 +86,51 @@ git push
 
 ---
 
-## v2.11.1 Changes (completed 2026-09-04)
-
-### New Files
-- `src/models/brand.py` — `BrandConfig(BaseModel)` with full field set, `load()`, `save()`, `resolved_logo_path()`, `is_feature_allowed()`, `primary_color_rgb()`, `secondary_color_rgb()`. `_hex_to_rgb()` helper. `brand_config` singleton initialized on import.
-- `brand.json` — default deployable config at project root: `"MedAI - ViTec"`, `"standard"` tier.
+## v2.11.2 Changes (completed 2026-09-04)
 
 ### Changed
-- `src/models/__init__.py` — `BrandConfig` and `brand_config` exported.
-- `pyproject.toml` — version bumped to `2.11.1`.
-
-### Key design decisions
-- `brand.json` resolved via `get_base_dir_path()` — works in both dev (project root) and frozen PyInstaller build (executable dir). AD-09.
-- `BrandConfig` has NO dependency on `AppSettings` and vice versa — clean separation per AD-20.
-- `is_feature_allowed()` uses `_TIER_FEATURES` dict; enterprise is a superset of standard; unknown features default `False` (safe by default).
-- `primary_color` / `secondary_color` drive PDF only in v2.11.x — GUI theme color support deferred.
-- Default `clinic_name` is `"MedAI - ViTec"` (the enterprise product name, not the original single-clinic hardcoded string).
+- `src/pdf_maker.py` — full branding decoupled from hardcoded strings:
+  - `draw_header()`: `brand_config.clinic_name`, `primary_color_rgb()`, `resolved_logo_path()`, optional `report_header_text` subtitle.
+  - `draw_footer_section()`: `brand_config.report_consent_text`, `brand_config.report_footer_text`.
+  - `draw_table_foundings()` / `draw_table_therapy()`: `secondary_color_rgb()` for table header fill.
+  - `draw_watermark()` new method: diagonal "TRIAL" stamp via `FPDF.rotation()`.
+  - `create_report_pdf()`: watermark loop over all pages when `is_feature_allowed("no_watermark")` is `False`.
+  - `LOGO_PATH` module constant removed — logo now optional, not fatal.
+  - Module-level docstring added.
+- `pyproject.toml` — version bumped to `2.11.2`.
 
 ---
 
-## v2.11.2 Implementation Notes (for next session)
+## v2.11.3 Implementation Notes (for next session)
 
-### Target: `pdf_maker.py` — replace all hardcoded branding with `brand_config` reads
+### Target files to read before implementing
+- `src/dsclinic_gui/dsclinic_gui_app.py` — sets the root window title; needs `brand_config.clinic_name`.
+- `src/dsclinic_gui/main_container.py` — contains the toolbar/header label; needs `brand_config.clinic_name` + `brand_config.clinic_subtitle`.
 
-Key changes:
-- Import `brand_config` from `models` at the top of `pdf_maker.py`.
-- `LOGO_PATH` constant: replace the current `utils.get_resource_filepath("logo.png")` (which raises on missing file) with `brand_config.resolved_logo_path()` — returns empty string gracefully when logo absent.
-- `HolisticReport.__init__`: remove the `if not os.path.exists(LOGO_PATH): raise Exception(...)` guard — logo rendering is now optional, not fatal.
-- `draw_header()`: replace hardcoded `"HOLISTIČKI CENTAR DAR PRIRODE"` title string with `brand_config.clinic_name`. Replace `set_text_color(0, 51, 102)` with `brand_config.primary_color_rgb()` unpacked. Logo render: use `brand_config.resolved_logo_path()` — skip if empty.
-- `draw_footer_section()`: replace hardcoded consent/note strings with `brand_config.report_consent_text` and `brand_config.report_footer_text`.
-- Trial watermark: add `_draw_watermark(self)` method on `HolisticReport`. Called from `create_report_pdf()` when `brand_config.is_feature_allowed("no_watermark")` is `False`. Watermark is diagonal text across the page center using `FPDF.rotate()` + `cell()` in light gray.
-- `draw_patient_info()`: if `brand_config.report_header_text` is non-empty, render it as a subtitle line below the clinic name in the header.
-- `set_fill_color` for table headers: use `brand_config.secondary_color_rgb()`.
-- `pdf_maker.py` is in the `mypy` exclude list — no type annotation burden, but keep the `brand_config` import clean.
-
-### Watermark implementation sketch
-```python
-def _draw_watermark(self) -> None:
-    # Diagonal "TRIAL" stamp — rendered behind content using transparency trick
-    # (FPDF2 doesn't support true alpha; use light gray color as visual cue)
-    self.set_font(FONT_BOLD, "", 60)
-    self.set_text_color(220, 220, 220)
-    with self.rotation(45, x=self.w / 2, y=self.h / 2):
-        self.text(x=self.w / 2 - 60, y=self.h / 2, txt="TRIAL")
-    self.set_text_color(0, 0, 0)  # reset
-```
+### Key changes
+- `dsclinic_gui_app.py`: replace `root.title("...")` hardcoded string with `brand_config.clinic_name`. Import `brand_config` from `models`.
+- `main_container.py`: locate the toolbar label widget that shows the app name. Replace its text with `f"{brand_config.clinic_name}  {brand_config.clinic_subtitle}".strip()`. If subtitle is empty, show name only.
+- Logo in main panel header: if `brand_config.resolved_logo_path()` returns a non-empty path, load and display it with `PIL.Image` + `ImageTk.PhotoImage` in the toolbar. If absent, show no image (no error). Store the `PhotoImage` reference on the widget or parent to prevent GC.
+- Both files are in the `mypy` exclude list — no annotation burden, but keep imports clean.
+- Do NOT import `brand_config` in any ViewModel — it is View/App-layer configuration.
 
 ---
 
 ## Key Existing Code Context
 
-- `src/models/brand.py` — NEW: `BrandConfig`, `brand_config` singleton, `is_feature_allowed()`, color helpers.
-- `src/providers/` — complete: `base.py`, `gemini_provider.py`, `claude_provider.py`, `openai_compatible_provider.py`, `groq_provider.py`, `together_provider.py`, `huggingface_provider.py`, `ollama_provider.py`, `factory.py`, `__init__.py`. All six providers fully implemented. No stubs remaining.
-- `src/providers/ollama_provider.py` — `OllamaProvider`: daemon-ping availability, load-on-demand with VRAM guard, streaming chat, text-only (vision multimodal deferred to v2.14.3).
-- `src/providers/base.py` — `ProviderRequest` has `context: str` field for text-only providers.
-- `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports. Document loading produces `genai_types.Part` list — text-only providers receive empty `documents` and rely on `context`.
+- `src/models/brand.py` — `BrandConfig`, `brand_config` singleton, `is_feature_allowed()`, color helpers.
+- `src/pdf_maker.py` — fully branded as of v2.11.2; `LOGO_PATH` constant removed.
+- `src/providers/` — complete: all six providers implemented, no stubs.
+- `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports.
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` fully implemented.
 - `src/dsclinic_gui/report_view_models.py` — full patient + session management.
-- `src/pdf_maker.py` — all clinic branding currently hardcoded; target for v2.11.2.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.11.2** ✅ — `pdf_maker.py` fully branded via `brand_config`; watermark; logo optional.
 - **v2.11.1** ✅ — `BrandConfig` model, `brand_config` singleton, `brand.json` default file.
 - **v2.10.4** ✅ — `ProviderFactory` `OLLAMA` stub replaced; all 6 providers registered and reachable.
 - **v2.10.3** ✅ — Load-on-demand pull + VRAM sequential guard in `_ensure_model_loaded()`.

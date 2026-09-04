@@ -23,6 +23,23 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.11.2] - 2026-09-04
+
+### Changed
+- `src/pdf_maker.py` — full branding decoupled from hardcoded strings; all clinic identity now sourced from `brand_config` (AD-20):
+  - `draw_header()`: clinic name title replaced with `brand_config.clinic_name`; `set_text_color` uses `brand_config.primary_color_rgb()`; logo rendered via `brand_config.resolved_logo_path()` — skipped gracefully when path is absent or resolves to a missing file; optional subtitle line rendered when `brand_config.report_header_text` is non-empty.
+  - `draw_footer_section()`: hardcoded consent and disclaimer strings replaced with `brand_config.report_consent_text` and `brand_config.report_footer_text`.
+  - `draw_table_foundings()` and `draw_table_therapy()`: table header `set_fill_color` replaced with `brand_config.secondary_color_rgb()`.
+  - `draw_watermark()` — new method: diagonal `"TRIAL"` stamp in light gray (220, 220, 220) across page center using `FPDF.rotation()`. Called per-page.
+  - `create_report_pdf()`: watermark loop iterates all pages when `brand_config.is_feature_allowed("no_watermark")` returns `False`; restores `pdf.page` to last page after loop so `.output()` / `.buffer` work correctly.
+  - `LOGO_PATH` module constant removed — logo path is no longer resolved at import time, eliminating the startup `raise Exception` on missing logo. Logo is now optional for all deployments.
+  - Module-level docstring added.
+
+### Changed
+- `pyproject.toml` — version bumped to `2.11.2`.
+
+---
+
 ## [2.11.1] - 2026-09-04
 
 ### Added
