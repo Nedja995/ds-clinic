@@ -212,11 +212,11 @@
 
 ---
 
-### v2.11.3 — Dynamic GUI Branding
+### v2.11.3 — Dynamic GUI Branding ✅ Completed
 
-- [ ] Window title = `brand_config.clinic_name`.
-- [ ] Toolbar/header label = `brand_config.clinic_name` + `brand_config.clinic_subtitle`.
-- [ ] Logo image shown in main panel header if `brand_config.logo_path` resolves to an existing file.
+- [x] Window title = `brand_config.clinic_name`.
+- [x] Toolbar header label = `brand_config.clinic_name` + `brand_config.clinic_subtitle` (condensed `·`-separated, right side of toolbar).
+- [x] Logo image shown in toolbar if `brand_config.resolved_logo_path()` returns a valid path — resized to 22×22 px; `PhotoImage` reference stored on `self` to prevent GC; skipped gracefully on error.
 
 ---
 

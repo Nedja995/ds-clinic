@@ -23,6 +23,20 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.11.3] - 2026-09-04
+
+### Changed
+- `src/dsclinic_gui/dsclinic_gui_app.py` — `_configure_app()`: `self.title()` now uses `brand_config.clinic_name` instead of `app_settings.app_name`. `brand_config` imported from `models.brand`. Module docstring updated on `DSClinicAppGUI` class.
+- `src/dsclinic_gui/report_view.py` — `_build_toolbar()`: branded clinic identity block added on the right side of the toolbar (left of the Settings button):
+  - `brand_config.clinic_name` + `brand_config.clinic_subtitle` rendered as a single `ttk.Label` with `WHITE` foreground on `TOOLBAR` background.
+  - Logo image loaded via `brand_config.resolved_logo_path()` → `PIL.Image.open()` → resized to 22×22 px → `ImageTk.PhotoImage`. Stored on `self._toolbar_logo_image` to prevent GC destruction. Entire block skipped gracefully on missing file or PIL error.
+  - `from PIL import Image, ImageTk` and `from models.brand import brand_config` added to imports.
+
+### Changed
+- `pyproject.toml` — version bumped to `2.11.3`.
+
+---
+
 ## [2.11.2] - 2026-09-04
 
 ### Changed

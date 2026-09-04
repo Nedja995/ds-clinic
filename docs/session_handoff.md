@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.11.2 ✅ Complete — Next: v2.11.3
+## Current Status: v2.11.3 ✅ Complete — Next: v2.11.4
 
 | Version | Scope | Status |
 |---|---|---|
@@ -76,8 +76,8 @@ git push
 | v2.10.4 | Register Ollama in `ProviderFactory` | ✅ Done |
 | v2.11.1 | `BrandConfig` model & loader | ✅ Done |
 | v2.11.2 | Dynamic PDF report branding | ✅ Done |
-| v2.11.3 | Dynamic GUI branding | Next |
-| v2.11.4 | Clinic Profile settings section | Planned |
+| v2.11.3 | Dynamic GUI branding | ✅ Done |
+| v2.11.4 | Clinic Profile settings section | Next |
 | v2.11.5 | Subscription tier enforcement stubs | Planned |
 | v2.12.0 | Chat Session View rewrite | Planned |
 | v2.13.0 | pytest coverage | Planned |
@@ -86,50 +86,95 @@ git push
 
 ---
 
-## v2.11.2 Changes (completed 2026-09-04)
+## v2.11.3 Changes (completed 2026-09-04)
 
 ### Changed
-- `src/pdf_maker.py` — full branding decoupled from hardcoded strings:
-  - `draw_header()`: `brand_config.clinic_name`, `primary_color_rgb()`, `resolved_logo_path()`, optional `report_header_text` subtitle.
-  - `draw_footer_section()`: `brand_config.report_consent_text`, `brand_config.report_footer_text`.
-  - `draw_table_foundings()` / `draw_table_therapy()`: `secondary_color_rgb()` for table header fill.
-  - `draw_watermark()` new method: diagonal "TRIAL" stamp via `FPDF.rotation()`.
-  - `create_report_pdf()`: watermark loop over all pages when `is_feature_allowed("no_watermark")` is `False`.
-  - `LOGO_PATH` module constant removed — logo now optional, not fatal.
-  - Module-level docstring added.
-- `pyproject.toml` — version bumped to `2.11.2`.
+- `src/dsclinic_gui/dsclinic_gui_app.py` — `self.title()` → `brand_config.clinic_name`; `brand_config` imported.
+- `src/dsclinic_gui/report_view.py` — `_build_toolbar()`: branded identity block on right side of toolbar:
+  - `ttk.Label` showing `clinic_name · clinic_subtitle` (subtitle omitted when empty).
+  - Logo: `PIL.Image.open()` → resize 22×22 → `ImageTk.PhotoImage`; ref stored on `self._toolbar_logo_image` (GC guard); whole block try/except skipped on error.
+  - `PIL` and `brand_config` imports added.
+- `pyproject.toml` — version bumped to `2.11.3`.
+
+### Design note
+`brand_config` imported directly in View files — it is presentation-layer configuration, not business logic. ViewModel layer must never import it (MVVM boundary).
 
 ---
 
-## v2.11.3 Implementation Notes (for next session)
+## v2.11.4 Implementation Notes (for next session)
 
-### Target files to read before implementing
-- `src/dsclinic_gui/dsclinic_gui_app.py` — sets the root window title; needs `brand_config.clinic_name`.
-- `src/dsclinic_gui/main_container.py` — contains the toolbar/header label; needs `brand_config.clinic_name` + `brand_config.clinic_subtitle`.
+### Target files
+- `src/dsclinic_gui/settings/settings_view_model.py` — add `BrandConfig`-backed vars and save logic.
+- `src/dsclinic_gui/settings/settings_view.py` — add "Clinic Profile" card with entry fields + logo picker + tier label.
 
-### Key changes
-- `dsclinic_gui_app.py`: replace `root.title("...")` hardcoded string with `brand_config.clinic_name`. Import `brand_config` from `models`.
-- `main_container.py`: locate the toolbar label widget that shows the app name. Replace its text with `f"{brand_config.clinic_name}  {brand_config.clinic_subtitle}".strip()`. If subtitle is empty, show name only.
-- Logo in main panel header: if `brand_config.resolved_logo_path()` returns a non-empty path, load and display it with `PIL.Image` + `ImageTk.PhotoImage` in the toolbar. If absent, show no image (no error). Store the `PhotoImage` reference on the widget or parent to prevent GC.
-- Both files are in the `mypy` exclude list — no annotation burden, but keep imports clean.
-- Do NOT import `brand_config` in any ViewModel — it is View/App-layer configuration.
+### ViewModel changes (`settings_view_model.py`)
+Add at end of `__init__` (after existing vars):
+```python
+# v2.11.4 — Clinic profile vars (read from brand_config, written to brand.json)
+self.var_clinic_name         = tk.StringVar(value=brand_config.clinic_name)
+self.var_clinic_subtitle     = tk.StringVar(value=brand_config.clinic_subtitle)
+self.var_clinic_address      = tk.StringVar(value=brand_config.clinic_address)
+self.var_report_header_text  = tk.StringVar(value=brand_config.report_header_text)
+self.var_report_footer_text  = tk.StringVar(value=brand_config.report_footer_text)
+self.var_logo_path           = tk.StringVar(value=brand_config.logo_path)
+self.var_subscription_tier   = tk.StringVar(value=brand_config.subscription_tier)
+# Delegate set by View — called when logo picker button is clicked (MVVM: no filedialog in VM)
+self.on_pick_logo_file: Callable[[], None] | None = None
+```
+
+Add save logic in `save_to_config()` before `app_settings.save_unified()`:
+```python
+# Persist clinic profile to brand.json — separate from app_settings (AD-20)
+brand_config.clinic_name        = self.var_clinic_name.get().strip()
+brand_config.clinic_subtitle    = self.var_clinic_subtitle.get().strip()
+brand_config.clinic_address     = self.var_clinic_address.get().strip()
+brand_config.report_header_text = self.var_report_header_text.get().strip()
+brand_config.report_footer_text = self.var_report_footer_text.get().strip()
+brand_config.logo_path          = self.var_logo_path.get().strip()
+try:
+    brand_config.save()
+except OSError as exc:
+    logger.error(f"Failed to save brand.json: {exc}")
+```
+
+Add `update_from_config()` refresh for brand vars (at end of the method):
+```python
+self.var_clinic_name.set(brand_config.clinic_name)
+self.var_clinic_subtitle.set(brand_config.clinic_subtitle)
+self.var_clinic_address.set(brand_config.clinic_address)
+self.var_report_header_text.set(brand_config.report_header_text)
+self.var_report_footer_text.set(brand_config.report_footer_text)
+self.var_logo_path.set(brand_config.logo_path)
+self.var_subscription_tier.set(brand_config.subscription_tier)
+```
+
+Import needed: `from models.brand import brand_config` at top of `settings_view_model.py`.
+
+### View changes (`settings_view.py`)
+- New `_build_clinic_profile_section()` method — call it in `_setup_ui()` between `_build_patient_data_section()` and `_build_ai_section()`.
+- Uses existing `_entry_field()` helper for all text fields.
+- Logo picker row: `ttk.Entry` (bound to `var_logo_path`, read-only `state="readonly"`) + `ttk.Button("Browse…")`. Button `command` calls `self._on_logo_pick()` which runs `filedialog.askopenfilename` and sets `view_model.var_logo_path` — file dialog stays in View, ViewModel holds the path string.
+- Subscription tier: read-only `ttk.Label` bound to `view_model.var_subscription_tier` with `SUBTLE` foreground.
+- `_HEIGHT` bump: +180 px to accommodate the new card.
+- Import needed: `from models.brand import brand_config` NOT needed in view — all data flows through ViewModel vars.
 
 ---
 
 ## Key Existing Code Context
 
-- `src/models/brand.py` — `BrandConfig`, `brand_config` singleton, `is_feature_allowed()`, color helpers.
-- `src/pdf_maker.py` — fully branded as of v2.11.2; `LOGO_PATH` constant removed.
-- `src/providers/` — complete: all six providers implemented, no stubs.
-- `src/dsclinic.py` — routes all AI calls through `active_provider`; no direct SDK imports.
-- `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles` fully implemented.
-- `src/dsclinic_gui/report_view_models.py` — full patient + session management.
+- `src/models/brand.py` — `BrandConfig`, `brand_config` singleton, `is_feature_allowed()`, color helpers, `save()`.
+- `src/pdf_maker.py` — fully branded via `brand_config` as of v2.11.2.
+- `src/dsclinic_gui/dsclinic_gui_app.py` — window title from `brand_config.clinic_name`.
+- `src/dsclinic_gui/report_view.py` — toolbar shows `clinic_name · clinic_subtitle` + logo (22×22).
+- `src/dsclinic_gui/settings/settings_view.py` — existing card pattern: `_card(title)` → returns content `ttk.Frame`. `_entry_field()`, `_credential_field()`, `_text_field()` helpers available.
+- `src/dsclinic_gui/settings/settings_view_model.py` — existing `save_to_config()` and `update_from_config()` pattern to follow.
 - PII anonymization — working, over-anonymizes clinical values; fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.11.3** ✅ — Window title + toolbar branding from `brand_config`; logo in toolbar.
 - **v2.11.2** ✅ — `pdf_maker.py` fully branded via `brand_config`; watermark; logo optional.
 - **v2.11.1** ✅ — `BrandConfig` model, `brand_config` singleton, `brand.json` default file.
 - **v2.10.4** ✅ — `ProviderFactory` `OLLAMA` stub replaced; all 6 providers registered and reachable.

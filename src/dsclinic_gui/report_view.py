@@ -10,8 +10,10 @@ Jedini izuzeci su:
 
 import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog, messagebox
+from PIL import Image, ImageTk
 
 from models import app_settings, MedicalReport, MedicalReportModel, MedicalCriticalFindingModel, MedicalTherapyModel
+from models.brand import brand_config
 from npy.core.logger import setup_logger
 
 from dsclinic_gui.styles import *
@@ -91,7 +93,7 @@ class MedicalReportView(ttk.Frame):
         self.top_frame = ttk.Frame(parent, style="Toolbar.TFrame", padding=(0, 6))
         self.top_frame.pack(side="top", fill="x")
 
-        # Bind directly to VM commands and properties
+        # Action buttons — left side
         self.btn_analyze = self._tooolbar_button(self.top_frame, textvariable=self.view_model.var_btn_analyze_text)
         self.btn_analyze.config(command=self.view_model.toggle_analysis)
 
@@ -100,6 +102,37 @@ class MedicalReportView(ttk.Frame):
 
         self.btn_full_report = self._tooolbar_button(self.top_frame, text=_("Details"), state="disabled")
         self.btn_settings    = self._tooolbar_button(self.top_frame, text=_("Settings"), side="right", command=lambda: open_settings(self.master))
+
+        # Branded clinic identity — right side, left of Settings button (AD-20).
+        # Logo image reference must be stored on self to prevent GC from
+        # destroying the PhotoImage while the widget is still displayed.
+        self._toolbar_logo_image = None
+        logo_path = brand_config.resolved_logo_path()
+        if logo_path:
+            try:
+                pil_img = Image.open(logo_path).resize((22, 22), Image.LANCZOS)
+                self._toolbar_logo_image = ImageTk.PhotoImage(pil_img)
+                ttk.Label(
+                    self.top_frame,
+                    image=self._toolbar_logo_image,
+                    background=TOOLBAR,
+                ).pack(side="right", padx=(0, 4))
+            except Exception as exc:
+                logger.debug(f"Toolbar logo load skipped: {exc}")
+
+        # Clinic name + subtitle — condensed single-line label in the toolbar
+        _subtitle = brand_config.clinic_subtitle
+        _header_text = (
+            f"{brand_config.clinic_name}  ·  {_subtitle}"
+            if _subtitle else brand_config.clinic_name
+        )
+        ttk.Label(
+            self.top_frame,
+            text=_header_text,
+            background=TOOLBAR,
+            foreground=WHITE,
+            font=FL,
+        ).pack(side="right", padx=(0, 12))
 
         ttk.Frame(parent, style="Shadow.TFrame", height=2).pack(side="top", fill="x")
 
