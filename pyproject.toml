@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsclinic"
-version = "2.12.3"
+version = "2.12.4"
 description = "Enterprise B2B Medical AI Analysis & Report Platform — ViTec"
 readme = "README.md"
 license = "MIT"
@@ -13,7 +13,6 @@ authors = [
     { name = "ViTec", email = "your@email.com" },
 ]
 
-# ── Runtime dependencies ───────────────────────────────────────────────────────
 dependencies = [
     "google-genai>=1.0",
     "pydantic>=2.9",
@@ -29,18 +28,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-claude = [
-    "anthropic>=0.40",
-]
-local = [
-    # ollama SDK covers the local Ollama daemon (AD-13, v2.10.x).
-    "ollama>=0.3",
-]
-# openai SDK covers Groq, Together AI, and HuggingFace router — all expose
-# OpenAI-compatible /v1/chat/completions endpoints (AD-19, v2.9.x).
-providers = [
-    "openai>=1.50",
-]
+claude = ["anthropic>=0.40"]
+local = ["ollama>=0.3"]
+providers = ["openai>=1.50"]
 
 [dependency-groups]
 dev = [
