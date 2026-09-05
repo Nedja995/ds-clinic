@@ -1,3 +1,20 @@
+"""
+src/dsclinic_gui/report_view_models.py — DSClinic main ViewModel.
+
+Owns: DSClinicViewModel — all observable state, worker thread management,
+      persistence, and provider routing for the main report/chat workflow.
+
+Threading model:
+  - Initial analysis: background thread → _analysis_queue (slow, 1 s poll).
+  - Follow-up Q&A: background thread → _chat_queue (fast, 100 ms poll).
+  - Reanalysis: reuses _run_task_initial_analyzis with an optional extra system
+    instruction; result flows through _analysis_queue and _apply_analysis_event
+    exactly as initial analysis, with var_reanalysis_summary set on completion
+    so the View can add a labeled [Reanalysis] bubble.
+
+Does NOT own: UI widgets, dialogs, or tkinter imports beyond tk.StringVar /
+BooleanVar / DoubleVar (the minimal observable primitives).
+"""
 import threading
 import queue
 import tkinter as tk
@@ -98,6 +115,21 @@ class DSClinicViewModel:
         # The value is the fully accumulated text so far, not just the new fragment.
         self.var_chunk = tk.StringVar(value="")
 
+        # var_additional_prompt: user-editable extra instruction appended to
+        # system_instructions on reanalysis (v2.12.3). Pre-populated with the
+        # configured initial task description so the default produces the same
+        # result as a normal analysis — the user only edits when they want to
+        # steer the reanalysis differently.
+        self.var_additional_prompt = tk.StringVar(
+            value=app_settings.ai_initial_task_description
+        )
+
+        # var_reanalysis_summary: set to the patient_name from the new report
+        # when a reanalysis completes. The View traces this to add a labeled
+        # [Reanalysis] bot bubble without polling on_vm_data_changed (which
+        # also triggers the full report form rebuild).
+        self.var_reanalysis_summary = tk.StringVar(value="")
+
         # Analysis Status & Progress
         self.var_status_title = tk.StringVar(value="IDLE")
         self.var_status_detail = tk.StringVar(value="Ready")
@@ -112,6 +144,10 @@ class DSClinicViewModel:
 
         self._cancel_event: threading.Event = threading.Event()
         self._worker_thread: threading.Thread | None = None
+
+        # Tracks whether the current analysis run was triggered as a reanalysis
+        # so _apply_analysis_event can set var_reanalysis_summary on completion.
+        self._is_reanalysis: bool = False
 
         # Events (View subscribes to these)
         self.on_vm_data_changed:    EventEmitter = EventEmitter()
@@ -340,6 +376,8 @@ class DSClinicViewModel:
         self.var_response.set("")
         self.var_chunk.set("")
         self.var_initial_question.set("")
+        self.var_additional_prompt.set(app_settings.ai_initial_task_description)
+        self.var_reanalysis_summary.set("")
         self.var_status_title.set("IDLE")
         self.var_status_detail.set("Ready")
         self.var_progress_value.set(0.0)
@@ -385,9 +423,68 @@ class DSClinicViewModel:
         else:
             self._cancel_analysis()
 
+    def reanalyze(self) -> None:
+        """Re-run initial analysis with the current additional prompt as extra context.
+
+        Uses the same worker and queue as normal analysis. _is_reanalysis is
+        set to True so _apply_analysis_event sets var_reanalysis_summary on
+        completion instead of only emitting on_vm_data_changed — the chat View
+        traces var_reanalysis_summary to add a labeled [Reanalysis] bubble
+        without a separate event channel.
+
+        Guards: blocked while a task is already running; same trial-tier check
+        as _start_analysis() applies because reanalysis consumes a session slot.
+        """
+        if self.var_is_analyzing.get():
+            logger.warning("reanalyze() called while a task is already running — ignored.")
+            return
+
+        additional_prompt = self.var_additional_prompt.get().strip()
+
+        # Apply the same trial-tier gate as normal analysis.
+        if not brand_config.is_feature_allowed("unlimited_sessions"):
+            today_str = datetime.date.today().isoformat()
+            try:
+                all_sessions = self._db.sessions.list_index()
+                todays_count = sum(
+                    1 for s in all_sessions
+                    if str(s.get("created_at", "")).startswith(today_str)
+                )
+            except (OSError, Exception) as e:
+                logger.warning("Could not count today's sessions for trial limit check: %s", e)
+                todays_count = 0
+
+            if todays_count >= _TRIAL_DAILY_LIMIT:
+                self.on_show_error_message.emit(ErrorMessageEvent(
+                    title="Trial Limit Reached",
+                    message=(
+                        f"Your trial plan allows {_TRIAL_DAILY_LIMIT} analyses per day. "
+                        "Upgrade to Standard or Enterprise to remove this limit."
+                    ),
+                ))
+                return
+
+        self._is_reanalysis = True
+        self.var_is_analyzing.set(True)
+        self.var_status_title.set("Reanalyzing")
+        self.var_status_detail.set("Running reanalysis with updated prompt...")
+        self.var_progress_value.set(0)
+        self._cancel_event.clear()
+
+        self._worker_thread = threading.Thread(
+            target=self._run_task_initial_analyzis,
+            args=(self._analysis_queue, self._cancel_event, additional_prompt),
+            daemon=True,
+            name="dsclinic-reanalyze-thread",
+        )
+        self._worker_thread.start()
+        self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_analysis_queue)
+        logger.info("Reanalysis launched with additional_prompt=%r", additional_prompt[:80])
+
     def _reset_task_state(self) -> None:
         self._cancel_event.clear()
         self._analysis_queue = queue.Queue()
+        self._is_reanalysis = False
         self.var_is_analyzing.set(False)
         self.var_status_title.set("Cancelling")
         self.var_status_detail.set("Cancelling analysis...")
@@ -424,6 +521,7 @@ class DSClinicViewModel:
                 )
                 return
 
+        self._is_reanalysis = False
         self.var_is_analyzing.set(True)
         self.var_btn_analyze_text.set("Cancel")
         self.var_status_title.set("Running")
@@ -448,7 +546,15 @@ class DSClinicViewModel:
         self,
         output_queue: queue.Queue[ProgressEvent],
         cancel_event: threading.Event,
+        additional_prompt: str = "",
     ) -> None:
+        """Run the initial analysis pipeline in a background thread.
+
+        additional_prompt is appended to system_instructions in the
+        ProviderRequest when non-empty. This is the only difference between
+        a normal analysis and a reanalysis — the rest of the pipeline
+        (anonymization, document loading, provider call) is identical.
+        """
         try:
             output_queue.put(ProgressEvent(status=TaskStatus.RUNNING, message="Finding local medical files..."))
 
@@ -527,12 +633,13 @@ class DSClinicViewModel:
 
             output_queue.put(ProgressEvent(
                 status=TaskStatus.PROGRESS,
-                message="Sending safely anonymized data to Gemini...",
+                message="Sending safely anonymized data to AI provider...",
                 elapsed_seconds=2,
             ))
 
             report: MedicalReport = self.dsclinicapp.get_initial_analysis_report(
-                scrubbed_files_map=scrubbed_files_map
+                scrubbed_files_map=scrubbed_files_map,
+                additional_prompt=additional_prompt,
             )
             output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, message="Analysis complete", result=report))
 
@@ -618,6 +725,8 @@ class DSClinicViewModel:
         """Apply one analysis ProgressEvent to observable vars.
 
         Returns True while the task is still running; False when it has ended.
+        On reanalysis completion, sets var_reanalysis_summary so the View can
+        add a labeled [Reanalysis] bot bubble via its trace.
         """
         logger.debug(f"Applying analysis ProgressEvent: {progress_event}")
         match progress_event.status:
@@ -644,8 +753,19 @@ class DSClinicViewModel:
                     self.var_status_detail.set("Analysis completed successfully.")
                     self.var_is_analyzing.set(False)
                     self.var_btn_analyze_text.set(_("Analyze"))  # type: ignore[name-defined]
+
+                    # Emit on_vm_data_changed so the report form rebuilds.
                     self.on_vm_data_changed.emit()
 
+                    # For reanalysis: signal the chat View via var_reanalysis_summary
+                    # so it can add a labeled bubble. Set after on_vm_data_changed
+                    # so the report form is already updated when the bubble appears.
+                    if self._is_reanalysis:
+                        summary = self._model.content.patient_name or "Reanalysis complete"
+                        self.var_reanalysis_summary.set(summary)
+                        self._is_reanalysis = False
+
+                    # Persist and open a fresh session for subsequent Q&A.
                     self._persist_report(self._model)
                     self._session = ChatSessionModel(report=self._model)
                     self._persist_session()
@@ -662,12 +782,14 @@ class DSClinicViewModel:
                     self.var_status_detail.set("Analysis Failed with error: 'Unexpected result type.'")
                     self.var_is_analyzing.set(False)
                     self.var_btn_analyze_text.set(_("Analyze"))  # type: ignore[name-defined]
+                    self._is_reanalysis = False
                 return False
 
             case TaskStatus.CANCELED:
                 self.var_is_analyzing.set(False)
                 self.var_status_title.set("Cancelled")
                 self.var_status_detail.set("✖ " + progress_event.message)
+                self._is_reanalysis = False
                 return False
 
             case TaskStatus.FAILED:
@@ -681,6 +803,7 @@ class DSClinicViewModel:
                     title="Analysis Failed",
                     message=error_msg if error_msg else "An unknown error occurred during analysis.",
                 ))
+                self._is_reanalysis = False
                 return False
 
             case _:

@@ -23,27 +23,53 @@ See [TODO.md](TODO.md) for planned versions.
 
 ---
 
+## [2.12.3] - 2026-09-05
+
+### Added
+- `src/dsclinic.py` — `get_initial_analysis_report()`: `additional_prompt: str = ""` parameter added. When non-empty, the cleaned additional prompt is appended to `system_instructions` in the `ProviderRequest` before the provider call. Appending rather than replacing preserves the base JSON schema, language, and formatting rules from config. Log message emitted at INFO level with prompt length.
+- `src/dsclinic_gui/report_view_models.py`:
+  - `var_additional_prompt: tk.StringVar` — pre-populated from `app_settings.ai_initial_task_description` so a plain reanalyze without editing produces the same result as the initial analysis.
+  - `var_reanalysis_summary: tk.StringVar` — set to `model.content.patient_name` (or fallback `"Reanalysis complete"`) when a reanalysis FINISHED event arrives. The View traces this to add a `[Reanalysis]` labeled bot bubble without a separate event channel.
+  - `_is_reanalysis: bool` — instance flag set `True` by `reanalyze()`, reset to `False` in all `_apply_analysis_event` terminal branches (FINISHED / CANCELED / FAILED) so a subsequent normal analysis is never misidentified.
+  - `reanalyze() -> None` — guards: blocked while `var_is_analyzing` is `True`; applies same trial-tier daily limit gate as `_start_analysis()`. Sets `_is_reanalysis = True`, launches `_run_task_initial_analyzis` with `additional_prompt=var_additional_prompt.get().strip()` on `_analysis_queue`; schedules `_poll_analysis_queue`.
+  - `_run_task_initial_analyzis()` — `additional_prompt: str = ""` parameter added; passed through to `dsclinicapp.get_initial_analysis_report(additional_prompt=...)`.
+  - `_apply_analysis_event()` — FINISHED branch: sets `var_reanalysis_summary` and clears `_is_reanalysis` when `_is_reanalysis` is `True`; all terminal branches (FINISHED-error, CANCELED, FAILED) reset `_is_reanalysis = False`.
+  - `new_session()` — resets `var_additional_prompt` to `app_settings.ai_initial_task_description` and clears `var_reanalysis_summary`.
+  - Module docstring updated to document reanalysis threading model.
+- `src/dsclinic_gui/chat_session_view.py`:
+  - `ChatSessionView._build_reanalyze_row()` — new method: `ttk.Frame` packed `side="bottom"` above the send row, containing `ent_additional_prompt` (`ttk.Entry` bound to `var_additional_prompt`) and `btn_reanalyze` (`"↺ Reanalyze"`, `Accent.TButton`).
+  - `ChatSessionView._build_send_row()` — extracted from `_build_ui()` as a named private method for structural clarity.
+  - `ChatSessionView.btn_reanalyze` — disabled while `var_is_analyzing` is `True`; enabled when idle.
+  - `ChatSessionView.ent_additional_prompt` — disabled while `var_is_analyzing` is `True`; enabled when idle.
+  - `ChatSessionView._on_reanalyze()` — adds a right-aligned `[Reanalyze] <prompt>` user bubble (so the conversation history shows what prompt was used), then calls `view_model.reanalyze()`.
+  - `ChatSessionView._on_reanalysis_complete()` — traces `var_reanalysis_summary`; adds a left-aligned `[Reanalysis] <summary>` bot bubble when the value is non-empty.
+  - `ChatSessionView._bind_viewmodel()` — `var_reanalysis_summary.trace_add` wired to `_on_reanalysis_complete()`.
+  - `ChatSessionView._update_input_state()` — extended to disable `btn_reanalyze` and `ent_additional_prompt` alongside existing widgets.
+  - `_build_ui()` — call order: `_build_header()` → `_build_reanalyze_row()` → `_build_send_row()` → `_build_history_canvas()`.
+  - Module docstring updated with Reanalyze section.
+
+### Changed
+- `src/dsclinic_gui/report_view_models.py` — `_start_analysis()` sets `_is_reanalysis = False` before launching so a normal analysis is never misidentified as a reanalysis.
+- `pyproject.toml` — version bumped to `2.12.3`.
+
+---
+
 ## [2.12.2] - 2026-09-05
 
 ### Added
 - `src/dsclinic_gui/report_view_models.py`:
   - `from providers import ProviderFactory, ProviderType` import added.
-  - `var_active_provider: tk.StringVar` — initialised from `dsclinicapp.active_provider.provider_type().value` at startup (empty string when no provider is configured). The chat toolbar Combobox binds to this var so the displayed selection always reflects the live active provider.
-  - `available_provider_names() -> list[str]` — wraps `ProviderFactory.available_providers()`; returns `[p.value for p in ...]`. Called by the Combobox `postcommand` on every open so runtime changes (Ollama daemon start, new API key) are reflected without restart. Never raises — returns empty list on error.
-  - `set_provider_by_name(name: str) -> None` — resolves `ProviderType(name)`, calls `dsclinicapp.set_active_provider()`; on `ValueError` emits `on_show_error_message` and restores `var_active_provider` to the actual current provider so the Combobox doesn't show a provider that isn't active.
+  - `var_active_provider: tk.StringVar` — initialised from `dsclinicapp.active_provider.provider_type().value` at startup.
+  - `available_provider_names() -> list[str]` — wraps `ProviderFactory.available_providers()`.
+  - `set_provider_by_name(name: str) -> None` — calls `dsclinicapp.set_active_provider()`; emits error and restores var on failure.
 - `src/dsclinic_gui/chat_session_view.py`:
-  - `ChatSessionView._build_header()` — extracted from `_build_ui()` as a named private method. Builds the header strip with the "CHAT ASISTENT" title label (left) and the provider selector block (right).
-  - `ChatSessionView.cmb_provider: ttk.Combobox` — `state="readonly"`, `width=14`, bound to `view_model.var_active_provider`. `postcommand` calls `_refresh_provider_list()`. `<<ComboboxSelected>>` calls `_on_provider_selected()`.
-  - `ChatSessionView._refresh_provider_list()` — calls `view_model.available_provider_names()` and sets `cmb_provider.configure(values=...)`. Also called once at build time so the list is not empty before first open.
-  - `ChatSessionView._on_provider_selected(event)` — reads `view_model.var_active_provider.get()` and calls `view_model.set_provider_by_name()`.
-  - `ChatSessionView._update_input_state()` — extended to set `cmb_provider` to `"disabled"` while `var_is_analyzing` is `True`; `"readonly"` when idle. Prevents provider switching mid-stream.
-  - `ent_message` — `<Return>` key binding added: calls `_on_send()` so the user can submit with Enter as well as the button.
-  - Module docstring updated with provider selector section.
+  - `_build_header()` with provider Combobox.
+  - `cmb_provider`, `_refresh_provider_list()`, `_on_provider_selected()`.
+  - `_update_input_state()` extended to cover `cmb_provider`.
+  - `<Return>` binding on `ent_message`.
 
 ### Changed
-- `src/dsclinic_gui/styles.py`:
-  - `ChatUser.TFrame` — `background` changed from `ACCENT_LT` to `ACCENT`.
-  - `ChatUser.TLabel` — `background` changed from `ACCENT_LT` to `ACCENT`; `foreground` changed from `TEXT` to `WHITE`. User bubbles now render as solid blue with white text to visually contrast with bot bubbles.
+- `src/dsclinic_gui/styles.py` — `ChatUser.TFrame/TLabel` solid `ACCENT` + `WHITE` fg.
 - `pyproject.toml` — version bumped to `2.12.2`.
 
 ---
@@ -51,36 +77,13 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.12.1] - 2026-09-04
 
 ### Added
-- `src/models/diagnostics.py` — `TaskStatus.CHUNK` enum member added. Carries a partial streaming text fragment in `ProgressEvent.message`. Multiple CHUNK events precede a single FINISHED event per follow-up turn.
-- `src/dsclinic_gui/constants.py` — `CHAT_STREAM_POLL_INTERVAL_MS: int = 100`. Dedicated poll interval for the streaming chat queue, independent of the 1 s analysis queue interval.
-- `src/dsclinic_gui/report_view_models.py`:
-  - `_streaming_buffer: str` instance attribute — accumulates chunk text for the current turn; reset at the start of each `followup_question_submit()`.
-  - `var_chunk: tk.StringVar` — set on every CHUNK event with the fully accumulated text so far. ChatSessionView traces this to call `update_text()` in place.
-  - `_analysis_queue` and `_chat_queue` — two separate `queue.Queue[ProgressEvent]` instances replacing the single `_output_queue`. Analysis worker writes to `_analysis_queue`; chat worker writes to `_chat_queue`. Prevents CHUNK events from interleaving with RUNNING/PROGRESS analysis events.
-  - `_poll_analysis_queue()` — dedicated slow poller (QUEUE_POLL_INTERVAL_MS) for the initial analysis worker.
-  - `_poll_chat_queue()` — dedicated fast poller (CHAT_STREAM_POLL_INTERVAL_MS) for the streaming chat worker.
-  - `_apply_analysis_event()` — handles RUNNING / PROGRESS / FINISHED (MedicalReport) / CANCELED / FAILED for the analysis path.
-  - `_apply_chat_event()` — handles CHUNK / FINISHED (str) / FAILED for the chat streaming path.
-  - `_run_task_followup_question()` — rewritten to iterate `active_provider.ask()` chunk-by-chunk, emitting one CHUNK event per fragment with the accumulated text in `message`, then a final FINISHED with the complete answer in `result`.
-  - `followup_question_submit()` — resets `_streaming_buffer` and `var_chunk` before launch; schedules `_poll_chat_queue` (not `_poll_analysis_queue`).
-  - `new_session()` — clears `var_chunk` alongside `var_response`.
-- `src/dsclinic_gui/chat_session_view.py`:
-  - `MarkdownLabel.update_text(new_text: str)` — enables widget, clears content, re-inserts markdown, disables, recalculates height. In-place streaming update without spawning a new widget.
-  - `MarkdownLabel._insert_markdown()` — extracted from `__init__` as a named private method so `update_text()` can reuse it.
-  - `MarkdownLabel._recalculate_height()` — extracted from `__init__` as a named private method.
-  - `ChatSessionView._current_bot_bubble: Optional[MarkdownLabel]` — reference to the bot bubble currently receiving stream chunks. `None` between turns.
-  - `ChatSessionView._bind_viewmodel()` — wires all three traces in one place: `var_chunk` to `_on_chunk()`; `var_response` to `_on_response_finalised()`; `var_is_analyzing` to `_on_analyzing_changed()`.
-  - `ChatSessionView._on_chunk()` — creates the bot bubble on the first chunk of a turn via `_add_bot_bubble()`; calls `update_text()` on subsequent chunks. Auto-scrolls to bottom.
-  - `ChatSessionView._on_response_finalised()` — traces `var_response` (FINISHED signal) to call `append_chat_response()` for model persistence only. Does not create a new bubble.
-  - `ChatSessionView._on_analyzing_changed()` — clears `_current_bot_bubble` reference when `var_is_analyzing` transitions to `False`; calls `_update_input_state()`.
-  - `ChatSessionView._add_bot_bubble(text)` — creates and returns a `MarkdownLabel` bubble aligned left; separated from the user-bubble path.
-  - `ChatSessionView.add_user_bubble(text)` — public method for user-side plain `ttk.Label` bubbles.
-  - `ChatSessionView._on_send()` — guard added: returns early on empty input. Calls `add_user_bubble()` directly instead of the old `add_message()` shim.
-  - Module docstring added explaining the streaming architecture.
+- `src/models/diagnostics.py` — `TaskStatus.CHUNK`.
+- `src/dsclinic_gui/constants.py` — `CHAT_STREAM_POLL_INTERVAL_MS = 100`.
+- `src/dsclinic_gui/report_view_models.py` — `_streaming_buffer`, `var_chunk`, `_analysis_queue`, `_chat_queue`, dual pollers and handlers, `_run_task_followup_question` rewritten for chunk streaming.
+- `src/dsclinic_gui/chat_session_view.py` — `MarkdownLabel.update_text()`, `_current_bot_bubble`, `_on_chunk()`, `_on_response_finalised()`, `_on_analyzing_changed()`, `_add_bot_bubble()`, `add_user_bubble()`.
 
 ### Changed
-- `src/dsclinic_gui/report_view_models.py` — `_reset_task_state()` now resets `_analysis_queue` (not the removed `_output_queue`).
-- `src/dsclinic_gui/chat_session_view.py` — `var_response.trace_add` no longer drives bubble creation; moved to `_on_response_finalised()` for persistence only.
+- `src/dsclinic_gui/report_view_models.py` — `_reset_task_state()` resets `_analysis_queue`.
 - `pyproject.toml` — version bumped to `2.12.1`.
 
 ---
@@ -88,11 +91,7 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.11.5] - 2026-09-04
 
 ### Added
-- `src/dsclinic_gui/report_view_models.py`:
-  - `from models.brand import brand_config` import added.
-  - `_TRIAL_DAILY_LIMIT: int = 3` module-level constant — maximum analyses per day on the trial tier.
-  - `_start_analysis()`: trial-tier session limit gate added before any worker thread is launched. Calls `brand_config.is_feature_allowed("unlimited_sessions")`; when `False`, counts today's sessions from `_db.sessions.list_index()` filtered by ISO date prefix. If count ≥ `_TRIAL_DAILY_LIMIT`, emits `on_show_error_message` with upgrade prompt and returns without launching analysis. Standard and enterprise tiers skip the check entirely (zero overhead). `OSError` on index read caught and logged; count defaults to 0 so a DB failure never silently blocks analysis.
-- `src/providers/factory.py` — `available_providers()`: enterprise stub block added at top of method. Lazy-imports `brand_config` inside try/except; calls `is_feature_allowed("custom_models")` and logs a `DEBUG` message when the enterprise tier is active. `except Exception: pass` ensures no provider discovery is ever blocked by a brand config import failure.
+- Trial session gate in `_start_analysis()`; enterprise stub in `ProviderFactory.available_providers()`.
 
 ### Changed
 - `pyproject.toml` — version bumped to `2.11.5`.
@@ -102,10 +101,9 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.11.4] - 2026-09-04
 
 ### Added
-- `src/dsclinic_gui/settings/settings_view.py` — `_build_clinic_profile_section()`: new "CLINIC PROFILE" card placed first in the settings scroll area.
+- Clinic Profile settings card.
 
 ### Changed
-- `src/dsclinic_gui/settings/settings_view_model.py` — clinic profile vars, `brand_config.save()` on save.
 - `pyproject.toml` — version bumped to `2.11.4`.
 
 ---
@@ -113,8 +111,7 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.11.3] - 2026-09-04
 
 ### Changed
-- `src/dsclinic_gui/dsclinic_gui_app.py` — window title from `brand_config.clinic_name`.
-- `src/dsclinic_gui/report_view.py` — toolbar branding: clinic name + subtitle + 22×22 logo.
+- Window title + toolbar branding from `brand_config`.
 - `pyproject.toml` — version bumped to `2.11.3`.
 
 ---
@@ -122,7 +119,7 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.11.2] - 2026-09-04
 
 ### Changed
-- `src/pdf_maker.py` — fully branded via `brand_config`; trial watermark; `LOGO_PATH` removed.
+- `pdf_maker.py` fully branded; trial watermark; `LOGO_PATH` removed.
 - `pyproject.toml` — version bumped to `2.11.2`.
 
 ---
@@ -131,7 +128,6 @@ See [TODO.md](TODO.md) for planned versions.
 
 ### Added
 - `src/models/brand.py` — `BrandConfig`, `brand_config` singleton, `brand.json`.
-- `src/models/__init__.py` — `BrandConfig` and `brand_config` exported.
 
 ### Changed
 - `pyproject.toml` — version bumped to `2.11.1`.
@@ -141,28 +137,28 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.10.4] - 2026-09-03
 
 ### Changed
-- `src/providers/factory.py` — `OllamaProvider` stub replaced with full lazy import.
+- `ProviderFactory` — `OllamaProvider` stub replaced with lazy import.
 
 ---
 
 ## [2.10.3] - 2026-09-03
 
 ### Added
-- `src/providers/ollama_provider.py` — `OllamaProvider._ensure_model_loaded()`: unloads previous model before loading new, pulls on first use only.
+- `OllamaProvider._ensure_model_loaded()` — unload previous model before loading new; pull on first use only.
 
 ---
 
 ## [2.10.2] - 2026-09-03
 
 ### Added
-- `src/providers/ollama_provider.py` — `OllamaProvider(LLMProvider)` full implementation.
+- `OllamaProvider(LLMProvider)` full implementation.
 
 ---
 
 ## [2.10.1] - 2026-09-03
 
 ### Added
-- Ollama config infra: `config.json`, `AppSettings`, `SettingsViewModel`, `settings_view.py` "LOCAL AI" card.
+- Ollama config infra: `config.json`, `AppSettings`, `SettingsViewModel`, Settings UI "LOCAL AI" card.
 
 ### Changed
 - `pyproject.toml` — version bumped to `2.10.1`.
@@ -172,29 +168,28 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.9.4] - 2026-09-02
 
 ### Changed
-- `src/providers/factory.py` — Groq, Together, HuggingFace stubs replaced with lazy imports.
+- `ProviderFactory` — Groq, Together, HuggingFace stubs replaced.
 
 ---
 
 ## [2.9.3] - 2026-09-02
 
 ### Added
-- `src/providers/groq_provider.py`, `together_provider.py`, `huggingface_provider.py`.
+- `GroqProvider`, `TogetherProvider`, `HuggingFaceProvider`.
 
 ---
 
 ## [2.9.2] - 2026-09-02
 
 ### Added
-- `src/providers/openai_compatible_provider.py` — `OpenAICompatibleProvider(LLMProvider)` shared base.
+- `OpenAICompatibleProvider(LLMProvider)` shared base.
 
 ---
 
 ## [2.9.1] - 2026-09-02
 
 ### Added
-- `ProviderRequest.context: str` field (Split-Horizon text-only path, AD-12).
-- Groq, Together, HuggingFace credential and config infra.
+- `ProviderRequest.context: str`; Groq/Together/HuggingFace credential and config infra.
 
 ### Changed
 - `pyproject.toml` — version bumped to `2.9.1`.
@@ -204,77 +199,66 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.8.4] - 2026-09-02
 
 ### Changed
-- `src/dsclinic.py` — full refactor to route through `ProviderFactory` / `LLMProvider` (AD-19).
+- `dsclinic.py` full refactor to `ProviderFactory` / `LLMProvider` (AD-19).
 
 ---
 
 ## [2.8.3] - 2026-09-02
 
 ### Added
-- `src/providers/factory.py` — `ProviderFactory` with `create()` and `available_providers()`.
-
-### Changed
-- `src/providers/__init__.py` — `ProviderFactory` exported.
+- `ProviderFactory` with `create()` and `available_providers()`.
 
 ---
 
 ## [2.8.2] - 2026-09-02
 
 ### Added
-- `src/providers/gemini_provider.py` — `GeminiProvider(LLMProvider)`.
-- `src/providers/claude_provider.py` — `ClaudeProvider(LLMProvider)`.
+- `GeminiProvider`, `ClaudeProvider`.
 
 ---
 
 ## [2.8.1] - 2026-09-02
 
 ### Added
-- `src/providers/` package, `base.py` — `ProviderType`, `ProviderRequest`, `ProviderResponse`, `LLMProvider(ABC)`.
+- `src/providers/` package; `ProviderType`, `ProviderRequest`, `ProviderResponse`, `LLMProvider(ABC)`.
 
 ---
 
 ## [2.7.4] - 2026-09-01
 
 ### Added
-- `src/dsclinic_gui/session_history_view.py` — two-tab Notebook sidebar (Sessions + Patients).
-- `src/dsclinic_gui/report_view_models.py` — patient management methods.
+- Two-tab Notebook sidebar (Sessions + Patients); patient management ViewModel methods.
 
 ---
 
 ## [2.7.3] - 2026-09-01
 
 ### Added
-- `src/dsclinic_gui/session_history_view.py` — `SessionHistoryView(ttk.Frame)` initial version.
-- Session index, `on_sessions_changed`, `load_session()`, `new_session()` in ViewModel.
+- `SessionHistoryView`; session index; `load_session()`; `new_session()`.
 
 ### Changed
-- `src/dsclinic_gui/main_container.py` — three-pane layout.
+- `main_container.py` — three-pane layout.
 
 ---
 
 ## [2.7.2] - 2026-09-01
 
 ### Added
-- `AppDatabase` wired into `DSClinicViewModel`; `_persist_report()`, `_persist_session()`.
+- `AppDatabase` wired; `_persist_report()`, `_persist_session()`.
 
 ---
 
 ## [2.7.1] - 2026-09-01
 
 ### Added
-- `src/models/patient.py` — `PatientRecord(BaseModel)`.
-- `src/db/app_database.py` — `patients` collection.
+- `PatientRecord`; `patients` collection in `AppDatabase`.
 
 ---
 
 ## [2.5.4] - 2026-09-01
 
 ### Added
-- `pyproject.toml` full migration: metadata, deps, extras, dev group, tool sections.
-- `README.md` full rewrite.
-
-### Removed
-- `mypy.ini` — config moved into `pyproject.toml`.
+- `pyproject.toml` full migration; `README.md` rewrite.
 
 ---
 
@@ -288,42 +272,42 @@ See [TODO.md](TODO.md) for planned versions.
 ## [2.5.2] - 2026-08-31
 
 ### Fixed
-- Defensive error handling audit across `src/db/`, keyring, worker threads.
+- Defensive error handling audit.
 
 ---
 
 ## [2.5.1] - 2026-08-31
 
 ### Fixed
-- MVVM boundary audit; `append_chat_response()` delegate; `execute_export()` error handling.
+- MVVM boundary audit; `append_chat_response()` delegate.
 
 ---
 
 ## [2.6.7] - 2026-08-30
 
 ### Security
-- `settings.ini` permanently deleted. Both API keys regenerated and written to OS keyring.
+- `settings.ini` permanently deleted. API keys regenerated and written to OS keyring.
 
 ---
 
 ## [2.6.0] - 2026-08-30 — Secure Credential Management & `settings.ini` Elimination ✅
 
 ### Security
-- All API keys moved to OS keyring via `keyring_manager.py`. `settings.ini` deleted.
+- All API keys moved to OS keyring via `keyring_manager.py`.
 
 ---
 
 ## [2.3.0] - 2026-08-29
 
 ### Added
-- Unified `src/models/` package. `AppSettings` Pydantic model.
+- Unified `src/models/` package; `AppSettings` Pydantic model.
 
 ---
 
 ## [2.1.10] - 2026-08-28
 
 ### Added
-- "SUPPORT" card section in Settings. Token-optimization filters.
+- "SUPPORT" card in Settings. Token-optimization filters.
 
 ### Fixed
-- Nested-tuple serialization bug on multiple settings saves.
+- Nested-tuple serialization bug.

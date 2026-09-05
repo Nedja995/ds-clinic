@@ -19,6 +19,14 @@ Provider selector (v2.12.2):
   - <<ComboboxSelected>> calls view_model.set_provider_by_name(); disabled
     while var_is_analyzing is True alongside the send button and entry.
 
+Reanalyze (v2.12.3):
+  - Additional prompt ttk.Entry bound to view_model.var_additional_prompt,
+    above the message send row.
+  - "↺ Reanalyze" button calls view_model.reanalyze(); disabled while analyzing.
+  - var_reanalysis_summary trace: when reanalysis completes the ViewModel sets
+    this var; the View adds a [Reanalysis] labeled bot bubble without needing
+    a separate event channel.
+
 Does NOT own: business logic, AI calls, session persistence.
 """
 from __future__ import annotations
@@ -121,9 +129,10 @@ class ChatSessionView(ttk.Frame):
     """
     Right-hand chat pane.
 
-    Manages the scrollable bubble list and the message input row. Streaming
-    updates are applied in-place via _current_bot_bubble — only one bubble
-    object is created per bot turn regardless of how many CHUNK events arrive.
+    Manages the scrollable bubble list, the additional-prompt / reanalyze row,
+    and the message send row. Streaming updates are applied in-place via
+    _current_bot_bubble — only one bubble object is created per bot turn
+    regardless of how many CHUNK events arrive.
     """
 
     def __init__(
@@ -143,47 +152,34 @@ class ChatSessionView(ttk.Frame):
 
     def _bind_viewmodel(self) -> None:
         """Wire all ViewModel observable vars to View handlers."""
-        # var_chunk: fires on every streaming fragment — update bubble in place.
         self.view_model.var_chunk.trace_add(
-            "write",
-            lambda *_: self._on_chunk(),
+            "write", lambda *_: self._on_chunk(),
         )
-        # var_response: fires once at FINISHED — persist response, no new bubble.
         self.view_model.var_response.trace_add(
-            "write",
-            lambda *_: self._on_response_finalised(),
+            "write", lambda *_: self._on_response_finalised(),
         )
-        # var_is_analyzing: clear the in-progress bubble reference when idle
-        # and sync input widget states.
         self.view_model.var_is_analyzing.trace_add(
-            "write",
-            lambda *_: self._on_analyzing_changed(),
+            "write", lambda *_: self._on_analyzing_changed(),
+        )
+        # var_reanalysis_summary: set by the ViewModel when a reanalysis
+        # completes. Non-empty value triggers a labeled [Reanalysis] bubble.
+        self.view_model.var_reanalysis_summary.trace_add(
+            "write", lambda *_: self._on_reanalysis_complete(),
         )
         self._update_input_state()
 
     def _on_chunk(self) -> None:
-        """Handle a streaming CHUNK event from the ViewModel.
-
-        Creates the bot bubble on the first chunk of a turn; calls update_text()
-        on subsequent chunks so the text grows in-place without layout thrash.
-        """
         text = self.view_model.var_chunk.get()
         if not text:
             return
-
         if self._current_bot_bubble is None:
             self._current_bot_bubble = self._add_bot_bubble(text)
         else:
             self._current_bot_bubble.update_text(text)
-
         self._scroll_to_bottom()
 
     def _on_response_finalised(self) -> None:
-        """Handle the FINISHED signal — persist the completed response.
-
-        Does NOT create a new bubble: the streaming bubble already contains
-        the full text by the time FINISHED arrives.
-        """
+        """Handle FINISHED signal — persist the completed response, no new bubble."""
         answer = self.view_model.var_response.get()
         if answer:
             self.view_model.append_chat_response(answer)
@@ -191,52 +187,41 @@ class ChatSessionView(ttk.Frame):
     def _on_analyzing_changed(self) -> None:
         """Clear the in-progress bubble reference and sync widget states."""
         if not self.view_model.var_is_analyzing.get():
-            # Turn is over — next send creates a new bubble from scratch.
             self._current_bot_bubble = None
         self._update_input_state()
 
-    def _update_input_state(self) -> None:
-        """Enable or disable all interactive widgets based on analyzing state.
+    def _on_reanalysis_complete(self) -> None:
+        """Add a labeled [Reanalysis] bot bubble when a reanalysis finishes.
 
-        The provider Combobox and the send controls are all disabled together
-        while a task is running so the user cannot change the provider mid-stream
-        or submit a second question before the first completes.
+        The ViewModel sets var_reanalysis_summary to a non-empty string on
+        reanalysis completion. The View uses this as the trigger to add the
+        bubble so the signal path is the same as all other observable vars —
+        no separate event channel needed.
         """
-        state = "disabled" if self.view_model.var_is_analyzing.get() else "normal"
+        summary = self.view_model.var_reanalysis_summary.get()
+        if not summary:
+            return
+        self._add_bot_bubble(f"[Reanalysis] {summary}")
+        self._scroll_to_bottom()
+
+    def _update_input_state(self) -> None:
+        """Enable or disable all interactive widgets based on analyzing state."""
+        is_busy = self.view_model.var_is_analyzing.get()
+        state = "disabled" if is_busy else "normal"
         self.btn_send.config(state=state)
         self.ent_message.config(state=state)
-        self.cmb_provider.config(state="disabled" if self.view_model.var_is_analyzing.get() else "readonly")
+        self.btn_reanalyze.config(state=state)
+        self.ent_additional_prompt.config(state=state)
+        self.cmb_provider.config(state="disabled" if is_busy else "readonly")
 
     def _build_ui(self) -> None:
         self._build_header()
-
-        input_pane = ttk.Frame(self, style="Footer.TFrame", padding=(12, 8))
-        input_pane.pack(side="bottom", fill="x")
-
-        self.ent_message = ttk.Entry(
-            input_pane, textvariable=self.view_model.var_initial_question
-        )
-        self.ent_message.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=2)
-        self.ent_message.bind("<Return>", lambda _e: self._on_send())
-
-        self.btn_send = ttk.Button(
-            input_pane,
-            text="Pošalji",
-            style="Accent.TButton",
-            command=self._on_send,
-        )
-        self.btn_send.pack(side="right")
-
+        self._build_reanalyze_row()
+        self._build_send_row()
         self._build_history_canvas()
 
     def _build_header(self) -> None:
-        """Build the header strip containing the title and provider selector.
-
-        The provider Combobox uses 'readonly' state so the user picks from the
-        list rather than typing a raw provider name. postcommand refreshes the
-        values list on every open so runtime availability changes are reflected
-        without requiring an app restart.
-        """
+        """Header strip: title (left) + provider selector (right)."""
         header = ttk.Frame(self, style="Strip.TFrame", padding=(8, 4))
         header.pack(side="top", fill="x")
 
@@ -246,7 +231,6 @@ class ChatSessionView(ttk.Frame):
             style="CardTitle.TLabel",
         ).pack(side="left")
 
-        # Provider selector — right-aligned in the header strip.
         provider_frame = ttk.Frame(header, style="Strip.TFrame")
         provider_frame.pack(side="right", padx=(0, 4))
 
@@ -266,37 +250,80 @@ class ChatSessionView(ttk.Frame):
             font=("Segoe UI", 8),
         )
         self.cmb_provider.pack(side="left")
-
-        # Refresh available providers on every dropdown open — catches Ollama
-        # daemon start or new API key added after app launch.
-        self.cmb_provider.configure(
-            postcommand=self._refresh_provider_list,
-        )
+        self.cmb_provider.configure(postcommand=self._refresh_provider_list)
         self.cmb_provider.bind("<<ComboboxSelected>>", self._on_provider_selected)
-
-        # Populate on build so the list is not empty before first open.
         self._refresh_provider_list()
 
+    def _build_reanalyze_row(self) -> None:
+        """Additional-prompt entry + reanalyze button row above the send row.
+
+        The entry is pre-populated with var_additional_prompt (which is
+        initialised from app_settings.ai_initial_task_description) so running
+        a plain reanalyze without editing it produces the same result as the
+        initial analysis. The user edits the entry to steer the reanalysis.
+        """
+        reanalyze_pane = ttk.Frame(self, style="Footer.TFrame", padding=(12, 4))
+        reanalyze_pane.pack(side="bottom", fill="x")
+
+        self.ent_additional_prompt = ttk.Entry(
+            reanalyze_pane,
+            textvariable=self.view_model.var_additional_prompt,
+            font=("Segoe UI", 9),
+        )
+        self.ent_additional_prompt.pack(
+            side="left", fill="x", expand=True, padx=(0, 8), ipady=2
+        )
+
+        self.btn_reanalyze = ttk.Button(
+            reanalyze_pane,
+            text="↺ Reanalyze",
+            style="Accent.TButton",
+            command=self._on_reanalyze,
+        )
+        self.btn_reanalyze.pack(side="right")
+
+    def _build_send_row(self) -> None:
+        """Message entry + send button row at the very bottom."""
+        input_pane = ttk.Frame(self, style="Footer.TFrame", padding=(12, 8))
+        input_pane.pack(side="bottom", fill="x")
+
+        self.ent_message = ttk.Entry(
+            input_pane, textvariable=self.view_model.var_initial_question
+        )
+        self.ent_message.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=2)
+        self.ent_message.bind("<Return>", lambda _e: self._on_send())
+
+        self.btn_send = ttk.Button(
+            input_pane,
+            text="Pošalji",
+            style="Accent.TButton",
+            command=self._on_send,
+        )
+        self.btn_send.pack(side="right")
+
     def _refresh_provider_list(self) -> None:
-        """Reload the Combobox values from the ViewModel's live availability check."""
         names = self.view_model.available_provider_names()
         self.cmb_provider.configure(values=names)
 
     def _on_provider_selected(self, _event: Any) -> None:
-        """Forward the selected provider name to the ViewModel."""
         selected = self.view_model.var_active_provider.get()
         self.view_model.set_provider_by_name(selected)
 
     def _on_send(self) -> None:
-        """Send button handler — adds the user bubble then submits to ViewModel."""
         question = self.view_model.var_initial_question.get().strip()
         if not question:
             return
         self.add_user_bubble(question)
         self.view_model.followup_question_submit()
 
+    def _on_reanalyze(self) -> None:
+        """Reanalyze button handler — shows a labeled user bubble then triggers reanalysis."""
+        prompt = self.view_model.var_additional_prompt.get().strip()
+        label = f"[Reanalyze] {prompt}" if prompt else "[Reanalyze]"
+        self.add_user_bubble(label)
+        self.view_model.reanalyze()
+
     def _build_history_canvas(self) -> None:
-        logger.debug("Building history canvas...")
         wrap = ttk.Frame(self)
         wrap.pack(fill="both", expand=True)
 
@@ -313,7 +340,6 @@ class ChatSessionView(ttk.Frame):
             (0, 0), window=self.history_frame, anchor="nw"
         )
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
-
         self.canvas.bind(
             "<Configure>",
             lambda e: self.canvas.itemconfigure(self._win_id, width=e.width),
@@ -341,11 +367,7 @@ class ChatSessionView(ttk.Frame):
         self._add_bubble(text, is_user=True)
 
     def _add_bot_bubble(self, text: str) -> MarkdownLabel:
-        """Render a left-aligned bot bubble and return the MarkdownLabel widget.
-
-        The caller stores the reference so subsequent chunks can call
-        update_text() on the same widget.
-        """
+        """Render a left-aligned bot bubble and return the MarkdownLabel widget."""
         bubble_wrap = ttk.Frame(self.history_frame, padding=(12, 6))
         bubble_wrap.pack(side="top", fill="x")
 

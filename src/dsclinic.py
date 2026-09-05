@@ -97,10 +97,16 @@ class DSClinic:
     def get_initial_analysis_report(
         self,
         scrubbed_files_map: dict[str, str] | None = None,
+        additional_prompt: str = "",
     ) -> MedicalReport:
         """
         Load documents, apply anonymization, build a ProviderRequest, and
         run the initial structured analysis via the active provider.
+
+        additional_prompt is appended to system_instructions when non-empty.
+        This is the only difference between a normal analysis and a reanalysis
+        (v2.12.3) — the full document loading and anonymization pipeline runs
+        identically in both cases.
 
         Document loading produces genai_types.Part objects — this is
         currently Gemini-format because api_gemini_utils owns the file →
@@ -128,9 +134,6 @@ class DSClinic:
             logger.info(f"[DSClinic] No files found in input directory: {self.input_dir}")
 
         # ── Document loading & anonymization ─────────────────────────────
-        # This loop is provider-agnostic at the DSClinic level: it produces
-        # a list of file parts that GeminiProvider understands natively.
-        # Future provider adapters will transform this list as needed.
         input_documents_parts: list[genai_types.Part] = []
 
         for doc_filepath in documents_filepaths:
@@ -171,10 +174,22 @@ class DSClinic:
         raw_question = app_settings.ai_initial_task_description
         cleaned_question = " ".join(raw_question.split())
 
+        # Build system instructions: base config list + optional additional prompt.
+        # The additional prompt is appended rather than replacing so the base
+        # instructions (JSON schema, language, formatting rules) always apply.
+        system_instructions = list(app_settings.ai_system_instructions)
+        if additional_prompt:
+            cleaned_additional = " ".join(additional_prompt.split())
+            system_instructions.append(cleaned_additional)
+            logger.info(
+                "[DSClinic] Additional prompt appended to system instructions (%d chars).",
+                len(cleaned_additional),
+            )
+
         request = ProviderRequest(
             documents=input_documents_parts,
             question=cleaned_question,
-            system_instructions=list(app_settings.ai_system_instructions),
+            system_instructions=system_instructions,
             temperature=app_settings.ai_model_temperature,
             max_tokens=app_settings.ai_model_max_output_tokens,
         )
@@ -192,8 +207,8 @@ class DSClinic:
         the accumulated full response string.
 
         The Iterator[str] contract on LLMProvider.ask() allows the chat view
-        to consume chunks as they arrive in the future (v2.12.1). Here we
-        accumulate for compatibility with the existing ViewModel polling pattern.
+        to consume chunks as they arrive (v2.12.1). Here we accumulate for
+        compatibility with the existing ViewModel polling pattern.
         """
         if self.active_provider is None:
             raise RuntimeError(
