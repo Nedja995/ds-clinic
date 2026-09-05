@@ -50,7 +50,7 @@ git push
 
 ---
 
-## Current Status: v2.11.5 ✅ Complete — v2.11.0 ✅ Complete — Next: v2.12.0
+## Current Status: v2.12.2 ✅ Complete — Next: v2.12.3
 
 | Version | Scope | Status |
 |---|---|---|
@@ -59,63 +59,76 @@ git push
 | v2.8.1 – v2.8.4 | LLMProvider abstraction, GeminiProvider, ClaudeProvider | ✅ Done |
 | v2.9.1 – v2.9.4 | Groq, Together, HuggingFace providers | ✅ Done |
 | v2.10.1 – v2.10.4 | OllamaProvider, VRAM guard, config | ✅ Done |
-| v2.11.1 | `BrandConfig` model & loader | ✅ Done |
-| v2.11.2 | Dynamic PDF report branding | ✅ Done |
-| v2.11.3 | Dynamic GUI branding | ✅ Done |
-| v2.11.4 | Clinic Profile settings section | ✅ Done |
-| v2.11.5 | Subscription tier enforcement stubs | ✅ Done |
-| v2.12.0 | Chat Session View rewrite | Next |
+| v2.11.1 – v2.11.5 | BrandConfig, dynamic PDF/GUI branding, settings, tier enforcement | ✅ Done |
+| v2.12.1 | Streaming bubble fix, `MarkdownLabel.update_text()`, dual queue pollers | ✅ Done |
+| v2.12.2 | ChatUser style fix + provider selector Combobox in chat header | ✅ Done |
+| v2.12.3 | Reanalyze command + additional prompt input | Next |
+| v2.12.4 | `include_in_report` checkboxes per bubble | Planned |
 | v2.13.0 | pytest coverage | Planned |
 | v2.14.0 | PII improvements + debug panel | Planned |
 | v2.15.0 | README case study + architecture diagrams | Planned |
 
 ---
 
-## v2.11.5 Changes (completed 2026-09-04)
+## v2.12.2 Changes (completed 2026-09-05)
 
 ### Changed
+- `src/dsclinic_gui/styles.py` — `ChatUser.TFrame` background `ACCENT_LT` → `ACCENT`; `ChatUser.TLabel` background `ACCENT_LT` → `ACCENT`, foreground `TEXT` → `WHITE`. User bubbles are now solid blue with white text.
+
+### Added
 - `src/dsclinic_gui/report_view_models.py`:
-  - `brand_config` imported from `models.brand`.
-  - `_TRIAL_DAILY_LIMIT = 3` module-level constant.
-  - `_start_analysis()`: trial gate calls `is_feature_allowed("unlimited_sessions")`; when `False`, counts today's sessions by ISO date prefix on `list_index()`. Blocks with error message if count ≥ limit. DB read failure defaults to 0 (never silently blocks). Standard/enterprise tiers: gate not entered, zero overhead.
-- `src/providers/factory.py` — `available_providers()`: enterprise stub — lazy-imports `brand_config`, logs DEBUG when `is_feature_allowed("custom_models")` is `True`. Wrapped in `except Exception: pass`.
-- `pyproject.toml` — version bumped to `2.11.5`.
-- `TODO.md` / `CHANGELOG.md` — v2.11.0 parent marked ✅ Completed.
+  - `from providers import ProviderFactory, ProviderType` import.
+  - `var_active_provider: tk.StringVar` — initialised from `dsclinicapp.active_provider.provider_type().value`; empty string when no provider configured.
+  - `available_provider_names() -> list[str]` — wraps `ProviderFactory.available_providers()`; never raises.
+  - `set_provider_by_name(name: str) -> None` — calls `dsclinicapp.set_active_provider(ProviderType(name))`; on `ValueError` emits `on_show_error_message` and restores `var_active_provider`.
+- `src/dsclinic_gui/chat_session_view.py`:
+  - `_build_header()` — extracted from `_build_ui()`; builds title label (left) + provider selector block (right).
+  - `cmb_provider: ttk.Combobox` — `state="readonly"`, bound to `var_active_provider`; `postcommand` refreshes values; `<<ComboboxSelected>>` calls `_on_provider_selected()`.
+  - `_refresh_provider_list()` — calls `available_provider_names()` and updates combobox values; called once at build and on every open.
+  - `_on_provider_selected(event)` — delegates to `view_model.set_provider_by_name()`.
+  - `_update_input_state()` — extended to disable `cmb_provider` while analyzing.
+  - `ent_message` — `<Return>` binding added.
 
 ---
 
-## v2.11.0 — Complete Architecture Summary
+## v2.12.3 — Implementation Notes (next sub-version)
 
-| Sub-version | Deliverable |
-|---|---|
-| v2.11.1 | `BrandConfig(BaseModel)`, `brand_config` singleton, `brand.json`, `is_feature_allowed()`, color helpers |
-| v2.11.2 | `pdf_maker.py` fully branded — clinic name, colors, logo, footer, trial watermark |
-| v2.11.3 | Window title + toolbar label + toolbar logo from `brand_config` |
-| v2.11.4 | "Clinic Profile" settings card — all brand fields editable, logo picker, brand.json saved on Settings save |
-| v2.11.5 | Trial daily limit gate in `_start_analysis()`; enterprise stub in `ProviderFactory` |
+### Reanalyze button
+- Add `reanalyze(additional_prompt: str) -> None` to `DSClinicViewModel`.
+  - Sets `var_is_analyzing = True`; launches `_run_task_initial_analyzis` on `_analysis_queue`.
+  - Before launching: append `additional_prompt` to a local copy of `app_settings.ai_system_instructions` and pass it in via a `ProviderRequest` override, OR temporarily mutate `dsclinicapp`'s request context for the single call. Simpler: pass `additional_prompt` as an extra system instruction in the worker — do not mutate `app_settings`.
+- Add `var_additional_prompt: tk.StringVar` to `DSClinicViewModel.__init__` — pre-populated with `app_settings.ai_initial_task_description`.
+- In `ChatSessionView._build_header()`: add a "↺ Reanalyze" `ttk.Button` (`style="Toolbar.TButton"`) that calls `view_model.reanalyze(view_model.var_additional_prompt.get())`.
+- Add a `ttk.Entry` bound to `var_additional_prompt` in the input pane (above the send row), replacing or augmenting the existing single entry.
+- Reanalyze result: the FINISHED handler detects a `MedicalReport` result and emits `on_vm_data_changed` as usual. The chat view listens and adds a bot bubble prefixed with `[Reanalysis]`.
+- The `_run_task_initial_analyzis` worker needs a way to receive the additional prompt — add an optional `additional_prompt: str = ""` parameter that is appended to `system_instructions` in the `ProviderRequest`.
 
 ---
 
 ## Key Existing Code Context
 
-- `src/models/brand.py` — `BrandConfig`, `brand_config`, `is_feature_allowed()`, `_TIER_FEATURES`, `save()`, `resolved_logo_path()`, color helpers.
+- `src/dsclinic_gui/styles.py` — `ChatUser` bubble: `ACCENT` bg + `WHITE` fg (fixed v2.12.2). `ChatBot` bubble: `WHITE` bg.
+- `src/dsclinic_gui/report_view_models.py` — `var_active_provider`, `available_provider_names()`, `set_provider_by_name()` added v2.12.2.
+- `src/dsclinic_gui/chat_session_view.py` — `cmb_provider`, `_build_header()`, `_refresh_provider_list()`, `_on_provider_selected()` added v2.12.2. `<Return>` binding on `ent_message`.
+- `src/models/diagnostics.py` — `TaskStatus` (RUNNING, PROGRESS, CHUNK, FINISHED, CANCELED, FAILED).
+- `src/dsclinic_gui/constants.py` — `QUEUE_POLL_INTERVAL_MS = 1000`, `CHAT_STREAM_POLL_INTERVAL_MS = 100`.
+- `src/dsclinic_gui/report_view_models.py` — `_analysis_queue`, `_chat_queue`, `var_chunk`, `_streaming_buffer`, `_poll_analysis_queue()`, `_poll_chat_queue()`, `_apply_analysis_event()`, `_apply_chat_event()`.
+- `src/dsclinic_gui/chat_session_view.py` — `MarkdownLabel.update_text()`, `_current_bot_bubble`, `_on_chunk()`, `_add_bot_bubble()`, `add_user_bubble()`.
+- `src/providers/factory.py` — `ProviderFactory.available_providers()`, `create()`.
+- `src/dsclinic.py` — `DSClinic.set_active_provider(provider_type)`, `active_provider`.
+- `src/models/brand.py` — `BrandConfig`, `brand_config`, `is_feature_allowed()`.
 - `src/pdf_maker.py` — fully branded; watermark on trial; logo optional.
-- `src/dsclinic_gui/dsclinic_gui_app.py` — window title from `brand_config.clinic_name`.
-- `src/dsclinic_gui/report_view.py` — toolbar: `clinic_name · clinic_subtitle` + 22×22 logo.
-- `src/dsclinic_gui/settings/settings_view_model.py` — full clinic profile vars, `brand_config.save()` on save.
-- `src/dsclinic_gui/settings/settings_view.py` — "CLINIC PROFILE" card, logo picker, tier label.
-- `src/dsclinic_gui/report_view_models.py` — `_TRIAL_DAILY_LIMIT`, trial gate in `_start_analysis()`.
-- `src/providers/factory.py` — enterprise DEBUG stub in `available_providers()`.
-- `src/providers/` — all six providers fully implemented, no stubs.
+- `src/providers/` — all six providers fully implemented.
 - `src/db/app_database.py` — `patients`, `sessions`, `reports`, `ai_profiles`.
-- PII anonymization — working; over-anonymization fix in v2.14.0.
 
 ---
 
 ## Previously Completed
 
+- **v2.12.2** ✅ — ChatUser style fix (solid ACCENT); provider Combobox in chat header; `var_active_provider`, `available_provider_names()`, `set_provider_by_name()` in ViewModel; `<Return>` binding on message entry.
+- **v2.12.1** ✅ — Streaming bubble fix; `MarkdownLabel.update_text()`; dual queue pollers; `TaskStatus.CHUNK`; `CHAT_STREAM_POLL_INTERVAL_MS`.
 - **v2.11.5** ✅ — Trial session gate; enterprise stub in ProviderFactory. v2.11.0 complete.
-- **v2.11.4** ✅ — Clinic Profile settings card; brand.json editable from UI.
+- **v2.11.4** ✅ — Clinic Profile settings card.
 - **v2.11.3** ✅ — Window title + toolbar branding.
 - **v2.11.2** ✅ — `pdf_maker.py` fully branded; watermark; logo optional.
 - **v2.11.1** ✅ — `BrandConfig` model, `brand_config` singleton, `brand.json`.

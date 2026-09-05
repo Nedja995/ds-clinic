@@ -77,11 +77,13 @@ def build_styles():
                 background=SIDEBAR_BG, foreground=TEXT,
                 font=FB)
 
-    # Chat message styles
-    s.configure("ChatUser.TFrame", background=ACCENT_LT)
+    # Chat message styles.
+    # User bubble uses solid ACCENT + WHITE text to visually distinguish from bot.
+    # Bot bubble stays on WHITE so MarkdownLabel's bg=WHITE blends seamlessly.
+    s.configure("ChatUser.TFrame", background=ACCENT)
     s.configure("ChatBot.TFrame",  background=WHITE)
-    s.configure("ChatUser.TLabel", background=ACCENT_LT, foreground=TEXT, font=FI)
-    s.configure("ChatBot.TLabel",  background=WHITE,     foreground=TEXT, font=FI)
+    s.configure("ChatUser.TLabel", background=ACCENT, foreground=WHITE, font=FI)
+    s.configure("ChatBot.TLabel",  background=WHITE,  foreground=TEXT,  font=FI)
 
     # ── Labels ───────────────────────────────────────────────────────
     s.configure("CardTitle.TLabel",

@@ -25,7 +25,8 @@ from dsclinic import DSClinic
 from pdf_maker import generate_report_pdf_at_filepath
 from npy.core.event_emitter import EventEmitter, ErrorMessageEvent
 from models import TaskStatus, ProgressEvent
-from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS
+from providers import ProviderFactory, ProviderType
+from dsclinic_gui.constants import QUEUE_POLL_INTERVAL_MS, CHAT_STREAM_POLL_INTERVAL_MS
 
 logger = setup_logger()
 
@@ -54,21 +55,21 @@ class DSClinicViewModel:
         self._model: MedicalReport = model or MedicalReport()
 
         # Single AppDatabase instance for the lifetime of this ViewModel (AD-06).
-        # Instantiated here rather than passed in — AppDatabase is a local file
-        # store, not an injected dependency, and there is exactly one per session.
         self._db: AppDatabase = AppDatabase()
 
         # Active session wraps the current report + chat history for persistence.
-        # Initialised fresh here; replaced when a saved session is loaded.
         self._session: ChatSessionModel = ChatSessionModel(report=self._model)
 
         # Holds the question text from the most recent follow-up submission so
         # the FINISHED handler can build the ChatMessage pair for persistence.
         self._pending_question: str = ""
 
+        # Accumulates streaming chunk text during a follow-up Q&A turn.
+        # Reset to "" at the start of each new followup_question_submit().
+        self._streaming_buffer: str = ""
+
         # patient_id of the currently selected patient, or empty string when
-        # no patient is associated with the active session. Used by
-        # _persist_session() to link new sessions into PatientRecord.session_ids.
+        # no patient is associated with the active session.
         self._active_patient_id: str = ""
 
         # Handled manually for Text widgets
@@ -81,18 +82,21 @@ class DSClinicViewModel:
         self.var_report_date = tk.StringVar(value=self._model.report_date)
         self.var_input_dir = tk.StringVar(value=self._model.input_dir)
 
-        # Session history index — plain list updated whenever sessions change.
-        # The View reads this on on_sessions_changed to rebuild the sidebar list.
-        # Each entry is the flat dict produced by JsonCollection.list_index().
+        # Session / patient indexes
         self.var_sessions_index: list[dict[str, Any]] = self._db.sessions.list_index()
-
-        # Patient index — same pattern as sessions. Each entry is the flat dict
-        # from JsonCollection.list_index() over the patients collection.
         self.var_patients_index: list[dict[str, Any]] = self._db.patients.list_index()
 
-        # Chat session (TODO: get rid of these)
+        # Chat
         self.var_initial_question = tk.StringVar(value="")
+
+        # var_response: set once when the full follow-up answer is finalised.
+        # ChatSessionView uses this to persist the completed response only — it
+        # no longer drives bubble creation (that is now driven by var_chunk).
         self.var_response = tk.StringVar(value="")
+
+        # var_chunk: set on every streaming CHUNK event from the follow-up worker.
+        # The value is the fully accumulated text so far, not just the new fragment.
+        self.var_chunk = tk.StringVar(value="")
 
         # Analysis Status & Progress
         self.var_status_title = tk.StringVar(value="IDLE")
@@ -101,8 +105,11 @@ class DSClinicViewModel:
         self.var_is_analyzing = tk.BooleanVar(value=False)
         self.var_btn_analyze_text = tk.StringVar(value=_("Analyze"))  # type: ignore[name-defined]
 
-        # Threading
-        self._output_queue: queue.Queue[ProgressEvent] = queue.Queue()
+        # Two separate queues so the analysis poller (1 s) and the streaming
+        # chat poller (100 ms) never share a queue and run at independent rates.
+        self._analysis_queue: queue.Queue[ProgressEvent] = queue.Queue()
+        self._chat_queue: queue.Queue[ProgressEvent] = queue.Queue()
+
         self._cancel_event: threading.Event = threading.Event()
         self._worker_thread: threading.Thread | None = None
 
@@ -111,13 +118,21 @@ class DSClinicViewModel:
         self.on_show_error_message: EventEmitter = EventEmitter()
         self.on_export_requested:   EventEmitter = EventEmitter()
         self.on_export_succeeded:   EventEmitter = EventEmitter()
-        # Fired whenever var_sessions_index is refreshed — SessionHistoryView
-        # subscribes to rebuild its session list without coupling to on_vm_data_changed.
         self.on_sessions_changed:   EventEmitter = EventEmitter()
-        # Fired whenever var_patients_index is refreshed — patient tab subscribes.
         self.on_patients_changed:   EventEmitter = EventEmitter()
 
         self.dsclinicapp = DSClinic(model_name=app_settings.ai_model_name)
+
+        # var_active_provider: display name (ProviderType.value) of the active
+        # provider. Initialised from dsclinicapp.active_provider when one was
+        # auto-selected at startup; empty string when no provider is configured.
+        # The chat toolbar Combobox binds to this var (v2.12.2).
+        _initial_provider = (
+            self.dsclinicapp.active_provider.provider_type().value
+            if self.dsclinicapp.active_provider is not None
+            else ""
+        )
+        self.var_active_provider = tk.StringVar(value=_initial_provider)
 
     def _update_viewmodel_from_model(self) -> None:
         logger.debug("Updating ViewModel from Model...")
@@ -136,6 +151,48 @@ class DSClinicViewModel:
         self._model.content.critical_findings              = self.findings
         self._model.therapies                              = self.therapy_data
 
+    # ── Provider selector ─────────────────────────────────────────────────────
+
+    def available_provider_names(self) -> list[str]:
+        """Return display names of all currently available providers.
+
+        Called by the chat toolbar Combobox on postcommand so the list always
+        reflects the live availability state (e.g. Ollama daemon started after
+        app launch). Never raises — returns empty list on failure.
+        """
+        try:
+            return [p.value for p in ProviderFactory.available_providers()]
+        except Exception as exc:
+            logger.error("Failed to query available providers: %s", exc)
+            return []
+
+    def set_provider_by_name(self, name: str) -> None:
+        """Switch the active provider by its ProviderType.value display name.
+
+        Called by the chat toolbar Combobox on <<ComboboxSelected>>. Emits
+        on_show_error_message when the provider is unavailable so the View
+        never needs to handle the ValueError directly.
+        """
+        if not name:
+            return
+        try:
+            provider_type = ProviderType(name)
+            self.dsclinicapp.set_active_provider(provider_type)
+            self.var_active_provider.set(name)
+            logger.info("Active provider switched to %r via selector.", name)
+        except ValueError as exc:
+            logger.warning("Provider switch failed: %s", exc)
+            self.on_show_error_message.emit(ErrorMessageEvent(
+                title="Provider Unavailable",
+                message=str(exc),
+            ))
+            # Restore var to the actual current provider so the Combobox doesn't
+            # show a provider that isn't active.
+            if self.dsclinicapp.active_provider is not None:
+                self.var_active_provider.set(
+                    self.dsclinicapp.active_provider.provider_type().value
+                )
+
     # ── Persistence helpers ───────────────────────────────────────────────────
 
     def _persist_report(self, report: MedicalReport) -> None:
@@ -151,12 +208,7 @@ class DSClinicViewModel:
             logger.error("Failed to auto-save report %r: %s", report.report_id, e, exc_info=True)
 
     def _persist_session(self) -> None:
-        """Re-save the current ChatSessionModel after any mutation.
-
-        If _active_patient_id is set, the session_id is appended to that
-        patient's session_ids list so the patient → session link is maintained
-        (AD-18). Also refreshes both sidebar indexes.
-        """
+        """Re-save the current ChatSessionModel after any mutation."""
         self._session.report = self._model
         try:
             self._db.sessions.save(self._session.session_id, self._session)
@@ -164,17 +216,13 @@ class DSClinicViewModel:
         except (OSError, Exception) as e:
             logger.error("Failed to auto-save session %r: %s", self._session.session_id, e, exc_info=True)
 
-        # Link session into the active patient record if one is selected.
         if self._active_patient_id:
             self._link_session_to_patient(self._session.session_id, self._active_patient_id)
 
         self._refresh_sessions_index()
 
     def _link_session_to_patient(self, session_id: str, patient_id: str) -> None:
-        """Append session_id to PatientRecord.session_ids if not already present.
-
-        Idempotent — safe to call on every _persist_session() invocation.
-        """
+        """Append session_id to PatientRecord.session_ids if not already present."""
         try:
             patient = self._db.patients.load(patient_id)
             if patient is None:
@@ -212,11 +260,7 @@ class DSClinicViewModel:
     # ── Patient management ────────────────────────────────────────────────────
 
     def save_new_patient(self, full_name: str, date_of_birth: str) -> None:
-        """Create and persist a new PatientRecord.
-
-        full_name must be non-empty — caller is responsible for validation
-        before invoking. Emits on_patients_changed on success.
-        """
+        """Create and persist a new PatientRecord."""
         full_name = full_name.strip()
         if not full_name:
             logger.warning("save_new_patient called with empty full_name — ignored.")
@@ -240,21 +284,14 @@ class DSClinicViewModel:
         self._refresh_patients_index()
 
     def set_active_patient(self, patient_id: str) -> None:
-        """Mark a patient as active so subsequent sessions are linked to them.
-
-        Passing an empty string clears the active patient (no linkage).
-        """
+        """Mark a patient as active so subsequent sessions are linked to them."""
         self._active_patient_id = patient_id
         logger.debug("Active patient set to %r.", patient_id or "(none)")
 
     # ── Session management ────────────────────────────────────────────────────
 
     def load_session(self, session_id: str) -> None:
-        """Restore a previously saved session from disk.
-
-        Replaces the current model and session state. Emits on_vm_data_changed
-        so the report form rebuilds from the loaded data.
-        """
+        """Restore a previously saved session from disk."""
         if self.var_is_analyzing.get():
             logger.warning("Cannot load session while analysis is running.")
             return
@@ -284,12 +321,7 @@ class DSClinicViewModel:
         logger.info("Session %r loaded and restored.", session_id)
 
     def new_session(self) -> None:
-        """Reset all state to defaults and start a fresh session.
-
-        Does not persist anything — the new session is saved to disk only after
-        the first analysis completes. Does not clear _active_patient_id so the
-        user's patient selection persists across new sessions.
-        """
+        """Reset all state to defaults and start a fresh session."""
         if self.var_is_analyzing.get():
             logger.warning("Cannot start new session while analysis is running.")
             return
@@ -297,6 +329,7 @@ class DSClinicViewModel:
         self._model = MedicalReport()
         self._session = ChatSessionModel(report=self._model)
         self._pending_question = ""
+        self._streaming_buffer = ""
         self.therapy_text_content = ""
         self.findings = []
         self.therapy_data = []
@@ -305,6 +338,7 @@ class DSClinicViewModel:
         self.var_report_date.set(self._model.report_date)
         self.var_input_dir.set(self._model.input_dir)
         self.var_response.set("")
+        self.var_chunk.set("")
         self.var_initial_question.set("")
         self.var_status_title.set("IDLE")
         self.var_status_detail.set("Ready")
@@ -317,23 +351,19 @@ class DSClinicViewModel:
     # --- Logic: Data Management ---
 
     def add_finding(self) -> None:
-        """Adds a blank finding to the list."""
         logger.debug("Adding new finding...")
         self.findings.append(MedicalCriticalFindingModel())
 
     def remove_finding(self, index: int) -> None:
-        """Removes a finding at the specified index."""
         logger.debug(f"Removing finding at index {index}...")
         if 0 <= index < len(self.findings):
             self.findings.pop(index)
 
     def add_therapy(self) -> None:
-        """Adds a blank therapy to the list."""
         logger.debug("Adding new therapy...")
         self.therapy_data.append(MedicalTherapyModel())
 
     def remove_therapy(self, index: int) -> None:
-        """Removes a therapy at the specified index."""
         logger.debug(f"Removing therapy at index {index}...")
         if 0 <= index < len(self.therapy_data):
             self.therapy_data.pop(index)
@@ -350,16 +380,14 @@ class DSClinicViewModel:
     # --- Logic: Analysis ---
 
     def toggle_analysis(self) -> None:
-        """Toggles the analysis process."""
         if not self.var_is_analyzing.get():
             self._start_analysis()
         else:
             self._cancel_analysis()
 
     def _reset_task_state(self) -> None:
-        """Resets ViewModel state for an ongoing task."""
         self._cancel_event.clear()
-        self._output_queue = queue.Queue()
+        self._analysis_queue = queue.Queue()
         self.var_is_analyzing.set(False)
         self.var_status_title.set("Cancelling")
         self.var_status_detail.set("Cancelling analysis...")
@@ -370,8 +398,6 @@ class DSClinicViewModel:
         On the trial tier, enforces a daily session cap before launching.
         Standard and enterprise tiers bypass the cap entirely.
         """
-        # Trial tier: count today's sessions and block if limit reached (AD-20).
-        # is_feature_allowed() is a no-op for standard/enterprise — no overhead.
         if not brand_config.is_feature_allowed("unlimited_sessions"):
             today_str = datetime.date.today().isoformat()
             try:
@@ -407,12 +433,12 @@ class DSClinicViewModel:
 
         self._worker_thread = threading.Thread(
             target=self._run_task_initial_analyzis,
-            args=(self._output_queue, self._cancel_event),
+            args=(self._analysis_queue, self._cancel_event),
             daemon=True,
             name="dsclinic-gemini-thread",
         )
         self._worker_thread.start()
-        self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
+        self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_analysis_queue)
 
     def _cancel_analysis(self) -> None:
         self._reset_task_state()
@@ -527,51 +553,73 @@ class DSClinicViewModel:
         self.var_status_detail.set("Waiting for AI response...")
         self.var_progress_value.set(0)
 
-        # Stash the question so the FINISHED handler can build the ChatMessage
-        # pair — the thread only returns the answer, not the original question.
+        self._streaming_buffer = ""
+        self.var_chunk.set("")
         self._pending_question = question
 
         self._worker_thread = threading.Thread(
             target=self._run_task_followup_question,
-            args=(question, self._output_queue),
+            args=(question, self._chat_queue),
             daemon=True,
             name="dsclinic-chat-thread",
         )
         self._worker_thread.start()
-        self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
+        self.schedule_poll_fn(CHAT_STREAM_POLL_INTERVAL_MS, self._poll_chat_queue)
 
     def _run_task_followup_question(
         self, question: str, output_queue: queue.Queue[ProgressEvent]
     ) -> None:
+        """Stream the follow-up answer chunk-by-chunk through the queue.
+
+        Each chunk from the provider is emitted as a separate CHUNK event
+        whose message field carries the accumulated text so far. A final
+        FINISHED event carries the complete response in result for persistence.
+        """
         try:
-            answer = self.dsclinicapp.ask_followup_question(question)
-            output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, result=answer))
+            accumulated: str = ""
+            for chunk in self.dsclinicapp.active_provider.ask(question):  # type: ignore[union-attr]
+                accumulated += chunk
+                output_queue.put(ProgressEvent(
+                    status=TaskStatus.CHUNK,
+                    message=accumulated,
+                ))
+            output_queue.put(ProgressEvent(status=TaskStatus.FINISHED, result=accumulated))
         except Exception as e:
             logger.error(f"Error in chat followup: {e}", exc_info=True)
             output_queue.put(ProgressEvent(status=TaskStatus.FAILED, message=str(e), result=str(e)))
 
-    def _poll_result_queue(self) -> None:
-        """Drain the queue and update observable state. Scheduled via `after`."""
-        task_still_running = True
+    # ── Queue pollers ─────────────────────────────────────────────────────────
 
+    def _poll_analysis_queue(self) -> None:
+        """Drain the analysis queue (slow poll, QUEUE_POLL_INTERVAL_MS)."""
+        task_still_running = True
         try:
             while True:
-                progress_event: ProgressEvent = self._output_queue.get_nowait()
-                task_still_running = self._apply_progress_event(progress_event)
+                event: ProgressEvent = self._analysis_queue.get_nowait()
+                task_still_running = self._apply_analysis_event(event)
         except queue.Empty:
             pass
-
         if task_still_running:
-            self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_result_queue)
+            self.schedule_poll_fn(QUEUE_POLL_INTERVAL_MS, self._poll_analysis_queue)
 
-    def _apply_progress_event(self, progress_event: ProgressEvent) -> bool:
-        """Apply one ProgressEvent to observable vars.
+    def _poll_chat_queue(self) -> None:
+        """Drain the chat queue (fast poll, CHAT_STREAM_POLL_INTERVAL_MS)."""
+        task_still_running = True
+        try:
+            while True:
+                event: ProgressEvent = self._chat_queue.get_nowait()
+                task_still_running = self._apply_chat_event(event)
+        except queue.Empty:
+            pass
+        if task_still_running:
+            self.schedule_poll_fn(CHAT_STREAM_POLL_INTERVAL_MS, self._poll_chat_queue)
 
-        Returns:
-            True  → task is still running; keep polling.
-            False → task has ended; stop polling.
+    def _apply_analysis_event(self, progress_event: ProgressEvent) -> bool:
+        """Apply one analysis ProgressEvent to observable vars.
+
+        Returns True while the task is still running; False when it has ended.
         """
-        logger.debug(f"Applying ProgressEvent: {progress_event}")
+        logger.debug(f"Applying analysis ProgressEvent: {progress_event}")
         match progress_event.status:
             case TaskStatus.RUNNING:
                 self.var_status_title.set("Starting analysis...")
@@ -598,30 +646,8 @@ class DSClinicViewModel:
                     self.var_btn_analyze_text.set(_("Analyze"))  # type: ignore[name-defined]
                     self.on_vm_data_changed.emit()
 
-                    # Persist report and open a fresh session around it so
-                    # subsequent Q&A exchanges are recoverable from disk.
                     self._persist_report(self._model)
                     self._session = ChatSessionModel(report=self._model)
-                    self._persist_session()
-
-                elif isinstance(progress_event.result, str):
-                    answer = progress_event.result
-                    self.var_response.set(answer)
-                    self.var_is_analyzing.set(False)
-                    self.var_status_title.set("Ready")
-                    self.var_status_detail.set("Chat response received.")
-                    self.var_progress_value.set(100)
-
-                    # Record the Q&A pair in the session and re-save so the
-                    # conversation is fully persistent even if the app crashes.
-                    if self._pending_question:
-                        self._session.chat_history.append(
-                            ChatMessage(content=self._pending_question)
-                        )
-                        self._session.chat_history.append(
-                            ChatMessage(content=answer)
-                        )
-                        self._pending_question = ""
                     self._persist_session()
 
                 else:
@@ -658,9 +684,56 @@ class DSClinicViewModel:
                 return False
 
             case _:
-                error_msg = f"Received ProgressEvent with unknown status: {progress_event.status}"
+                error_msg = f"Received analysis ProgressEvent with unknown status: {progress_event.status}"
                 logger.error(error_msg)
                 self.on_show_error_message.emit(ErrorMessageEvent(title="Error", message=error_msg))
+                return True
+
+    def _apply_chat_event(self, progress_event: ProgressEvent) -> bool:
+        """Apply one chat ProgressEvent (CHUNK / FINISHED / FAILED) to observable vars.
+
+        Returns True while the streaming turn is still running; False when done.
+        """
+        logger.debug(f"Applying chat ProgressEvent: {progress_event}")
+        match progress_event.status:
+            case TaskStatus.CHUNK:
+                self._streaming_buffer = progress_event.message
+                self.var_chunk.set(progress_event.message)
+                return True
+
+            case TaskStatus.FINISHED:
+                answer = progress_event.result if isinstance(progress_event.result, str) else ""
+                self.var_response.set(answer)
+                self.var_is_analyzing.set(False)
+                self.var_status_title.set("Ready")
+                self.var_status_detail.set("Chat response received.")
+                self.var_progress_value.set(100)
+
+                if self._pending_question:
+                    self._session.chat_history.append(
+                        ChatMessage(content=self._pending_question)
+                    )
+                    self._session.chat_history.append(
+                        ChatMessage(content=answer)
+                    )
+                    self._pending_question = ""
+                self._persist_session()
+                return False
+
+            case TaskStatus.FAILED:
+                self.var_is_analyzing.set(False)
+                error_msg = f"Chat failed: {progress_event.message}"
+                logger.error(error_msg)
+                self.var_status_title.set("Failed")
+                self.var_status_detail.set("✖ " + progress_event.message)
+                self.on_show_error_message.emit(ErrorMessageEvent(
+                    title="Chat Failed",
+                    message=error_msg,
+                ))
+                return False
+
+            case _:
+                logger.error("Unexpected status in chat queue: %s", progress_event.status)
                 return True
 
     # Logic: View Updates
